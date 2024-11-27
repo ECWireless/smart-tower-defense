@@ -1,0 +1,10 @@
+node_modules
+
+# envs
+.env
+
+# mud artifacts
+.mud
+# sqlite indexer data
+*.db
+*.db-journal
