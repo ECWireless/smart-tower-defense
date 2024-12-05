@@ -31,21 +31,30 @@ export function createSystemCalls(
    *   (https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
    */
   { worldContract, waitForTransaction }: SetupNetworkResult,
-  { Counter }: ClientComponents,
+  { Counter }: ClientComponents
 ) {
-  const increment = async () => {
-    /*
-     * Because IncrementSystem
-     * (https://mud.dev/templates/typescript/contracts#incrementsystemsol)
-     * is in the root namespace, `.increment` can be called directly
-     * on the World contract.
-     */
-    const tx = await worldContract.write.app__increment();
+  const deploySystem = async (bytecode: string) => {
+    const tx = await worldContract.write.app__deploySystem([
+      bytecode as `0x${string}`,
+    ]);
+    await waitForTransaction(tx);
+    return getComponentValue(Counter, singletonEntity);
+  };
+
+  const getContractSize = async () => {
+    const size = await worldContract.read.app__getContractSize();
+    return size;
+  };
+
+  const runStateChange = async () => {
+    const tx = await worldContract.write.app__runStateChange();
     await waitForTransaction(tx);
     return getComponentValue(Counter, singletonEntity);
   };
 
   return {
-    increment,
+    deploySystem,
+    getContractSize,
+    runStateChange,
   };
 }

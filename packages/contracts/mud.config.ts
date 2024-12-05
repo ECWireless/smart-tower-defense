@@ -9,5 +9,11 @@ export default defineWorld({
       },
       key: [],
     },
+    LogicSystemAddress: {
+      schema: {
+        value: "address",
+      },
+      key: [],
+    },
   },
 });

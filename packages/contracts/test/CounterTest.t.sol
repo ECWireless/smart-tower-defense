@@ -23,8 +23,8 @@ contract CounterTest is MudTest {
     uint32 counter = Counter.get();
     assertEq(counter, 1);
 
-    // Expect the counter to be 2 after calling increment.
-    IWorld(worldAddress).app__increment();
+    // Expect the counter to be 2 after calling runStateChange.
+    IWorld(worldAddress).app__runStateChange();
     counter = Counter.get();
     assertEq(counter, 2);
   }
