@@ -1,4 +1,5 @@
-out/
+out/*
+!out/IWorld.sol/
 cache/
 node_modules/
 bindings/
