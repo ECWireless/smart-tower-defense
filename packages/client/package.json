@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "start": "vite",
     "dev": "wait-port localhost:8545 && vite",
     "preview": "vite preview",
     "test": "tsc --noEmit"
