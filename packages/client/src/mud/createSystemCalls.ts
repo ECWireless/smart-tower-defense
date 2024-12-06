@@ -3,10 +3,7 @@
  * for changes in the World state (using the System contracts).
  */
 
-import { getComponentValue } from "@latticexyz/recs";
-import { ClientComponents } from "./createClientComponents";
 import { SetupNetworkResult } from "./setupNetwork";
-import { singletonEntity } from "@latticexyz/store-sync/recs";
 
 export type SystemCalls = ReturnType<typeof createSystemCalls>;
 
@@ -30,15 +27,19 @@ export function createSystemCalls(
    *   syncToRecs
    *   (https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
    */
-  { worldContract, waitForTransaction }: SetupNetworkResult,
-  { Counter }: ClientComponents
+  { worldContract, waitForTransaction }: SetupNetworkResult
 ) {
   const deploySystem = async (bytecode: string) => {
     const tx = await worldContract.write.app__deploySystem([
       bytecode as `0x${string}`,
     ]);
     await waitForTransaction(tx);
-    return getComponentValue(Counter, singletonEntity);
+
+    const txResult = await waitForTransaction(tx);
+    const { status } = txResult;
+
+    const success = status === "success";
+    return success;
   };
 
   const getContractSize = async () => {
@@ -48,8 +49,11 @@ export function createSystemCalls(
 
   const runStateChange = async () => {
     const tx = await worldContract.write.app__runStateChange();
-    await waitForTransaction(tx);
-    return getComponentValue(Counter, singletonEntity);
+    const txResult = await waitForTransaction(tx);
+    const { status } = txResult;
+
+    const success = status === "success";
+    return success;
   };
 
   return {
