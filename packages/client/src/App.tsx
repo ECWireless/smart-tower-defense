@@ -11,8 +11,6 @@ export const App = () => {
 
   const counter = useComponentValue(Counter, singletonEntity);
 
-  const [bytecode, setBytecode] = useState<string>("0x0");
-  const [systemSize, setSystemSize] = useState<number>(0);
   const [sourceCode, setSourceCode] = useState(
     `
     contract LogicSystem {
@@ -23,8 +21,32 @@ export const App = () => {
   `.trim()
   );
 
+  const [isRunningLogic, setIsRunningLogic] = useState<boolean>(false);
+
+  const [bytecode, setBytecode] = useState<string>("0x0");
+  const [isCompiling, setIsCompiling] = useState<boolean>(false);
+
+  const [isDeploying, setIsDeploying] = useState<boolean>(false);
+  const [systemSize, setSystemSize] = useState<number>(0);
+
+  const onRunStateChange = useCallback(async () => {
+    try {
+      setIsRunningLogic(true);
+      const success = await runStateChange();
+
+      if (!success) {
+        throw new Error("Failed to run state change");
+      }
+    } catch (error) {
+      console.error("Error running state change:", error);
+    } finally {
+      setIsRunningLogic(false);
+    }
+  }, [runStateChange]);
+
   const onCompileCode = useCallback(async () => {
     try {
+      setIsCompiling(true);
       const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 
       const res = await fetch(`${API_ENDPOINT}/compile`, {
@@ -43,8 +65,25 @@ export const App = () => {
       setBytecode(`0x${bytecode}`);
     } catch (error) {
       console.error("Error compiling code:", error);
+    } finally {
+      setIsCompiling(false);
     }
   }, [sourceCode]);
+
+  const onDeploySystem = useCallback(async () => {
+    try {
+      setIsDeploying(true);
+      const success = await deploySystem(bytecode);
+
+      if (!success) {
+        throw new Error("Failed to deploy system");
+      }
+    } catch (error) {
+      console.error("Error deploying system:", error);
+    } finally {
+      setIsDeploying(false);
+    }
+  }, [bytecode, deploySystem]);
 
   const onGetContractSize = useCallback(async () => {
     setSystemSize(Number(await getContractSize()));
@@ -53,22 +92,25 @@ export const App = () => {
   return (
     <>
       <div>
+        <p>
+          <strong>Run Counter System</strong>
+        </p>
         <div>
           Counter: <span>{counter?.value ?? "??"}</span>
         </div>
         <button
+          disabled={isRunningLogic}
+          onClick={onRunStateChange}
           type="button"
-          onClick={async (event) => {
-            event.preventDefault();
-            console.log("new counter value:", await runStateChange());
-          }}
         >
-          Run state change
+          {isRunningLogic ? "Running..." : "Run Counter System"}
         </button>
       </div>
       <br />
       <hr />
-      <br />
+      <p>
+        <strong>Compile New Counter System</strong>
+      </p>
       <div>
         <p>Compiler Version: 0.8.28</p>
         <textarea
@@ -78,31 +120,34 @@ export const App = () => {
           value={sourceCode}
         />
       </div>
-      <button type="button" onClick={onCompileCode}>
-        Compile code
+      <button disabled={isCompiling} onClick={onCompileCode} type="button">
+        {isCompiling ? "Compiling..." : "Compile"}
       </button>
       <br />
-      <hr />
       <br />
+      <hr />
+      <p>
+        <strong>Deploy New Counter System</strong>
+      </p>
       <div>
         <input
           onChange={(event) => setBytecode(event.target.value)}
+          style={{
+            width: "50%",
+          }}
           type="text"
           value={bytecode}
         />
       </div>
-      <button
-        type="button"
-        onClick={async (event) => {
-          event.preventDefault();
-          console.log("system deployed:", await deploySystem(bytecode));
-        }}
-      >
-        Deploy system
+      <button disabled={isDeploying} onClick={onDeploySystem} type="button">
+        {isDeploying ? "Deploying..." : "Deploy system"}
       </button>
       <br />
-      <hr />
       <br />
+      <hr />
+      <p>
+        <strong>Check System Size</strong>
+      </p>
       <div>
         System size: <span>{systemSize}</span>
       </div>
