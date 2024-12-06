@@ -11,3 +11,6 @@ procs:
   explorer:
     cwd: packages/contracts
     shell: pnpm explorer
+  api:
+    cwd: packages/api
+    shell: pnpm start

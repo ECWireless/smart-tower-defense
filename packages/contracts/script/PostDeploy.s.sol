@@ -4,6 +4,7 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
+import { LogicSystemAddress } from "../src/codegen/index.sol";
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 
@@ -18,11 +19,11 @@ contract PostDeploy is Script {
     // Start broadcasting transactions from the deployer account
     vm.startBroadcast(deployerPrivateKey);
 
-    // ------------------ EXAMPLES ------------------
+    address logicSystemAddress = IWorld(worldAddress).app__getLogicSystemAddress();
+    LogicSystemAddress.set(logicSystemAddress);
+    console.log("Logic System Address:", logicSystemAddress);
 
-    // Call increment on the world via the registered function selector
-    uint32 newValue = IWorld(worldAddress).app__increment();
-    console.log("Increment via IWorld:", newValue);
+    IWorld(worldAddress).app__runStateChange();
 
     vm.stopBroadcast();
   }
