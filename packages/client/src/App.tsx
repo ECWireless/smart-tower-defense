@@ -2,6 +2,15 @@ import { useComponentValue } from "@latticexyz/react";
 import { useMUD } from "./MUDContext";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 import { useCallback, useState } from "react";
+import Editor, { loader } from "@monaco-editor/react";
+
+const DEFAULT_SOURCE_CODE = `
+contract LogicSystem {
+  function applyStateChange(uint32 currentState) public pure returns (uint32) {
+    return currentState + 1;
+  }
+}
+`;
 
 export const App = () => {
   const {
@@ -11,15 +20,7 @@ export const App = () => {
 
   const counter = useComponentValue(Counter, singletonEntity);
 
-  const [sourceCode, setSourceCode] = useState(
-    `
-    contract LogicSystem {
-        function applyStateChange(uint32 currentState) public pure returns (uint32) {
-            return currentState + 1;
-        }
-    }
-  `.trim()
-  );
+  const [sourceCode, setSourceCode] = useState(DEFAULT_SOURCE_CODE.trim());
 
   const [isRunningLogic, setIsRunningLogic] = useState<boolean>(false);
 
@@ -89,6 +90,32 @@ export const App = () => {
     setSystemSize(Number(await getContractSize()));
   }, [getContractSize]);
 
+  // Configure Solidity language
+  loader.init().then((monacoInstance) => {
+    monacoInstance.languages.register({ id: "solidity" });
+
+    monacoInstance.languages.setMonarchTokensProvider("solidity", {
+      tokenizer: {
+        root: [
+          [
+            /\b(?:pragma|contract|function|string|public|constructor|memory|returns)\b/,
+            "keyword",
+          ],
+          [/\b(?:uint256|string|bool|address)\b/, "type"],
+          [/["'].*["']/, "string"],
+          [/\/\/.*$/, "comment"],
+        ],
+      },
+    });
+
+    monacoInstance.languages.setLanguageConfiguration("solidity", {
+      autoClosingPairs: [
+        { open: "{", close: "}" },
+        { open: "[", close: "]" },
+      ],
+    });
+  });
+
   return (
     <>
       <div>
@@ -113,12 +140,21 @@ export const App = () => {
       </p>
       <div>
         <p>Compiler Version: 0.8.28</p>
-        <textarea
-          cols={100}
-          onChange={(event) => setSourceCode(event.target.value)}
-          rows={10}
-          value={sourceCode}
-        />
+        <div
+          style={{ border: "1px solid black", height: "200px", width: "100%" }}
+        >
+          <Editor
+            defaultLanguage="solidity"
+            height="100%"
+            onChange={(value) => setSourceCode(value ?? "")}
+            options={{
+              fontSize: 14,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+            }}
+            value={sourceCode}
+          />
+        </div>
       </div>
       <button disabled={isCompiling} onClick={onCompileCode} type="button">
         {isCompiling ? "Compiling..." : "Compile"}
@@ -149,7 +185,7 @@ export const App = () => {
         <strong>Check System Size</strong>
       </p>
       <div>
-        System size: <span>{systemSize}</span>
+        System size: <span>{systemSize} bytes</span>
       </div>
       <button type="button" onClick={onGetContractSize}>
         Get contract size

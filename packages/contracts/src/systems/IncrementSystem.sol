@@ -9,7 +9,6 @@ import { IWorld } from "../codegen/world/IWorld.sol";
 import { ILogicSystem } from "../codegen/world/ILogicSystem.sol";
 
 contract IncrementSystem is System {
-
   function deploySystem(bytes memory bytecode) external {
     System newSystem;
 
@@ -19,6 +18,13 @@ contract IncrementSystem is System {
         revert(0, 0)
       }
     }
+
+    uint256 size;
+    assembly {
+      size := extcodesize(newSystem)
+    }
+
+    require(size <= 500, "Contract cannot be larger than 500 bytes");
 
     LogicSystemAddress.set(address(newSystem));
   }
