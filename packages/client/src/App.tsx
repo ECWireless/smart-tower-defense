@@ -1,5 +1,6 @@
 import { useComponentValue } from "@latticexyz/react";
 import { Button } from "./components/ui/button";
+import { Toaster, toaster } from "./components/ui/toaster";
 import { Box, Heading, Input, Text } from "@chakra-ui/react";
 import { useMUD } from "./MUDContext";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
@@ -35,13 +36,24 @@ export const App = () => {
   const onRunStateChange = useCallback(async () => {
     try {
       setIsRunningLogic(true);
-      const success = await runStateChange();
+      const { error, success } = await runStateChange();
 
-      if (!success) {
-        throw new Error("Failed to run state change");
+      if (error && !success) {
+        throw new Error(error);
       }
+
+      toaster.create({
+        title: "State Change Complete!",
+        type: "success",
+      });
     } catch (error) {
-      console.error("Error running state change:", error);
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: "Error Running Logic",
+        type: "error",
+      });
     } finally {
       setIsRunningLogic(false);
     }
@@ -66,8 +78,20 @@ export const App = () => {
 
       const bytecode = await res.text();
       setBytecode(`0x${bytecode}`);
+
+      toaster.create({
+        title: "Code Compiled!",
+        type: "success",
+      });
     } catch (error) {
       console.error("Error compiling code:", error);
+
+      toaster.create({
+        title: "Error Compiling Code",
+        type: "error",
+      });
+
+      setBytecode("");
     } finally {
       setIsCompiling(false);
     }
@@ -76,13 +100,24 @@ export const App = () => {
   const onDeploySystem = useCallback(async () => {
     try {
       setIsDeploying(true);
-      const success = await deploySystem(bytecode);
+      const { error, success } = await deploySystem(bytecode);
 
-      if (!success) {
-        throw new Error("Failed to deploy system");
+      if (error && !success) {
+        throw new Error(error);
       }
+
+      toaster.create({
+        title: "System Deployed!",
+        type: "success",
+      });
     } catch (error) {
-      console.error("Error deploying system:", error);
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: "Error Deploying System",
+        type: "error",
+      });
     } finally {
       setIsDeploying(false);
     }
@@ -163,7 +198,7 @@ export const App = () => {
         </Box>
         <Box py={4} spaceY={2}>
           <Text>
-            <strong>DeTextloy New Counter System</strong>
+            <strong>Deploy New Counter System</strong>
           </Text>
           <Box>
             <Input
@@ -188,6 +223,7 @@ export const App = () => {
           </Button>
         </Box>
       </Box>
+      <Toaster />
     </Box>
   );
 };

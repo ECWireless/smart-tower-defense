@@ -1,3 +1,5 @@
+import { BaseError, ContractFunctionRevertedError } from "viem";
+
 /*
  * Create the system calls that the client can use to ask
  * for changes in the World state (using the System contracts).
@@ -6,6 +8,17 @@
 import { SetupNetworkResult } from "./setupNetwork";
 
 export type SystemCalls = ReturnType<typeof createSystemCalls>;
+
+const getContractError = (error: BaseError): string => {
+  const revertError = error.walk(
+    (e) => e instanceof ContractFunctionRevertedError
+  );
+  if (revertError instanceof ContractFunctionRevertedError) {
+    const args = revertError.data?.args ?? [];
+    return (args[0] as string) ?? "An error occurred calling the contract.";
+  }
+  return "An error occurred calling the contract.";
+};
 
 export function createSystemCalls(
   /*
@@ -30,16 +43,27 @@ export function createSystemCalls(
   { worldContract, waitForTransaction }: SetupNetworkResult
 ) {
   const deploySystem = async (bytecode: string) => {
-    const tx = await worldContract.write.app__deploySystem([
-      bytecode as `0x${string}`,
-    ]);
-    await waitForTransaction(tx);
+    try {
+      const tx = await worldContract.write.app__deploySystem([
+        bytecode as `0x${string}`,
+      ]);
+      await waitForTransaction(tx);
 
-    const txResult = await waitForTransaction(tx);
-    const { status } = txResult;
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
 
-    const success = status === "success";
-    return success;
+      const success = status === "success";
+
+      return {
+        error: success ? undefined : "Failed to deploy system.",
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
   };
 
   const getContractSize = async () => {
@@ -48,12 +72,23 @@ export function createSystemCalls(
   };
 
   const runStateChange = async () => {
-    const tx = await worldContract.write.app__runStateChange();
-    const txResult = await waitForTransaction(tx);
-    const { status } = txResult;
+    try {
+      const tx = await worldContract.write.app__runStateChange();
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
 
-    const success = status === "success";
-    return success;
+      const success = status === "success";
+
+      return {
+        error: success ? undefined : "Failed to run state change.",
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
   };
 
   return {
