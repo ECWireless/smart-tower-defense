@@ -1,4 +1,7 @@
 import { useComponentValue } from "@latticexyz/react";
+import { Button } from "./components/ui/button";
+import { Toaster, toaster } from "./components/ui/toaster";
+import { Box, Heading, Input, Text } from "@chakra-ui/react";
 import { useMUD } from "./MUDContext";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 import { useCallback, useState } from "react";
@@ -33,13 +36,24 @@ export const App = () => {
   const onRunStateChange = useCallback(async () => {
     try {
       setIsRunningLogic(true);
-      const success = await runStateChange();
+      const { error, success } = await runStateChange();
 
-      if (!success) {
-        throw new Error("Failed to run state change");
+      if (error && !success) {
+        throw new Error(error);
       }
+
+      toaster.create({
+        title: "State Change Complete!",
+        type: "success",
+      });
     } catch (error) {
-      console.error("Error running state change:", error);
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: "Error Running Logic",
+        type: "error",
+      });
     } finally {
       setIsRunningLogic(false);
     }
@@ -64,8 +78,20 @@ export const App = () => {
 
       const bytecode = await res.text();
       setBytecode(`0x${bytecode}`);
+
+      toaster.create({
+        title: "Code Compiled!",
+        type: "success",
+      });
     } catch (error) {
       console.error("Error compiling code:", error);
+
+      toaster.create({
+        title: "Error Compiling Code",
+        type: "error",
+      });
+
+      setBytecode("");
     } finally {
       setIsCompiling(false);
     }
@@ -74,13 +100,24 @@ export const App = () => {
   const onDeploySystem = useCallback(async () => {
     try {
       setIsDeploying(true);
-      const success = await deploySystem(bytecode);
+      const { error, success } = await deploySystem(bytecode);
 
-      if (!success) {
-        throw new Error("Failed to deploy system");
+      if (error && !success) {
+        throw new Error(error);
       }
+
+      toaster.create({
+        title: "System Deployed!",
+        type: "success",
+      });
     } catch (error) {
-      console.error("Error deploying system:", error);
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: "Error Deploying System",
+        type: "error",
+      });
     } finally {
       setIsDeploying(false);
     }
@@ -117,79 +154,76 @@ export const App = () => {
   });
 
   return (
-    <>
-      <div>
-        <p>
-          <strong>Run Counter System</strong>
-        </p>
-        <div>
-          Counter: <span>{counter?.value ?? "??"}</span>
-        </div>
-        <button
-          disabled={isRunningLogic}
-          onClick={onRunStateChange}
-          type="button"
-        >
-          {isRunningLogic ? "Running..." : "Run Counter System"}
-        </button>
-      </div>
-      <br />
-      <hr />
-      <p>
-        <strong>Compile New Counter System</strong>
-      </p>
-      <div>
-        <p>Compiler Version: 0.8.28</p>
-        <div
-          style={{ border: "1px solid black", height: "200px", width: "100%" }}
-        >
-          <Editor
-            defaultLanguage="solidity"
-            height="100%"
-            onChange={(value) => setSourceCode(value ?? "")}
-            options={{
-              fontSize: 14,
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-            }}
-            value={sourceCode}
-          />
-        </div>
-      </div>
-      <button disabled={isCompiling} onClick={onCompileCode} type="button">
-        {isCompiling ? "Compiling..." : "Compile"}
-      </button>
-      <br />
-      <br />
-      <hr />
-      <p>
-        <strong>Deploy New Counter System</strong>
-      </p>
-      <div>
-        <input
-          onChange={(event) => setBytecode(event.target.value)}
-          style={{
-            width: "50%",
-          }}
-          type="text"
-          value={bytecode}
-        />
-      </div>
-      <button disabled={isDeploying} onClick={onDeploySystem} type="button">
-        {isDeploying ? "Deploying..." : "Deploy system"}
-      </button>
-      <br />
-      <br />
-      <hr />
-      <p>
-        <strong>Check System Size</strong>
-      </p>
-      <div>
-        System size: <span>{systemSize} bytes</span>
-      </div>
-      <button type="button" onClick={onGetContractSize}>
-        Get contract size
-      </button>
-    </>
+    <Box p={6}>
+      <Heading size="3xl" textAlign="center">
+        Smart Tower Defense
+      </Heading>
+      <Box divideY="2px">
+        <Box py={4} spaceY={2}>
+          <Text>
+            <strong>Run Counter System</strong>
+          </Text>
+          <Text>
+            Counter: <span>{counter?.value ?? "??"}</span>
+          </Text>
+          <Button
+            disabled={isRunningLogic}
+            onClick={onRunStateChange}
+            type="button"
+          >
+            {isRunningLogic ? "Running..." : "Run Counter System"}
+          </Button>
+        </Box>
+        <Box py={4} spaceY={2}>
+          <Text>
+            <strong>Compile New Counter System</strong>
+          </Text>
+          <Text>Compiler Version: 0.8.28</Text>
+          <Box border="1px solid black" h="200px" w="100%">
+            <Editor
+              defaultLanguage="solidity"
+              height="100%"
+              onChange={(value) => setSourceCode(value ?? "")}
+              options={{
+                fontSize: 14,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+              }}
+              value={sourceCode}
+            />
+          </Box>
+          <Button disabled={isCompiling} onClick={onCompileCode} type="button">
+            {isCompiling ? "Compiling..." : "Compile"}
+          </Button>
+        </Box>
+        <Box py={4} spaceY={2}>
+          <Text>
+            <strong>Deploy New Counter System</strong>
+          </Text>
+          <Box>
+            <Input
+              onChange={(event) => setBytecode(event.target.value)}
+              type="text"
+              value={bytecode}
+            />
+          </Box>
+          <Button disabled={isDeploying} onClick={onDeploySystem} type="button">
+            {isDeploying ? "Deploying..." : "Deploy System"}
+          </Button>
+        </Box>
+        <Box py={4} spaceY={2}>
+          <Text>
+            <strong>Check System Size</strong>
+          </Text>
+          <Text>
+            System size: <span>{systemSize} bytes</span>
+          </Text>
+          <Button type="button" onClick={onGetContractSize}>
+            Get Contract Size
+          </Button>
+        </Box>
+      </Box>
+      <Toaster />
+    </Box>
   );
 };

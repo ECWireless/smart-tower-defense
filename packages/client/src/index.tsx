@@ -1,4 +1,5 @@
 import ReactDOM from "react-dom/client";
+import { Provider } from "./components/ui/provider";
 import { App } from "./App";
 import { setup } from "./mud/setup";
 import { MUDProvider } from "./MUDContext";
@@ -12,7 +13,9 @@ const root = ReactDOM.createRoot(rootElement);
 setup().then(async (result) => {
   root.render(
     <MUDProvider value={result}>
-      <App />
+      <Provider>
+        <App />
+      </Provider>
     </MUDProvider>
   );
 
