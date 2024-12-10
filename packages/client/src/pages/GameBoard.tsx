@@ -1,7 +1,9 @@
-import { Box, HStack, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { GiStoneTower } from "react-icons/gi";
 import { BiSolidCastle } from "react-icons/bi";
+import { FaPlay } from "react-icons/fa";
+import { Tooltip } from "../components/ui/tooltip";
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -65,19 +67,25 @@ export const GameBoard = (): JSX.Element => {
           <StatsPanel />
           <Box>
             <HStack alignItems="stretch" gap={2} h="100%">
-              <Box bgColor="white" display="flex" w={100}>
+              <Box bgColor="white" display="flex" w={120}>
                 <Box borderRight="2px solid black" h="100%" w="50%">
                   <VStack
                     borderBottom="2px solid black"
                     h={16}
                     justifyContent="center"
                   >
-                    <Box
-                      draggable="true"
-                      onDragStart={(e) => handleDragStart(e, "offense")}
+                    <Tooltip
+                      closeDelay={200}
+                      content="Offensive Tower"
+                      openDelay={200}
                     >
-                      <GiStoneTower color="blue" size={20} />
-                    </Box>
+                      <Box
+                        draggable="true"
+                        onDragStart={(e) => handleDragStart(e, "offense")}
+                      >
+                        <GiStoneTower color="blue" size={20} />
+                      </Box>
+                    </Tooltip>
                   </VStack>
                 </Box>
                 <Box h="100%" w="50%">
@@ -86,12 +94,18 @@ export const GameBoard = (): JSX.Element => {
                     h={16}
                     justifyContent="center"
                   >
-                    <Box
-                      draggable="true"
-                      onDragStart={(e) => handleDragStart(e, "defense")}
+                    <Tooltip
+                      closeDelay={200}
+                      content="Defensive Tower"
+                      openDelay={200}
                     >
-                      <GiStoneTower color="red" size={20} />
-                    </Box>
+                      <Box
+                        draggable="true"
+                        onDragStart={(e) => handleDragStart(e, "defense")}
+                      >
+                        <GiStoneTower color="red" size={20} />
+                      </Box>
+                    </Tooltip>
                   </VStack>
                 </Box>
               </Box>
@@ -142,13 +156,19 @@ export const GameBoard = (): JSX.Element => {
                           justifyContent="center"
                           w="100%"
                         >
-                          <Box
-                            draggable="true"
-                            onClick={() => setIsSystemDrawerOpen(true)}
-                            onDragStart={(e) => handleDragStart(e, "offense")}
+                          <Tooltip
+                            closeDelay={200}
+                            content="Offensive Tower"
+                            openDelay={200}
                           >
-                            <GiStoneTower color="blue" size={20} />
-                          </Box>
+                            <Box
+                              draggable="true"
+                              onClick={() => setIsSystemDrawerOpen(true)}
+                              onDragStart={(e) => handleDragStart(e, "offense")}
+                            >
+                              <GiStoneTower color="blue" size={20} />
+                            </Box>
+                          </Tooltip>
                         </Box>
                       )}
 
@@ -161,45 +181,81 @@ export const GameBoard = (): JSX.Element => {
                           justifyContent="center"
                           w="100%"
                         >
-                          <Box
-                            draggable="true"
-                            onClick={() => setIsSystemDrawerOpen(true)}
-                            onDragStart={(e) => handleDragStart(e, "defense")}
+                          <Tooltip
+                            closeDelay={200}
+                            content="Defensive Tower"
+                            openDelay={200}
                           >
-                            <GiStoneTower color="red" size={20} />
-                          </Box>
+                            <Box
+                              draggable="true"
+                              onClick={() => setIsSystemDrawerOpen(true)}
+                              onDragStart={(e) => handleDragStart(e, "defense")}
+                            >
+                              <GiStoneTower color="red" size={20} />
+                            </Box>
+                          </Tooltip>
                         </Box>
                       )}
 
                       {myCastle && (
-                        <Box
-                          alignItems="center"
-                          color="white"
-                          display="flex"
-                          h="100%"
-                          justifyContent="center"
-                          w="100%"
+                        <Tooltip
+                          closeDelay={200}
+                          content="Your Castle"
+                          openDelay={200}
                         >
-                          <BiSolidCastle color="yellow" size={20} />
-                        </Box>
+                          <Box
+                            alignItems="center"
+                            color="white"
+                            display="flex"
+                            h="100%"
+                            justifyContent="center"
+                            w="100%"
+                          >
+                            <BiSolidCastle color="yellow" size={20} />
+                          </Box>
+                        </Tooltip>
                       )}
 
                       {enemyCastle && (
-                        <Box
-                          alignItems="center"
-                          color="white"
-                          display="flex"
-                          h="100%"
-                          justifyContent="center"
-                          w="100%"
+                        <Tooltip
+                          closeDelay={200}
+                          content="Enemy Castle"
+                          openDelay={200}
                         >
-                          <BiSolidCastle color="yellow" size={20} />
-                        </Box>
+                          <Box
+                            alignItems="center"
+                            color="white"
+                            display="flex"
+                            h="100%"
+                            justifyContent="center"
+                            w="100%"
+                          >
+                            <BiSolidCastle color="yellow" size={20} />
+                          </Box>
+                        </Tooltip>
                       )}
                     </Box>
                   );
                 })}
               </Box>
+              <VStack bgColor="white" color="black" p={2} w={120}>
+                <HStack justifyContent="center">
+                  <Text fontSize="sm">NEXT</Text>
+                  <Button
+                    p={0}
+                    variant="ghost"
+                    _hover={{
+                      bgColor: "gray.200",
+                    }}
+                  >
+                    <FaPlay color="black" />
+                  </Button>
+                </HStack>
+                <HStack justifyContent="center">
+                  <Text fontSize="sm">TIMER</Text>
+                  <Text fontWeight={900}>5:00</Text>
+                </HStack>
+              </VStack>
             </HStack>
           </Box>
         </Box>
