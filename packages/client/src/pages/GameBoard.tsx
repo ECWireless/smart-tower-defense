@@ -1,226 +1,201 @@
-import { useComponentValue } from "@latticexyz/react";
-import { Button } from "../components/ui/button";
-import { Toaster, toaster } from "../components/ui/toaster";
-import { Box, Input, Text, VStack } from "@chakra-ui/react";
-import { useMUD } from "../MUDContext";
-import { singletonEntity } from "@latticexyz/store-sync/recs";
-import { useCallback, useState } from "react";
-import Editor, { loader } from "@monaco-editor/react";
-
-const DEFAULT_SOURCE_CODE = `
-contract LogicSystem {
-  function applyStateChange(uint32 currentState) public pure returns (uint32) {
-    return currentState + 1;
-  }
-}
-`;
+import { Box, HStack, VStack } from "@chakra-ui/react";
+import { useState } from "react";
+import { GiStoneTower } from "react-icons/gi";
+import { BiSolidCastle } from "react-icons/bi";
+import {
+  DrawerBackdrop,
+  DrawerBody,
+  DrawerCloseTrigger,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerRoot,
+  DrawerTitle,
+} from "../components/ui/drawer";
 
 export const GameBoard = (): JSX.Element => {
-  const {
-    components: { Counter },
-    systemCalls: { deploySystem, getContractSize, runStateChange },
-  } = useMUD();
-
-  const counter = useComponentValue(Counter, singletonEntity);
-
-  const [sourceCode, setSourceCode] = useState(DEFAULT_SOURCE_CODE.trim());
-
-  const [isRunningLogic, setIsRunningLogic] = useState<boolean>(false);
-
-  const [bytecode, setBytecode] = useState<string>("0x0");
-  const [isCompiling, setIsCompiling] = useState<boolean>(false);
-
-  const [isDeploying, setIsDeploying] = useState<boolean>(false);
-  const [systemSize, setSystemSize] = useState<number>(0);
-
-  const onRunStateChange = useCallback(async () => {
-    try {
-      setIsRunningLogic(true);
-      const { error, success } = await runStateChange();
-
-      if (error && !success) {
-        throw new Error(error);
-      }
-
-      toaster.create({
-        title: "State Change Complete!",
-        type: "success",
-      });
-    } catch (error) {
-      console.error(`Smart contract error: ${(error as Error).message}`);
-
-      toaster.create({
-        description: (error as Error).message,
-        title: "Error Running Logic",
-        type: "error",
-      });
-    } finally {
-      setIsRunningLogic(false);
-    }
-  }, [runStateChange]);
-
-  const onCompileCode = useCallback(async () => {
-    try {
-      setIsCompiling(true);
-      const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
-
-      const res = await fetch(`${API_ENDPOINT}/compile`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sourceCode }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to compile code");
-      }
-
-      const bytecode = await res.text();
-      setBytecode(`0x${bytecode}`);
-
-      toaster.create({
-        title: "Code Compiled!",
-        type: "success",
-      });
-    } catch (error) {
-      console.error("Error compiling code:", error);
-
-      toaster.create({
-        title: "Error Compiling Code",
-        type: "error",
-      });
-
-      setBytecode("");
-    } finally {
-      setIsCompiling(false);
-    }
-  }, [sourceCode]);
-
-  const onDeploySystem = useCallback(async () => {
-    try {
-      setIsDeploying(true);
-      const { error, success } = await deploySystem(bytecode);
-
-      if (error && !success) {
-        throw new Error(error);
-      }
-
-      toaster.create({
-        title: "System Deployed!",
-        type: "success",
-      });
-    } catch (error) {
-      console.error(`Smart contract error: ${(error as Error).message}`);
-
-      toaster.create({
-        description: (error as Error).message,
-        title: "Error Deploying System",
-        type: "error",
-      });
-    } finally {
-      setIsDeploying(false);
-    }
-  }, [bytecode, deploySystem]);
-
-  const onGetContractSize = useCallback(async () => {
-    setSystemSize(Number(await getContractSize()));
-  }, [getContractSize]);
-
-  // Configure Solidity language
-  loader.init().then((monacoInstance) => {
-    monacoInstance.languages.register({ id: "solidity" });
-
-    monacoInstance.languages.setMonarchTokensProvider("solidity", {
-      tokenizer: {
-        root: [
-          [
-            /\b(?:pragma|contract|function|string|public|constructor|memory|returns)\b/,
-            "keyword",
-          ],
-          [/\b(?:uint256|string|bool|address)\b/, "type"],
-          [/["'].*["']/, "string"],
-          [/\/\/.*$/, "comment"],
-        ],
-      },
-    });
-
-    monacoInstance.languages.setLanguageConfiguration("solidity", {
-      autoClosingPairs: [
-        { open: "{", close: "}" },
-        { open: "[", close: "]" },
-      ],
-    });
+  const [offenseTowerPosition, setOffenseTowerPosition] = useState({
+    x: -1,
+    y: -1,
   });
+  const [defenseTowerPosition, setDefenseTowerPosition] = useState({
+    x: -1,
+    y: -1,
+  });
+  const [activePiece, setActivePiece] = useState<
+    "offense" | "defense" | "none"
+  >("none");
+  const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
+
+  const handleDrop = (e: React.DragEvent, row: number, col: number) => {
+    e.preventDefault();
+    if (activePiece === "offense") setOffenseTowerPosition({ x: row, y: col });
+    else setDefenseTowerPosition({ x: row, y: col });
+  };
+
+  const allowDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDragStart = (e: React.DragEvent, type: "offense" | "defense") => {
+    setActivePiece(type);
+    e.dataTransfer.setData("text/plain", "piece"); // Arbitrary data to identify the piece
+  };
 
   return (
-    <VStack justifyContent="center" h="100vh" p={6} gapY={20}>
-      <Box divideY="2px" w="100%">
-        <Box py={4} spaceY={2}>
-          <Text>
-            <strong>Run Counter System</strong>
-          </Text>
-          <Text>
-            Counter: <span>{counter?.value ?? "??"}</span>
-          </Text>
-          <Button
-            disabled={isRunningLogic}
-            onClick={onRunStateChange}
-            type="button"
+    <DrawerRoot
+      onOpenChange={(e) => setIsSystemDrawerOpen(e.open)}
+      open={isSystemDrawerOpen}
+      size="lg"
+    >
+      <VStack h="100vh" justifyContent="center" p={6}>
+        <DrawerBackdrop />
+        <DrawerContent bgColor="white">
+          <DrawerCloseTrigger bgColor="black" />
+          <DrawerHeader>
+            <DrawerTitle color="black" textTransform="uppercase">
+              System Modification
+            </DrawerTitle>
+          </DrawerHeader>
+          <DrawerBody />
+          <DrawerFooter />
+        </DrawerContent>
+        <HStack alignItems="start">
+          <Box bgColor="white" display="flex" h="100%" w={100}>
+            <Box borderRight="2px solid black" h="100%" w="50%">
+              <VStack
+                borderBottom="2px solid black"
+                h={16}
+                justifyContent="center"
+              >
+                <Box
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, "offense")}
+                >
+                  <GiStoneTower color="blue" size={20} />
+                </Box>
+              </VStack>
+            </Box>
+            <Box h="100%" w="50%">
+              <VStack
+                borderBottom="2px solid black"
+                h={16}
+                justifyContent="center"
+              >
+                <Box
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, "defense")}
+                >
+                  <GiStoneTower color="red" size={20} />
+                </Box>
+              </VStack>
+            </Box>
+          </Box>
+
+          <Box
+            display="grid"
+            gridTemplateColumns="repeat(14, 1fr)"
+            gridTemplateRows="repeat(7, 1fr)"
+            h="300px"
+            w="600px"
           >
-            {isRunningLogic ? "Running..." : "Run Counter System"}
-          </Button>
-        </Box>
-        <Box py={4} spaceY={2}>
-          <Text>
-            <strong>Compile New Counter System</strong>
-          </Text>
-          <Text>Compiler Version: 0.8.28</Text>
-          <Box border="1px solid black" h="200px" w="100%">
-            <Editor
-              defaultLanguage="solidity"
-              height="100%"
-              onChange={(value) => setSourceCode(value ?? "")}
-              options={{
-                fontSize: 14,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-              }}
-              value={sourceCode}
-            />
+            {Array.from({ length: 98 }).map((_, index) => {
+              const row = Math.floor(index / 14);
+              const col = index % 14;
+              const isMiddleLine = index % 14 === 7;
+
+              const myCastle = row === 3 && col === 0;
+              const enemyCastle = row === 3 && col === 13;
+
+              const isEnemyTile = col > 6;
+
+              const isOffenceTowerActive =
+                offenseTowerPosition.x === row &&
+                offenseTowerPosition.y === col;
+              const isDeffenceTowerActive =
+                defenseTowerPosition.x === row &&
+                defenseTowerPosition.y === col;
+
+              return (
+                <Box
+                  bg="green.400"
+                  border="1px solid black"
+                  borderLeft={isMiddleLine ? "2px solid black" : "none"}
+                  h="100%"
+                  key={index}
+                  onDrop={(e) => handleDrop(e, row, col)}
+                  onDragOver={myCastle || isEnemyTile ? undefined : allowDrop}
+                  w="100%"
+                >
+                  {isOffenceTowerActive && (
+                    <Box
+                      alignItems="center"
+                      color="white"
+                      display="flex"
+                      h="100%"
+                      justifyContent="center"
+                      w="100%"
+                    >
+                      <Box
+                        draggable="true"
+                        onClick={() => setIsSystemDrawerOpen(true)}
+                        onDragStart={(e) => handleDragStart(e, "offense")}
+                      >
+                        <GiStoneTower color="blue" size={20} />
+                      </Box>
+                    </Box>
+                  )}
+
+                  {isDeffenceTowerActive && (
+                    <Box
+                      alignItems="center"
+                      color="white"
+                      display="flex"
+                      h="100%"
+                      justifyContent="center"
+                      w="100%"
+                    >
+                      <Box
+                        draggable="true"
+                        onClick={() => setIsSystemDrawerOpen(true)}
+                        onDragStart={(e) => handleDragStart(e, "defense")}
+                      >
+                        <GiStoneTower color="red" size={20} />
+                      </Box>
+                    </Box>
+                  )}
+
+                  {myCastle && (
+                    <Box
+                      alignItems="center"
+                      color="white"
+                      display="flex"
+                      h="100%"
+                      justifyContent="center"
+                      w="100%"
+                    >
+                      <BiSolidCastle color="yellow" size={20} />
+                    </Box>
+                  )}
+
+                  {enemyCastle && (
+                    <Box
+                      alignItems="center"
+                      color="white"
+                      display="flex"
+                      h="100%"
+                      justifyContent="center"
+                      w="100%"
+                    >
+                      <BiSolidCastle color="yellow" size={20} />
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
           </Box>
-          <Button disabled={isCompiling} onClick={onCompileCode} type="button">
-            {isCompiling ? "Compiling..." : "Compile"}
-          </Button>
-        </Box>
-        <Box py={4} spaceY={2}>
-          <Text>
-            <strong>Deploy New Counter System</strong>
-          </Text>
-          <Box>
-            <Input
-              onChange={(event) => setBytecode(event.target.value)}
-              type="text"
-              value={bytecode}
-            />
-          </Box>
-          <Button disabled={isDeploying} onClick={onDeploySystem} type="button">
-            {isDeploying ? "Deploying..." : "Deploy System"}
-          </Button>
-        </Box>
-        <Box py={4} spaceY={2}>
-          <Text>
-            <strong>Check System Size</strong>
-          </Text>
-          <Text>
-            System size: <span>{systemSize} bytes</span>
-          </Text>
-          <Button type="button" onClick={onGetContractSize}>
-            Get Contract Size
-          </Button>
-        </Box>
-      </Box>
-      <Toaster />
-    </VStack>
+        </HStack>
+      </VStack>
+    </DrawerRoot>
   );
 };
