@@ -2,7 +2,7 @@ import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { GiStoneTower } from "react-icons/gi";
 import { BiSolidCastle } from "react-icons/bi";
-import { FaPlay } from "react-icons/fa";
+import { FaPlay, FaInfoCircle } from "react-icons/fa";
 import { Tooltip } from "../components/ui/tooltip";
 import {
   DrawerBackdrop,
@@ -14,6 +14,17 @@ import {
   DrawerRoot,
   DrawerTitle,
 } from "../components/ui/drawer";
+import {
+  DialogBody,
+  DialogBackdrop,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
 import { StatsPanel } from "../components/StatsPanel";
 
 export const GameBoard = (): JSX.Element => {
@@ -255,6 +266,29 @@ export const GameBoard = (): JSX.Element => {
                   <Text fontSize="sm">TIMER</Text>
                   <Text fontWeight={900}>5:00</Text>
                 </HStack>
+                <DialogRoot>
+                  <DialogBackdrop />
+                  <DialogTrigger>
+                    <Button
+                      variant="ghost"
+                      _hover={{
+                        bgColor: "gray.200",
+                      }}
+                    >
+                      <FaInfoCircle color="black" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent bgColor="white" color="black">
+                    <DialogCloseTrigger bgColor="black" />
+                    <DialogHeader>
+                      <DialogTitle textTransform="uppercase">
+                        How to Play
+                      </DialogTitle>
+                    </DialogHeader>
+                    <DialogBody>Just start clicking around!</DialogBody>
+                    <DialogFooter />
+                  </DialogContent>
+                </DialogRoot>
               </VStack>
             </HStack>
           </Box>
