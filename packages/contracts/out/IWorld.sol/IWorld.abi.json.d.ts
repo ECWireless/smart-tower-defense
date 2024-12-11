@@ -20,6 +20,25 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__createGame",
+    "inputs": [
+      {
+        "name": "player2Address",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__deploySystem",
     "inputs": [
       {
