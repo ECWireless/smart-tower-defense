@@ -10,4 +10,6 @@ pragma solidity >=0.8.24;
  */
 interface ITowerSystem {
   function app__installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) external returns (bytes32);
+
+  function app__moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external;
 }

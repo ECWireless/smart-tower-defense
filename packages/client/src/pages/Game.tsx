@@ -1,6 +1,6 @@
 import { Box, Button, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
 import { useEntityQuery } from "@latticexyz/react";
-import { Address } from "viem";
+import { Address, zeroHash } from "viem";
 import { useCallback, useEffect, useState } from "react";
 import {
   Entity,
@@ -52,12 +52,13 @@ export const GamePage = (): JSX.Element => {
       Projectile,
       Tower,
     },
-    systemCalls: { installTower },
+    systemCalls: { installTower, moveTower },
   } = useMUD();
 
   const [game, setGame] = useState<Game | null>(null);
   const [isLoadingGame, setIsLoadingGame] = useState(true);
 
+  const [activeTowerId, setActiveTowerId] = useState<string>(zeroHash);
   const [isInstallingTower, setIsInstallingTower] = useState(false);
   const [installingPosition, setInstallingPosition] = useState<{
     x: number;
@@ -100,6 +101,7 @@ export const GamePage = (): JSX.Element => {
   ]).map((entity) => {
     const position = getComponentValueStrict(Position, entity);
     return {
+      id: entity,
       projectile: !!getComponentValue(Projectile, entity),
       x: position.x,
       y: position.y,
@@ -113,7 +115,13 @@ export const GamePage = (): JSX.Element => {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
 
-        if (!game) return;
+        if (activeTowerId !== zeroHash) {
+          throw new Error("Active tower selected. Please move it instead.");
+        }
+
+        if (!game) {
+          throw new Error("Game not found.");
+        }
 
         const hasProjectile = activePiece === "offense";
 
@@ -145,14 +153,65 @@ export const GamePage = (): JSX.Element => {
         setInstallingPosition(null);
       }
     },
-    [activePiece, game, installTower]
+    [activePiece, activeTowerId, game, installTower]
+  );
+
+  const onMoveTower = useCallback(
+    async (e: React.DragEvent, row: number, col: number) => {
+      e.preventDefault();
+      try {
+        setIsInstallingTower(true);
+        setInstallingPosition({ x: col, y: row });
+
+        if (activeTowerId === zeroHash) {
+          throw new Error("No active tower selected.");
+        }
+
+        if (!game) {
+          throw new Error("Game not found.");
+        }
+
+        const { error, success } = await moveTower(
+          game.id,
+          activeTowerId,
+          col,
+          row
+        );
+
+        if (error && !success) {
+          throw new Error(error);
+        }
+
+        toaster.create({
+          title: "Tower Moved!",
+          type: "success",
+        });
+      } catch (error) {
+        console.error(`Smart contract error: ${(error as Error).message}`);
+
+        toaster.create({
+          description: (error as Error).message,
+          title: "Error Moving Tower",
+          type: "error",
+        });
+      } finally {
+        setIsInstallingTower(false);
+        setInstallingPosition(null);
+      }
+    },
+    [activeTowerId, game, moveTower]
   );
 
   const allowDrop = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDragStart = (e: React.DragEvent, type: "offense" | "defense") => {
+  const handleDragStart = (
+    e: React.DragEvent,
+    towerId: string,
+    type: "offense" | "defense"
+  ) => {
+    setActiveTowerId(towerId);
     setActivePiece(type);
     e.dataTransfer.setData("text/plain", "piece"); // Arbitrary data to identify the piece
   };
@@ -230,7 +289,9 @@ export const GamePage = (): JSX.Element => {
                     >
                       <Box
                         draggable="true"
-                        onDragStart={(e) => handleDragStart(e, "offense")}
+                        onDragStart={(e) =>
+                          handleDragStart(e, zeroHash, "offense")
+                        }
                       >
                         <GiStoneTower color="blue" size={20} />
                       </Box>
@@ -250,7 +311,9 @@ export const GamePage = (): JSX.Element => {
                     >
                       <Box
                         draggable="true"
-                        onDragStart={(e) => handleDragStart(e, "defense")}
+                        onDragStart={(e) =>
+                          handleDragStart(e, zeroHash, "defense")
+                        }
                       >
                         <GiStoneTower color="red" size={20} />
                       </Box>
@@ -299,7 +362,11 @@ export const GamePage = (): JSX.Element => {
                       borderLeft={isMiddleLine ? "2px solid black" : "none"}
                       h="100%"
                       key={index}
-                      onDrop={(e) => onInstallTower(e, row, col)}
+                      onDrop={(e) =>
+                        activeTowerId === zeroHash
+                          ? onInstallTower(e, row, col)
+                          : onMoveTower(e, row, col)
+                      }
                       onDragOver={canInstall ? allowDrop : undefined}
                       w="100%"
                     >
@@ -340,6 +407,7 @@ export const GamePage = (): JSX.Element => {
                               onDragStart={(e) =>
                                 handleDragStart(
                                   e,
+                                  activeTower.id,
                                   activeTower.projectile ? "offense" : "defense"
                                 )
                               }

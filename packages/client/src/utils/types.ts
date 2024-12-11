@@ -9,6 +9,7 @@ export type Game = {
 };
 
 export type Tower = {
+  id: string;
   projectile: boolean;
   x: number;
   y: number;

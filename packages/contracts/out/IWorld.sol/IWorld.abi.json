@@ -112,6 +112,34 @@
   },
   {
     "type": "function",
+    "name": "app__moveTower",
+    "inputs": [
+      {
+        "name": "potentialGameId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "towerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "x",
+        "type": "int8",
+        "internalType": "int8"
+      },
+      {
+        "name": "y",
+        "type": "int8",
+        "internalType": "int8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__runStateChange",
     "inputs": [],
     "outputs": [],
