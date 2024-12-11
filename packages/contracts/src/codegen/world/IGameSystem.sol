@@ -9,5 +9,5 @@ pragma solidity >=0.8.24;
  * @dev This interface is automatically generated from the corresponding system contract. Do not edit manually.
  */
 interface IGameSystem {
-  function app__createGame(address player2) external returns (bytes32);
+  function app__createGame(address player2Address) external returns (bytes32);
 }

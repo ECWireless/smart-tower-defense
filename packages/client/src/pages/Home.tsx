@@ -2,15 +2,18 @@ import { Button } from "../components/ui/button";
 import { Heading, VStack } from "@chakra-ui/react";
 import { FaPlay } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { GAME_BOARD_PATH } from "../Routes";
+import { GAMES_PATH } from "../Routes";
 import { useMUD } from "../MUDContext";
 import { useCallback, useState } from "react";
 import { toaster } from "../components/ui/toaster";
+import { getComponentValue } from "@latticexyz/recs";
 import { zeroAddress } from "viem";
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const {
+    components: { RecentGame },
+    network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
 
@@ -29,7 +32,14 @@ export const Home = (): JSX.Element => {
         title: "Game Created!",
         type: "success",
       });
-      navigate(GAME_BOARD_PATH);
+
+      const recentGame = getComponentValue(RecentGame, playerEntity)?.value;
+
+      if (!recentGame) {
+        throw new Error("No recent game found");
+      }
+
+      navigate(`${GAMES_PATH}/${recentGame}`);
     } catch (error) {
       console.error(`Smart contract error: ${(error as Error).message}`);
 
@@ -41,7 +51,7 @@ export const Home = (): JSX.Element => {
     } finally {
       setIsCreatingGame(false);
     }
-  }, [createGame, navigate]);
+  }, [createGame, navigate, playerEntity, RecentGame]);
 
   return (
     <VStack gapY={20} h="100vh" justifyContent="center" p={6}>

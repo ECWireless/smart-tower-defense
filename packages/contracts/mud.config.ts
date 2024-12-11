@@ -25,5 +25,6 @@ export default defineWorld({
       },
       key: [],
     },
+    RecentGame: "bytes32", // Game.id
   },
 });

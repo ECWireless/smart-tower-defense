@@ -6,3 +6,4 @@ pragma solidity >=0.8.24;
 import { Counter } from "./tables/Counter.sol";
 import { Game, GameData } from "./tables/Game.sol";
 import { LogicSystemAddress } from "./tables/LogicSystemAddress.sol";
+import { RecentGame } from "./tables/RecentGame.sol";

@@ -27,7 +27,7 @@ import {
 } from "../components/ui/dialog";
 import { StatsPanel } from "../components/StatsPanel";
 
-export const GameBoard = (): JSX.Element => {
+export const Game = (): JSX.Element => {
   const [offenseTowerPosition, setOffenseTowerPosition] = useState({
     x: -1,
     y: -1,
