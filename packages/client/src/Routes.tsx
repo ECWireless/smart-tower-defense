@@ -7,7 +7,7 @@ import { ProgressRoot, ProgressBar } from "./components/ui/progress";
 
 import { useMUD } from "./MUDContext";
 import { Home } from "./pages/Home";
-import { Game } from "./pages/Game";
+import { GamePage } from "./pages/Game";
 
 export const HOME_PATH = "/";
 export const GAMES_PATH = "/games";
@@ -38,7 +38,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path={HOME_PATH} element={<Home />} />
-      <Route path={`${GAMES_PATH}/:id`} element={<Game />} />
+      <Route path={`${GAMES_PATH}/:id`} element={<GamePage />} />
     </Routes>
   );
 };

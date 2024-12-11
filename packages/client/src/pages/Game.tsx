@@ -1,9 +1,13 @@
-import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
-import { useState } from "react";
+import { Box, Button, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Address } from "viem";
+import { useCallback, useEffect, useState } from "react";
+import { Entity, getComponentValue } from "@latticexyz/recs";
+import { useParams } from "react-router-dom";
 import { GiStoneTower } from "react-icons/gi";
 import { BiSolidCastle } from "react-icons/bi";
 import { FaPlay, FaInfoCircle } from "react-icons/fa";
 import { Tooltip } from "../components/ui/tooltip";
+import { useMUD } from "../MUDContext";
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -26,8 +30,17 @@ import {
   DialogTrigger,
 } from "../components/ui/dialog";
 import { StatsPanel } from "../components/StatsPanel";
+import { type Game } from "../utils/types";
 
-export const Game = (): JSX.Element => {
+export const GamePage = (): JSX.Element => {
+  const { id } = useParams();
+  const {
+    components: { Game: GameComponent },
+  } = useMUD();
+
+  const [game, setGame] = useState<Game | null>(null);
+  const [isLoadingGame, setIsLoadingGame] = useState(true);
+
   const [offenseTowerPosition, setOffenseTowerPosition] = useState({
     x: -1,
     y: -1,
@@ -55,6 +68,43 @@ export const Game = (): JSX.Element => {
     setActivePiece(type);
     e.dataTransfer.setData("text/plain", "piece"); // Arbitrary data to identify the piece
   };
+
+  const fetchGame = useCallback(async () => {
+    if (!id) return;
+    const _game = getComponentValue(GameComponent, id as Entity);
+    if (_game) {
+      setGame({
+        id,
+        endTimestamp: _game.endTimestamp,
+        player1: _game.player1 as Address,
+        player2: _game.player2 as Address,
+        startTimestamp: _game.startTimestamp,
+      });
+    }
+    setIsLoadingGame(false);
+  }, [GameComponent, id]);
+
+  useEffect(() => {
+    fetchGame();
+  }, [fetchGame]);
+
+  if (isLoadingGame) {
+    return (
+      <VStack h="100vh" justifyContent="center">
+        <Spinner borderWidth="4px" size="xl" />
+      </VStack>
+    );
+  }
+
+  if (!game) {
+    return (
+      <VStack h="100vh" justifyContent="center">
+        <Text fontSize="3xl" fontWeight={700} textTransform="uppercase">
+          Game not found
+        </Text>
+      </VStack>
+    );
+  }
 
   return (
     <DrawerRoot
@@ -268,15 +318,13 @@ export const Game = (): JSX.Element => {
                 </HStack>
                 <DialogRoot>
                   <DialogBackdrop />
-                  <DialogTrigger>
-                    <Button
-                      variant="ghost"
-                      _hover={{
-                        bgColor: "gray.200",
-                      }}
-                    >
-                      <FaInfoCircle color="black" />
-                    </Button>
+                  <DialogTrigger
+                    as={Button}
+                    _hover={{
+                      bgColor: "gray.200",
+                    }}
+                  >
+                    <FaInfoCircle color="black" />
                   </DialogTrigger>
                   <DialogContent bgColor="white" color="black">
                     <DialogCloseTrigger bgColor="black" />

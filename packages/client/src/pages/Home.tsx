@@ -6,13 +6,17 @@ import { GAMES_PATH } from "../Routes";
 import { useMUD } from "../MUDContext";
 import { useCallback, useState } from "react";
 import { toaster } from "../components/ui/toaster";
-import { getComponentValue } from "@latticexyz/recs";
+import {
+  Entity,
+  getComponentValue,
+  getComponentValueStrict,
+} from "@latticexyz/recs";
 import { zeroAddress } from "viem";
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const {
-    components: { RecentGame },
+    components: { Game, RecentGame },
     network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
@@ -22,6 +26,16 @@ export const Home = (): JSX.Element => {
   const onCreateGame = useCallback(async () => {
     try {
       setIsCreatingGame(true);
+
+      let recentGame = getComponentValue(RecentGame, playerEntity)?.value;
+      if (recentGame) {
+        const game = getComponentValueStrict(Game, recentGame as Entity);
+        if (game.endTimestamp === BigInt(0)) {
+          navigate(`${GAMES_PATH}/${recentGame}`);
+          return;
+        }
+      }
+
       const { error, success } = await createGame(zeroAddress);
 
       if (error && !success) {
@@ -33,7 +47,7 @@ export const Home = (): JSX.Element => {
         type: "success",
       });
 
-      const recentGame = getComponentValue(RecentGame, playerEntity)?.value;
+      recentGame = getComponentValue(RecentGame, playerEntity)?.value;
 
       if (!recentGame) {
         throw new Error("No recent game found");
