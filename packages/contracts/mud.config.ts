@@ -9,6 +9,16 @@ export default defineWorld({
       },
       key: [],
     },
+    Game: {
+      schema: {
+        id: "bytes32",
+        endTimestamp: "uint256",
+        player1: "address",
+        player2: "address",
+        startTimestamp: "uint256",
+      },
+      key: ["id"],
+    },
     LogicSystemAddress: {
       schema: {
         value: "address",

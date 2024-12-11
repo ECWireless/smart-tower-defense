@@ -42,6 +42,28 @@ export function createSystemCalls(
    */
   { worldContract, waitForTransaction }: SetupNetworkResult
 ) {
+  const createGame = async (player2: string) => {
+    try {
+      const tx = await worldContract.write.app__createGame([
+        player2 as `0x${string}`,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === "success";
+
+      return {
+        error: success ? undefined : "Failed to create game.",
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const deploySystem = async (bytecode: string) => {
     try {
       const tx = await worldContract.write.app__deploySystem([
@@ -92,6 +114,7 @@ export function createSystemCalls(
   };
 
   return {
+    createGame,
     deploySystem,
     getContractSize,
     runStateChange,
