@@ -78,6 +78,68 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__installTower",
+    "inputs": [
+      {
+        "name": "potentialGameId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "projectile",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "x",
+        "type": "int8",
+        "internalType": "int8"
+      },
+      {
+        "name": "y",
+        "type": "int8",
+        "internalType": "int8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__moveTower",
+    "inputs": [
+      {
+        "name": "potentialGameId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "towerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "x",
+        "type": "int8",
+        "internalType": "int8"
+      },
+      {
+        "name": "y",
+        "type": "int8",
+        "internalType": "int8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__runStateChange",
     "inputs": [],
     "outputs": [],

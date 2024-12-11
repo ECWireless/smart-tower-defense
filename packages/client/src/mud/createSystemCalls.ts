@@ -93,6 +93,66 @@ export function createSystemCalls(
     return size;
   };
 
+  const installTower = async (
+    potentialGameId: string,
+    projectile: boolean,
+    x: number,
+    y: number
+  ) => {
+    try {
+      const tx = await worldContract.write.app__installTower([
+        potentialGameId as `0x${string}`,
+        projectile,
+        x,
+        y,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === "success";
+
+      return {
+        error: success ? undefined : "Failed to install tower.",
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
+  const moveTower = async (
+    gameId: string,
+    towerId: string,
+    x: number,
+    y: number
+  ) => {
+    try {
+      const tx = await worldContract.write.app__moveTower([
+        gameId as `0x${string}`,
+        towerId as `0x${string}`,
+        x,
+        y,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === "success";
+
+      return {
+        error: success ? undefined : "Failed to move tower.",
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const runStateChange = async () => {
     try {
       const tx = await worldContract.write.app__runStateChange();
@@ -117,6 +177,8 @@ export function createSystemCalls(
     createGame,
     deploySystem,
     getContractSize,
+    installTower,
+    moveTower,
     runStateChange,
   };
 }

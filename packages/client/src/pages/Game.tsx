@@ -1,13 +1,21 @@
 import { Box, Button, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
-import { Address } from "viem";
+import { useEntityQuery } from "@latticexyz/react";
+import { Address, zeroHash } from "viem";
 import { useCallback, useEffect, useState } from "react";
-import { Entity, getComponentValue } from "@latticexyz/recs";
+import {
+  Entity,
+  getComponentValue,
+  getComponentValueStrict,
+  Has,
+  HasValue,
+} from "@latticexyz/recs";
 import { useParams } from "react-router-dom";
 import { GiStoneTower } from "react-icons/gi";
 import { BiSolidCastle } from "react-icons/bi";
 import { FaPlay, FaInfoCircle } from "react-icons/fa";
 import { Tooltip } from "../components/ui/tooltip";
 import { useMUD } from "../MUDContext";
+import { toaster } from "../components/ui/toaster";
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -30,41 +38,180 @@ import {
   DialogTrigger,
 } from "../components/ui/dialog";
 import { StatsPanel } from "../components/StatsPanel";
-import { type Game } from "../utils/types";
+import { type Game, type Tower } from "../utils/types";
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
   const {
-    components: { Game: GameComponent },
+    components: {
+      Castle,
+      CurrentGame,
+      Game: GameComponent,
+      Owner,
+      Position,
+      Projectile,
+      Tower,
+    },
+    systemCalls: { installTower, moveTower },
   } = useMUD();
 
   const [game, setGame] = useState<Game | null>(null);
   const [isLoadingGame, setIsLoadingGame] = useState(true);
 
-  const [offenseTowerPosition, setOffenseTowerPosition] = useState({
-    x: -1,
-    y: -1,
-  });
-  const [defenseTowerPosition, setDefenseTowerPosition] = useState({
-    x: -1,
-    y: -1,
-  });
+  const [activeTowerId, setActiveTowerId] = useState<string>(zeroHash);
+  const [isInstallingTower, setIsInstallingTower] = useState(false);
+  const [installingPosition, setInstallingPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   const [activePiece, setActivePiece] = useState<
     "offense" | "defense" | "none"
   >("none");
+
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
 
-  const handleDrop = (e: React.DragEvent, row: number, col: number) => {
-    e.preventDefault();
-    if (activePiece === "offense") setOffenseTowerPosition({ x: row, y: col });
-    else setDefenseTowerPosition({ x: row, y: col });
-  };
+  const myCastlePosition = useEntityQuery([
+    Has(Castle),
+    HasValue(CurrentGame, { value: game?.id }),
+    HasValue(Owner, { value: game?.player1 }),
+  ]).map((entity) => {
+    const _myCastlePosition = getComponentValueStrict(Position, entity);
+    return {
+      x: _myCastlePosition.x,
+      y: _myCastlePosition.y,
+    };
+  })[0];
+
+  const enemyCastlePosition = useEntityQuery([
+    Has(Castle),
+    HasValue(CurrentGame, { value: game?.id }),
+    HasValue(Owner, { value: game?.player2 }),
+  ]).map((entity) => {
+    const _enemyCastlePosition = getComponentValueStrict(Position, entity);
+    return {
+      x: _enemyCastlePosition.x,
+      y: _enemyCastlePosition.y,
+    };
+  })[0];
+
+  const towers: Tower[] = useEntityQuery([
+    Has(Tower),
+    HasValue(CurrentGame, { value: game?.id }),
+  ]).map((entity) => {
+    const position = getComponentValueStrict(Position, entity);
+    return {
+      id: entity,
+      projectile: !!getComponentValue(Projectile, entity),
+      x: position.x,
+      y: position.y,
+    };
+  });
+
+  const onInstallTower = useCallback(
+    async (e: React.DragEvent, row: number, col: number) => {
+      e.preventDefault();
+      try {
+        setIsInstallingTower(true);
+        setInstallingPosition({ x: col, y: row });
+
+        if (activeTowerId !== zeroHash) {
+          throw new Error("Active tower selected. Please move it instead.");
+        }
+
+        if (!game) {
+          throw new Error("Game not found.");
+        }
+
+        const hasProjectile = activePiece === "offense";
+
+        const { error, success } = await installTower(
+          game.id,
+          hasProjectile,
+          col,
+          row
+        );
+
+        if (error && !success) {
+          throw new Error(error);
+        }
+
+        toaster.create({
+          title: "Tower Installed!",
+          type: "success",
+        });
+      } catch (error) {
+        console.error(`Smart contract error: ${(error as Error).message}`);
+
+        toaster.create({
+          description: (error as Error).message,
+          title: "Error Installing Tower",
+          type: "error",
+        });
+      } finally {
+        setIsInstallingTower(false);
+        setInstallingPosition(null);
+      }
+    },
+    [activePiece, activeTowerId, game, installTower]
+  );
+
+  const onMoveTower = useCallback(
+    async (e: React.DragEvent, row: number, col: number) => {
+      e.preventDefault();
+      try {
+        setIsInstallingTower(true);
+        setInstallingPosition({ x: col, y: row });
+
+        if (activeTowerId === zeroHash) {
+          throw new Error("No active tower selected.");
+        }
+
+        if (!game) {
+          throw new Error("Game not found.");
+        }
+
+        const { error, success } = await moveTower(
+          game.id,
+          activeTowerId,
+          col,
+          row
+        );
+
+        if (error && !success) {
+          throw new Error(error);
+        }
+
+        toaster.create({
+          title: "Tower Moved!",
+          type: "success",
+        });
+      } catch (error) {
+        console.error(`Smart contract error: ${(error as Error).message}`);
+
+        toaster.create({
+          description: (error as Error).message,
+          title: "Error Moving Tower",
+          type: "error",
+        });
+      } finally {
+        setIsInstallingTower(false);
+        setInstallingPosition(null);
+      }
+    },
+    [activeTowerId, game, moveTower]
+  );
 
   const allowDrop = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDragStart = (e: React.DragEvent, type: "offense" | "defense") => {
+  const handleDragStart = (
+    e: React.DragEvent,
+    towerId: string,
+    type: "offense" | "defense"
+  ) => {
+    setActiveTowerId(towerId);
     setActivePiece(type);
     e.dataTransfer.setData("text/plain", "piece"); // Arbitrary data to identify the piece
   };
@@ -142,7 +289,9 @@ export const GamePage = (): JSX.Element => {
                     >
                       <Box
                         draggable="true"
-                        onDragStart={(e) => handleDragStart(e, "offense")}
+                        onDragStart={(e) =>
+                          handleDragStart(e, zeroHash, "offense")
+                        }
                       >
                         <GiStoneTower color="blue" size={20} />
                       </Box>
@@ -162,7 +311,9 @@ export const GamePage = (): JSX.Element => {
                     >
                       <Box
                         draggable="true"
-                        onDragStart={(e) => handleDragStart(e, "defense")}
+                        onDragStart={(e) =>
+                          handleDragStart(e, zeroHash, "defense")
+                        }
                       >
                         <GiStoneTower color="red" size={20} />
                       </Box>
@@ -183,17 +334,26 @@ export const GamePage = (): JSX.Element => {
                   const col = index % 14;
                   const isMiddleLine = index % 14 === 7;
 
-                  const myCastle = row === 3 && col === 0;
-                  const enemyCastle = row === 3 && col === 13;
+                  const myCastle =
+                    row === myCastlePosition?.y && col === myCastlePosition?.x;
+                  const enemyCastle =
+                    row === enemyCastlePosition?.y &&
+                    col === enemyCastlePosition?.x;
 
                   const isEnemyTile = col > 6;
 
-                  const isOffenceTowerActive =
-                    offenseTowerPosition.x === row &&
-                    offenseTowerPosition.y === col;
-                  const isDeffenceTowerActive =
-                    defenseTowerPosition.x === row &&
-                    defenseTowerPosition.y === col;
+                  const activeTower = towers.find(
+                    (tower) => tower.x === col && tower.y === row
+                  );
+
+                  const canInstall =
+                    !activeTower && !myCastle && !enemyCastle && !isEnemyTile;
+
+                  const isInstalling =
+                    !!(
+                      installingPosition?.x === col &&
+                      installingPosition?.y === row
+                    ) && isInstallingTower;
 
                   return (
                     <Box
@@ -202,13 +362,15 @@ export const GamePage = (): JSX.Element => {
                       borderLeft={isMiddleLine ? "2px solid black" : "none"}
                       h="100%"
                       key={index}
-                      onDrop={(e) => handleDrop(e, row, col)}
-                      onDragOver={
-                        myCastle || isEnemyTile ? undefined : allowDrop
+                      onDrop={(e) =>
+                        activeTowerId === zeroHash
+                          ? onInstallTower(e, row, col)
+                          : onMoveTower(e, row, col)
                       }
+                      onDragOver={canInstall ? allowDrop : undefined}
                       w="100%"
                     >
-                      {isOffenceTowerActive && (
+                      {isInstalling && (
                         <Box
                           alignItems="center"
                           color="white"
@@ -217,23 +379,11 @@ export const GamePage = (): JSX.Element => {
                           justifyContent="center"
                           w="100%"
                         >
-                          <Tooltip
-                            closeDelay={200}
-                            content="Offensive Tower"
-                            openDelay={200}
-                          >
-                            <Box
-                              draggable="true"
-                              onClick={() => setIsSystemDrawerOpen(true)}
-                              onDragStart={(e) => handleDragStart(e, "offense")}
-                            >
-                              <GiStoneTower color="blue" size={20} />
-                            </Box>
-                          </Tooltip>
+                          <Spinner borderWidth="2px" size="sm" />
                         </Box>
                       )}
 
-                      {isDeffenceTowerActive && (
+                      {!!activeTower && (
                         <Box
                           alignItems="center"
                           color="white"
@@ -244,15 +394,28 @@ export const GamePage = (): JSX.Element => {
                         >
                           <Tooltip
                             closeDelay={200}
-                            content="Defensive Tower"
+                            content={
+                              activeTower.projectile
+                                ? "Offensive Tower"
+                                : "Defensive Tower"
+                            }
                             openDelay={200}
                           >
                             <Box
                               draggable="true"
                               onClick={() => setIsSystemDrawerOpen(true)}
-                              onDragStart={(e) => handleDragStart(e, "defense")}
+                              onDragStart={(e) =>
+                                handleDragStart(
+                                  e,
+                                  activeTower.id,
+                                  activeTower.projectile ? "offense" : "defense"
+                                )
+                              }
                             >
-                              <GiStoneTower color="red" size={20} />
+                              <GiStoneTower
+                                color={activeTower.projectile ? "blue" : "red"}
+                                size={20}
+                              />
                             </Box>
                           </Tooltip>
                         </Box>

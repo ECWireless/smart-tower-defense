@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { LogicSystemAddress } from "../src/codegen/index.sol";
+import { LogicSystemAddress, MapConfig } from "../src/codegen/index.sol";
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 
@@ -24,6 +24,8 @@ contract PostDeploy is Script {
     console.log("Logic System Address:", logicSystemAddress);
 
     IWorld(worldAddress).app__runStateChange();
+
+    MapConfig.set(7, 14);
 
     vm.stopBroadcast();
   }
