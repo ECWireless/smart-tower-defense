@@ -16,7 +16,7 @@ import { zeroAddress } from "viem";
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const {
-    components: { Game, RecentGame },
+    components: { CurrentGame, Game },
     network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
@@ -27,11 +27,11 @@ export const Home = (): JSX.Element => {
     try {
       setIsCreatingGame(true);
 
-      let recentGame = getComponentValue(RecentGame, playerEntity)?.value;
-      if (recentGame) {
-        const game = getComponentValueStrict(Game, recentGame as Entity);
+      let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
+      if (currentGame) {
+        const game = getComponentValueStrict(Game, currentGame as Entity);
         if (game.endTimestamp === BigInt(0)) {
-          navigate(`${GAMES_PATH}/${recentGame}`);
+          navigate(`${GAMES_PATH}/${currentGame}`);
           return;
         }
       }
@@ -47,13 +47,13 @@ export const Home = (): JSX.Element => {
         type: "success",
       });
 
-      recentGame = getComponentValue(RecentGame, playerEntity)?.value;
+      currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
 
-      if (!recentGame) {
+      if (!currentGame) {
         throw new Error("No recent game found");
       }
 
-      navigate(`${GAMES_PATH}/${recentGame}`);
+      navigate(`${GAMES_PATH}/${currentGame}`);
     } catch (error) {
       console.error(`Smart contract error: ${(error as Error).message}`);
 
@@ -65,7 +65,7 @@ export const Home = (): JSX.Element => {
     } finally {
       setIsCreatingGame(false);
     }
-  }, [createGame, navigate, playerEntity, RecentGame]);
+  }, [createGame, CurrentGame, Game, navigate, playerEntity]);
 
   return (
     <VStack gapY={20} h="100vh" justifyContent="center" p={6}>

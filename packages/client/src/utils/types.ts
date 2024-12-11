@@ -7,3 +7,9 @@ export type Game = {
   player2: Address;
   startTimestamp: bigint;
 };
+
+export type Tower = {
+  projectile: boolean;
+  x: number;
+  y: number;
+};
