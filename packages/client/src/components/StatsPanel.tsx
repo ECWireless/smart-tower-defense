@@ -1,8 +1,19 @@
 import { HStack, Text, VStack } from '@chakra-ui/react';
 
-export const StatsPanel = (): JSX.Element => {
+import { shortenAddress } from '../utils/helpers';
+import { type Game } from '../utils/types';
+
+type StatsPanelProps = {
+  game: Game;
+};
+
+export const StatsPanel: React.FC<StatsPanelProps> = ({
+  game,
+}): JSX.Element => {
+  const { actionCount, roundCount, turn } = game;
   return (
     <HStack
+      alignItems="stretch"
       bgColor="white"
       color="black"
       justifyContent="center"
@@ -11,28 +22,28 @@ export const StatsPanel = (): JSX.Element => {
       spaceX={12}
       w="100%"
     >
-      <VStack>
+      <VStack justifyContent="space-between">
         <Text fontWeight={700}>ACTIONS</Text>
         <Text fontSize="2xl" fontWeight={900}>
-          1
+          {actionCount}
         </Text>
       </VStack>
-      <VStack>
+      <VStack justifyContent="space-between">
         <Text fontWeight={700}>TURN</Text>
-        <Text fontSize="2xl" fontWeight={900}>
-          YOURS
+        <Text fontSize="sm" fontWeight={900} pb={1}>
+          {shortenAddress(turn)}
         </Text>
       </VStack>
-      <VStack>
+      <VStack justifyContent="space-between">
         <Text fontWeight={700}>ROUND</Text>
         <Text fontSize="2xl" fontWeight={900}>
-          3
+          {roundCount}
         </Text>
       </VStack>
-      <VStack>
+      <VStack justifyContent="space-between">
         <Text fontWeight={700}>WINS</Text>
         <Text fontSize="2xl" fontWeight={900}>
-          2
+          0
         </Text>
       </VStack>
     </HStack>
