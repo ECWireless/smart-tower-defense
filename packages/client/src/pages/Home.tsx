@@ -1,17 +1,18 @@
-import { Button } from "../components/ui/button";
-import { Heading, VStack } from "@chakra-ui/react";
-import { FaPlay } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { GAMES_PATH } from "../Routes";
-import { useMUD } from "../MUDContext";
-import { useCallback, useState } from "react";
-import { toaster } from "../components/ui/toaster";
+import { Heading, VStack } from '@chakra-ui/react';
 import {
   Entity,
   getComponentValue,
   getComponentValueStrict,
-} from "@latticexyz/recs";
-import { zeroAddress } from "viem";
+} from '@latticexyz/recs';
+import { useCallback, useState } from 'react';
+import { FaPlay } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { zeroAddress } from 'viem';
+
+import { Button } from '../components/ui/button';
+import { toaster } from '../components/ui/toaster';
+import { useMUD } from '../MUDContext';
+import { GAMES_PATH } from '../Routes';
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
@@ -43,24 +44,25 @@ export const Home = (): JSX.Element => {
       }
 
       toaster.create({
-        title: "Game Created!",
-        type: "success",
+        title: 'Game Created!',
+        type: 'success',
       });
 
       currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
 
       if (!currentGame) {
-        throw new Error("No recent game found");
+        throw new Error('No recent game found');
       }
 
       navigate(`${GAMES_PATH}/${currentGame}`);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
       toaster.create({
         description: (error as Error).message,
-        title: "Error Creating Game",
-        type: "error",
+        title: 'Error Creating Game',
+        type: 'error',
       });
     } finally {
       setIsCreatingGame(false);

@@ -1,21 +1,31 @@
-import { Box, Button, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
-import { useEntityQuery } from "@latticexyz/react";
-import { Address, zeroHash } from "viem";
-import { useCallback, useEffect, useState } from "react";
+import { Box, Button, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
+import { useEntityQuery } from '@latticexyz/react';
 import {
   Entity,
   getComponentValue,
   getComponentValueStrict,
   Has,
   HasValue,
-} from "@latticexyz/recs";
-import { useParams } from "react-router-dom";
-import { GiStoneTower } from "react-icons/gi";
-import { BiSolidCastle } from "react-icons/bi";
-import { FaPlay, FaInfoCircle } from "react-icons/fa";
-import { Tooltip } from "../components/ui/tooltip";
-import { useMUD } from "../MUDContext";
-import { toaster } from "../components/ui/toaster";
+} from '@latticexyz/recs';
+import { useCallback, useEffect, useState } from 'react';
+import { BiSolidCastle } from 'react-icons/bi';
+import { FaInfoCircle, FaPlay } from 'react-icons/fa';
+import { GiStoneTower } from 'react-icons/gi';
+import { useParams } from 'react-router-dom';
+import { Address, zeroHash } from 'viem';
+
+import { StatsPanel } from '../components/StatsPanel';
+import {
+  DialogBackdrop,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from '../components/ui/dialog';
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -25,20 +35,11 @@ import {
   DrawerHeader,
   DrawerRoot,
   DrawerTitle,
-} from "../components/ui/drawer";
-import {
-  DialogBody,
-  DialogBackdrop,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-  DialogTrigger,
-} from "../components/ui/dialog";
-import { StatsPanel } from "../components/StatsPanel";
-import { type Game, type Tower } from "../utils/types";
+} from '../components/ui/drawer';
+import { toaster } from '../components/ui/toaster';
+import { Tooltip } from '../components/ui/tooltip';
+import { useMUD } from '../MUDContext';
+import { type Game, type Tower } from '../utils/types';
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
@@ -66,8 +67,8 @@ export const GamePage = (): JSX.Element => {
   } | null>(null);
 
   const [activePiece, setActivePiece] = useState<
-    "offense" | "defense" | "none"
-  >("none");
+    'offense' | 'defense' | 'none'
+  >('none');
 
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
 
@@ -75,7 +76,7 @@ export const GamePage = (): JSX.Element => {
     Has(Castle),
     HasValue(CurrentGame, { value: game?.id }),
     HasValue(Owner, { value: game?.player1 }),
-  ]).map((entity) => {
+  ]).map(entity => {
     const _myCastlePosition = getComponentValueStrict(Position, entity);
     return {
       x: _myCastlePosition.x,
@@ -87,7 +88,7 @@ export const GamePage = (): JSX.Element => {
     Has(Castle),
     HasValue(CurrentGame, { value: game?.id }),
     HasValue(Owner, { value: game?.player2 }),
-  ]).map((entity) => {
+  ]).map(entity => {
     const _enemyCastlePosition = getComponentValueStrict(Position, entity);
     return {
       x: _enemyCastlePosition.x,
@@ -98,7 +99,7 @@ export const GamePage = (): JSX.Element => {
   const towers: Tower[] = useEntityQuery([
     Has(Tower),
     HasValue(CurrentGame, { value: game?.id }),
-  ]).map((entity) => {
+  ]).map(entity => {
     const position = getComponentValueStrict(Position, entity);
     return {
       id: entity,
@@ -116,20 +117,20 @@ export const GamePage = (): JSX.Element => {
         setInstallingPosition({ x: col, y: row });
 
         if (activeTowerId !== zeroHash) {
-          throw new Error("Active tower selected. Please move it instead.");
+          throw new Error('Active tower selected. Please move it instead.');
         }
 
         if (!game) {
-          throw new Error("Game not found.");
+          throw new Error('Game not found.');
         }
 
-        const hasProjectile = activePiece === "offense";
+        const hasProjectile = activePiece === 'offense';
 
         const { error, success } = await installTower(
           game.id,
           hasProjectile,
           col,
-          row
+          row,
         );
 
         if (error && !success) {
@@ -137,23 +138,24 @@ export const GamePage = (): JSX.Element => {
         }
 
         toaster.create({
-          title: "Tower Installed!",
-          type: "success",
+          title: 'Tower Installed!',
+          type: 'success',
         });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
         toaster.create({
           description: (error as Error).message,
-          title: "Error Installing Tower",
-          type: "error",
+          title: 'Error Installing Tower',
+          type: 'error',
         });
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
       }
     },
-    [activePiece, activeTowerId, game, installTower]
+    [activePiece, activeTowerId, game, installTower],
   );
 
   const onMoveTower = useCallback(
@@ -164,18 +166,18 @@ export const GamePage = (): JSX.Element => {
         setInstallingPosition({ x: col, y: row });
 
         if (activeTowerId === zeroHash) {
-          throw new Error("No active tower selected.");
+          throw new Error('No active tower selected.');
         }
 
         if (!game) {
-          throw new Error("Game not found.");
+          throw new Error('Game not found.');
         }
 
         const { error, success } = await moveTower(
           game.id,
           activeTowerId,
           col,
-          row
+          row,
         );
 
         if (error && !success) {
@@ -183,23 +185,24 @@ export const GamePage = (): JSX.Element => {
         }
 
         toaster.create({
-          title: "Tower Moved!",
-          type: "success",
+          title: 'Tower Moved!',
+          type: 'success',
         });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
         toaster.create({
           description: (error as Error).message,
-          title: "Error Moving Tower",
-          type: "error",
+          title: 'Error Moving Tower',
+          type: 'error',
         });
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
       }
     },
-    [activeTowerId, game, moveTower]
+    [activeTowerId, game, moveTower],
   );
 
   const allowDrop = (e: React.DragEvent) => {
@@ -209,11 +212,11 @@ export const GamePage = (): JSX.Element => {
   const handleDragStart = (
     e: React.DragEvent,
     towerId: string,
-    type: "offense" | "defense"
+    type: 'offense' | 'defense',
   ) => {
     setActiveTowerId(towerId);
     setActivePiece(type);
-    e.dataTransfer.setData("text/plain", "piece"); // Arbitrary data to identify the piece
+    e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
   };
 
   const fetchGame = useCallback(async () => {
@@ -255,7 +258,7 @@ export const GamePage = (): JSX.Element => {
 
   return (
     <DrawerRoot
-      onOpenChange={(e) => setIsSystemDrawerOpen(e.open)}
+      onOpenChange={e => setIsSystemDrawerOpen(e.open)}
       open={isSystemDrawerOpen}
       size="lg"
     >
@@ -289,8 +292,8 @@ export const GamePage = (): JSX.Element => {
                     >
                       <Box
                         draggable="true"
-                        onDragStart={(e) =>
-                          handleDragStart(e, zeroHash, "offense")
+                        onDragStart={e =>
+                          handleDragStart(e, zeroHash, 'offense')
                         }
                       >
                         <GiStoneTower color="blue" size={20} />
@@ -311,8 +314,8 @@ export const GamePage = (): JSX.Element => {
                     >
                       <Box
                         draggable="true"
-                        onDragStart={(e) =>
-                          handleDragStart(e, zeroHash, "defense")
+                        onDragStart={e =>
+                          handleDragStart(e, zeroHash, 'defense')
                         }
                       >
                         <GiStoneTower color="red" size={20} />
@@ -343,7 +346,7 @@ export const GamePage = (): JSX.Element => {
                   const isEnemyTile = col > 6;
 
                   const activeTower = towers.find(
-                    (tower) => tower.x === col && tower.y === row
+                    tower => tower.x === col && tower.y === row,
                   );
 
                   const canInstall =
@@ -359,10 +362,10 @@ export const GamePage = (): JSX.Element => {
                     <Box
                       bg="green.400"
                       border="1px solid black"
-                      borderLeft={isMiddleLine ? "2px solid black" : "none"}
+                      borderLeft={isMiddleLine ? '2px solid black' : 'none'}
                       h="100%"
                       key={index}
-                      onDrop={(e) =>
+                      onDrop={e =>
                         activeTowerId === zeroHash
                           ? onInstallTower(e, row, col)
                           : onMoveTower(e, row, col)
@@ -396,24 +399,26 @@ export const GamePage = (): JSX.Element => {
                             closeDelay={200}
                             content={
                               activeTower.projectile
-                                ? "Offensive Tower"
-                                : "Defensive Tower"
+                                ? 'Offensive Tower'
+                                : 'Defensive Tower'
                             }
                             openDelay={200}
                           >
                             <Box
                               draggable="true"
                               onClick={() => setIsSystemDrawerOpen(true)}
-                              onDragStart={(e) =>
+                              onDragStart={e =>
                                 handleDragStart(
                                   e,
                                   activeTower.id,
-                                  activeTower.projectile ? "offense" : "defense"
+                                  activeTower.projectile
+                                    ? 'offense'
+                                    : 'defense',
                                 )
                               }
                             >
                               <GiStoneTower
-                                color={activeTower.projectile ? "blue" : "red"}
+                                color={activeTower.projectile ? 'blue' : 'red'}
                                 size={20}
                               />
                             </Box>
@@ -469,7 +474,7 @@ export const GamePage = (): JSX.Element => {
                     p={0}
                     variant="ghost"
                     _hover={{
-                      bgColor: "gray.200",
+                      bgColor: 'gray.200',
                     }}
                   >
                     <FaPlay color="black" />
@@ -484,7 +489,7 @@ export const GamePage = (): JSX.Element => {
                   <DialogTrigger
                     as={Button}
                     _hover={{
-                      bgColor: "gray.200",
+                      bgColor: 'gray.200',
                     }}
                   >
                     <FaInfoCircle color="black" />

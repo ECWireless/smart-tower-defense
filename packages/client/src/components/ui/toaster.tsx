@@ -1,26 +1,26 @@
-"use client"
+'use client';
 
 import {
-  Toaster as ChakraToaster,
+  createToaster,
   Portal,
   Spinner,
   Stack,
   Toast,
-  createToaster,
-} from "@chakra-ui/react"
+  Toaster as ChakraToaster,
+} from '@chakra-ui/react';
 
 export const toaster = createToaster({
-  placement: "bottom-end",
+  placement: 'bottom-end',
   pauseOnPageIdle: true,
-})
+});
 
-export const Toaster = () => {
+export const Toaster = (): JSX.Element => {
   return (
     <Portal>
-      <ChakraToaster toaster={toaster} insetInline={{ mdDown: "4" }}>
-        {(toast) => (
-          <Toast.Root width={{ md: "sm" }}>
-            {toast.type === "loading" ? (
+      <ChakraToaster toaster={toaster} insetInline={{ mdDown: '4' }}>
+        {toast => (
+          <Toast.Root width={{ md: 'sm' }}>
+            {toast.type === 'loading' ? (
               <Spinner size="sm" color="blue.solid" />
             ) : (
               <Toast.Indicator />
@@ -39,5 +39,5 @@ export const Toaster = () => {
         )}
       </ChakraToaster>
     </Portal>
-  )
-}
+  );
+};

@@ -1,25 +1,25 @@
-import { BaseError, ContractFunctionRevertedError } from "viem";
+import { BaseError, ContractFunctionRevertedError } from 'viem';
 
 /*
  * Create the system calls that the client can use to ask
  * for changes in the World state (using the System contracts).
  */
-
-import { SetupNetworkResult } from "./setupNetwork";
+import { SetupNetworkResult } from './setupNetwork';
 
 export type SystemCalls = ReturnType<typeof createSystemCalls>;
 
 const getContractError = (error: BaseError): string => {
   const revertError = error.walk(
-    (e) => e instanceof ContractFunctionRevertedError
+    e => e instanceof ContractFunctionRevertedError,
   );
   if (revertError instanceof ContractFunctionRevertedError) {
     const args = revertError.data?.args ?? [];
-    return (args[0] as string) ?? "An error occurred calling the contract.";
+    return (args[0] as string) ?? 'An error occurred calling the contract.';
   }
-  return "An error occurred calling the contract.";
+  return 'An error occurred calling the contract.';
 };
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function createSystemCalls(
   /*
    * The parameter list informs TypeScript that:
@@ -40,7 +40,7 @@ export function createSystemCalls(
    *   syncToRecs
    *   (https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
    */
-  { worldContract, waitForTransaction }: SetupNetworkResult
+  { worldContract, waitForTransaction }: SetupNetworkResult,
 ) {
   const createGame = async (player2: string) => {
     try {
@@ -50,10 +50,10 @@ export function createSystemCalls(
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
 
-      const success = status === "success";
+      const success = status === 'success';
 
       return {
-        error: success ? undefined : "Failed to create game.",
+        error: success ? undefined : 'Failed to create game.',
         success,
       };
     } catch (error) {
@@ -74,10 +74,10 @@ export function createSystemCalls(
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
 
-      const success = status === "success";
+      const success = status === 'success';
 
       return {
-        error: success ? undefined : "Failed to deploy system.",
+        error: success ? undefined : 'Failed to deploy system.',
         success,
       };
     } catch (error) {
@@ -97,7 +97,7 @@ export function createSystemCalls(
     potentialGameId: string,
     projectile: boolean,
     x: number,
-    y: number
+    y: number,
   ) => {
     try {
       const tx = await worldContract.write.app__installTower([
@@ -109,10 +109,10 @@ export function createSystemCalls(
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
 
-      const success = status === "success";
+      const success = status === 'success';
 
       return {
-        error: success ? undefined : "Failed to install tower.",
+        error: success ? undefined : 'Failed to install tower.',
         success,
       };
     } catch (error) {
@@ -127,7 +127,7 @@ export function createSystemCalls(
     gameId: string,
     towerId: string,
     x: number,
-    y: number
+    y: number,
   ) => {
     try {
       const tx = await worldContract.write.app__moveTower([
@@ -139,10 +139,10 @@ export function createSystemCalls(
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
 
-      const success = status === "success";
+      const success = status === 'success';
 
       return {
-        error: success ? undefined : "Failed to move tower.",
+        error: success ? undefined : 'Failed to move tower.',
         success,
       };
     } catch (error) {
@@ -159,10 +159,10 @@ export function createSystemCalls(
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
 
-      const success = status === "success";
+      const success = status === 'success';
 
       return {
-        error: success ? undefined : "Failed to run state change.",
+        error: success ? undefined : 'Failed to run state change.',
         success,
       };
     } catch (error) {
