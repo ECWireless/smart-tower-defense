@@ -3,12 +3,19 @@
   "compilerOptions": {
     "types": ["vite/client"],
     "target": "ESNext",
-    "lib": ["ESNext", "DOM"],
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
+    "useDefineForClassFields": true,
     "module": "ESNext",
+    "lib": ["ESNext", "DOM"],
     "moduleResolution": "Bundler",
-    "skipLibCheck": true
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

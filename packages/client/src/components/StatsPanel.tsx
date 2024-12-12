@@ -1,4 +1,4 @@
-import { HStack, Text, VStack } from "@chakra-ui/react";
+import { HStack, Text, VStack } from '@chakra-ui/react';
 
 export const StatsPanel = (): JSX.Element => {
   return (

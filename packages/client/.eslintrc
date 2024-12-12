@@ -1,7 +1,41 @@
 {
-  "extends": ["../../.eslintrc", "plugin:react/recommended", "plugin:react-hooks/recommended"],
-  "plugins": ["react", "react-hooks"],
+  "extends": [
+    "../../.eslintrc",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:prettier/recommended",
+    "plugin:import/recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+  ],
+  "plugins": ["react", "react-hooks", "simple-import-sort", "prettier"],
   "rules": {
-    "react/react-in-jsx-scope": "off"
-  }
+    "@typescript-eslint/explicit-module-boundary-types": "error",
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-unused-expressions": "error",
+    "simple-import-sort/imports": "error",
+    "array-callback-return": "warn",
+    "consistent-return": "warn",
+    "default-case": "warn",
+    "simple-import-sort/exports": "error",
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off",
+    "react-hooks/exhaustive-deps": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "import/no-duplicates": "error",
+    "no-console": "error",
+  },
+  "settings": {
+    "react": {
+      "version": "detect",
+    },
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": "./tsconfig.json",
+      },
+    },
+  },
 }

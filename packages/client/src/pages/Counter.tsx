@@ -1,11 +1,13 @@
-import { useComponentValue } from "@latticexyz/react";
-import { Button } from "../components/ui/button";
-import { Toaster, toaster } from "../components/ui/toaster";
-import { Box, Input, Text, VStack } from "@chakra-ui/react";
-import { useMUD } from "../MUDContext";
-import { singletonEntity } from "@latticexyz/store-sync/recs";
-import { useCallback, useState } from "react";
-import Editor, { loader } from "@monaco-editor/react";
+import { Box, Input, Text, VStack } from '@chakra-ui/react';
+import { useComponentValue } from '@latticexyz/react';
+import { singletonEntity } from '@latticexyz/store-sync/recs';
+// eslint-disable-next-line import/no-named-as-default
+import Editor, { loader } from '@monaco-editor/react';
+import { useCallback, useState } from 'react';
+
+import { Button } from '../components/ui/button';
+import { Toaster, toaster } from '../components/ui/toaster';
+import { useMUD } from '../MUDContext';
 
 const DEFAULT_SOURCE_CODE = `
 contract LogicSystem {
@@ -27,7 +29,7 @@ export const Counter = (): JSX.Element => {
 
   const [isRunningLogic, setIsRunningLogic] = useState<boolean>(false);
 
-  const [bytecode, setBytecode] = useState<string>("0x0");
+  const [bytecode, setBytecode] = useState<string>('0x0');
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
 
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
@@ -43,16 +45,17 @@ export const Counter = (): JSX.Element => {
       }
 
       toaster.create({
-        title: "State Change Complete!",
-        type: "success",
+        title: 'State Change Complete!',
+        type: 'success',
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
       toaster.create({
         description: (error as Error).message,
-        title: "Error Running Logic",
-        type: "error",
+        title: 'Error Running Logic',
+        type: 'error',
       });
     } finally {
       setIsRunningLogic(false);
@@ -65,33 +68,34 @@ export const Counter = (): JSX.Element => {
       const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 
       const res = await fetch(`${API_ENDPOINT}/compile`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ sourceCode }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to compile code");
+        throw new Error('Failed to compile code');
       }
 
       const bytecode = await res.text();
       setBytecode(`0x${bytecode}`);
 
       toaster.create({
-        title: "Code Compiled!",
-        type: "success",
+        title: 'Code Compiled!',
+        type: 'success',
       });
     } catch (error) {
-      console.error("Error compiling code:", error);
+      // eslint-disable-next-line no-console
+      console.error('Error compiling code:', error);
 
       toaster.create({
-        title: "Error Compiling Code",
-        type: "error",
+        title: 'Error Compiling Code',
+        type: 'error',
       });
 
-      setBytecode("");
+      setBytecode('');
     } finally {
       setIsCompiling(false);
     }
@@ -107,16 +111,17 @@ export const Counter = (): JSX.Element => {
       }
 
       toaster.create({
-        title: "System Deployed!",
-        type: "success",
+        title: 'System Deployed!',
+        type: 'success',
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
       toaster.create({
         description: (error as Error).message,
-        title: "Error Deploying System",
-        type: "error",
+        title: 'Error Deploying System',
+        type: 'error',
       });
     } finally {
       setIsDeploying(false);
@@ -128,27 +133,27 @@ export const Counter = (): JSX.Element => {
   }, [getContractSize]);
 
   // Configure Solidity language
-  loader.init().then((monacoInstance) => {
-    monacoInstance.languages.register({ id: "solidity" });
+  loader.init().then(monacoInstance => {
+    monacoInstance.languages.register({ id: 'solidity' });
 
-    monacoInstance.languages.setMonarchTokensProvider("solidity", {
+    monacoInstance.languages.setMonarchTokensProvider('solidity', {
       tokenizer: {
         root: [
           [
             /\b(?:pragma|contract|function|string|public|constructor|memory|returns)\b/,
-            "keyword",
+            'keyword',
           ],
-          [/\b(?:uint256|string|bool|address)\b/, "type"],
-          [/["'].*["']/, "string"],
-          [/\/\/.*$/, "comment"],
+          [/\b(?:uint256|string|bool|address)\b/, 'type'],
+          [/["'].*["']/, 'string'],
+          [/\/\/.*$/, 'comment'],
         ],
       },
     });
 
-    monacoInstance.languages.setLanguageConfiguration("solidity", {
+    monacoInstance.languages.setLanguageConfiguration('solidity', {
       autoClosingPairs: [
-        { open: "{", close: "}" },
-        { open: "[", close: "]" },
+        { open: '{', close: '}' },
+        { open: '[', close: ']' },
       ],
     });
   });
@@ -161,14 +166,14 @@ export const Counter = (): JSX.Element => {
             <strong>Run Counter System</strong>
           </Text>
           <Text>
-            Counter: <span>{counter?.value ?? "??"}</span>
+            Counter: <span>{counter?.value ?? '??'}</span>
           </Text>
           <Button
             disabled={isRunningLogic}
             onClick={onRunStateChange}
             type="button"
           >
-            {isRunningLogic ? "Running..." : "Run Counter System"}
+            {isRunningLogic ? 'Running...' : 'Run Counter System'}
           </Button>
         </Box>
         <Box py={4} spaceY={2}>
@@ -180,7 +185,7 @@ export const Counter = (): JSX.Element => {
             <Editor
               defaultLanguage="solidity"
               height="100%"
-              onChange={(value) => setSourceCode(value ?? "")}
+              onChange={value => setSourceCode(value ?? '')}
               options={{
                 fontSize: 14,
                 minimap: { enabled: false },
@@ -190,7 +195,7 @@ export const Counter = (): JSX.Element => {
             />
           </Box>
           <Button disabled={isCompiling} onClick={onCompileCode} type="button">
-            {isCompiling ? "Compiling..." : "Compile"}
+            {isCompiling ? 'Compiling...' : 'Compile'}
           </Button>
         </Box>
         <Box py={4} spaceY={2}>
@@ -199,13 +204,13 @@ export const Counter = (): JSX.Element => {
           </Text>
           <Box>
             <Input
-              onChange={(event) => setBytecode(event.target.value)}
+              onChange={event => setBytecode(event.target.value)}
               type="text"
               value={bytecode}
             />
           </Box>
           <Button disabled={isDeploying} onClick={onDeploySystem} type="button">
-            {isDeploying ? "Deploying..." : "Deploy System"}
+            {isDeploying ? 'Deploying...' : 'Deploy System'}
           </Button>
         </Box>
         <Box py={4} spaceY={2}>
