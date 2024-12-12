@@ -20,6 +20,8 @@ contract TowerSystem is System {
 
     GameData memory currentGame = Game.get(currentGameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
+    require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
+    require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
 
     (int8 height, int8 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
@@ -27,26 +29,28 @@ contract TowerSystem is System {
 
     bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(x, y));
     require(positionEntity == 0, "TowerSystem: position is occupied");
-
     require(x < width / 2, "TowerSystem: x is in enemy territory");
-    
+
     uint256 timestamp = block.timestamp;
     bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
 
     Tower.set(towerId, true);
     CurrentGame.set(towerId, currentGameId);
     Owner.set(towerId, playerAddress);
-    Position.set(towerId, x, y );
+    Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(x, y), towerId);
 
     if (projectile) {
       Projectile.set(towerId, true);
     }
 
+    currentGame.actionCount -= 1;
+    Game.set(currentGameId, currentGame);
+
     return towerId;
   }
 
-  function moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external {
+  function moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     bytes32 player = addressToEntityKey(playerAddress);
 
@@ -56,6 +60,8 @@ contract TowerSystem is System {
 
     GameData memory currentGame = Game.get(currentGameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
+    require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
+    require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
 
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
 
@@ -70,8 +76,13 @@ contract TowerSystem is System {
 
     (int8 oldX, int8 oldY) = Position.get(towerId);
     EntityAtPosition.set(positionToEntityKey(oldX, oldY), 0);
-    
+
     Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(x, y), towerId);
+
+    currentGame.actionCount -= 1;
+    Game.set(currentGameId, currentGame);
+
+    return towerId;
   }
 }

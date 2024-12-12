@@ -1,4 +1,4 @@
-import { Box, Button, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
+import { Box, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
 import { useEntityQuery } from '@latticexyz/react';
 import {
   Entity,
@@ -7,14 +7,15 @@ import {
   Has,
   HasValue,
 } from '@latticexyz/recs';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
 import { GiStoneTower } from 'react-icons/gi';
 import { useParams } from 'react-router-dom';
-import { Address, zeroHash } from 'viem';
+import { Address, zeroAddress, zeroHash } from 'viem';
 
 import { StatsPanel } from '../components/StatsPanel';
+import { Button } from '../components/ui/button';
 import {
   DialogBackdrop,
   DialogBody,
@@ -53,7 +54,7 @@ export const GamePage = (): JSX.Element => {
       Projectile,
       Tower,
     },
-    systemCalls: { installTower, moveTower },
+    systemCalls: { installTower, moveTower, nextTurn },
   } = useMUD();
 
   const [game, setGame] = useState<Game | null>(null);
@@ -65,10 +66,11 @@ export const GamePage = (): JSX.Element => {
     x: number;
     y: number;
   } | null>(null);
-
   const [activePiece, setActivePiece] = useState<
     'offense' | 'defense' | 'none'
   >('none');
+
+  const [isChangingTurn, setIsChangingTurn] = useState(false);
 
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
 
@@ -109,6 +111,28 @@ export const GamePage = (): JSX.Element => {
     };
   });
 
+  const fetchGame = useCallback(async () => {
+    if (!id) return;
+    const _game = getComponentValue(GameComponent, id as Entity);
+    if (_game) {
+      setGame({
+        id,
+        actionCount: _game.actionCount,
+        endTimestamp: _game.endTimestamp,
+        player1: _game.player1 as Address,
+        player2: _game.player2 as Address,
+        roundCount: _game.roundCount,
+        startTimestamp: _game.startTimestamp,
+        turn: _game.turn as Address,
+      });
+    }
+    setIsLoadingGame(false);
+  }, [GameComponent, id]);
+
+  useEffect(() => {
+    fetchGame();
+  }, [fetchGame]);
+
   const onInstallTower = useCallback(
     async (e: React.DragEvent, row: number, col: number) => {
       e.preventDefault();
@@ -141,6 +165,8 @@ export const GamePage = (): JSX.Element => {
           title: 'Tower Installed!',
           type: 'success',
         });
+
+        fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
@@ -155,7 +181,7 @@ export const GamePage = (): JSX.Element => {
         setInstallingPosition(null);
       }
     },
-    [activePiece, activeTowerId, game, installTower],
+    [activePiece, activeTowerId, fetchGame, game, installTower],
   );
 
   const onMoveTower = useCallback(
@@ -188,6 +214,8 @@ export const GamePage = (): JSX.Element => {
           title: 'Tower Moved!',
           type: 'success',
         });
+
+        fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
@@ -202,7 +230,7 @@ export const GamePage = (): JSX.Element => {
         setInstallingPosition(null);
       }
     },
-    [activeTowerId, game, moveTower],
+    [activeTowerId, fetchGame, game, moveTower],
   );
 
   const allowDrop = (e: React.DragEvent) => {
@@ -219,24 +247,45 @@ export const GamePage = (): JSX.Element => {
     e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
   };
 
-  const fetchGame = useCallback(async () => {
-    if (!id) return;
-    const _game = getComponentValue(GameComponent, id as Entity);
-    if (_game) {
-      setGame({
-        id,
-        endTimestamp: _game.endTimestamp,
-        player1: _game.player1 as Address,
-        player2: _game.player2 as Address,
-        startTimestamp: _game.startTimestamp,
-      });
-    }
-    setIsLoadingGame(false);
-  }, [GameComponent, id]);
+  const onNextTurn = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
 
-  useEffect(() => {
-    fetchGame();
-  }, [fetchGame]);
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toaster.create({
+        title: 'Turn Changed!',
+        type: 'success',
+      });
+
+      fetchGame();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: 'Error Changing Turn',
+        type: 'error',
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [fetchGame, game, nextTurn]);
+
+  const canChangeTurn = useMemo(() => {
+    if (!game) return false;
+    if (game.turn === zeroAddress) return true;
+    return game.turn === game.player1 && game.actionCount === 0;
+  }, [game]);
 
   if (isLoadingGame) {
     return (
@@ -275,7 +324,7 @@ export const GamePage = (): JSX.Element => {
           <DrawerFooter />
         </DrawerContent>
         <Box>
-          <StatsPanel />
+          <StatsPanel game={game} />
           <Box>
             <HStack alignItems="stretch" gap={2} h="100%">
               <Box bgColor="white" display="flex" w={120}>
@@ -471,13 +520,18 @@ export const GamePage = (): JSX.Element => {
                 <HStack justifyContent="center">
                   <Text fontSize="sm">NEXT</Text>
                   <Button
+                    loading={isChangingTurn}
+                    onClick={onNextTurn}
                     p={0}
                     variant="ghost"
                     _hover={{
                       bgColor: 'gray.200',
                     }}
+                    _disabled={{
+                      bgColor: 'gray.500',
+                    }}
                   >
-                    <FaPlay color="black" />
+                    <FaPlay color={canChangeTurn ? 'green' : 'black'} />
                   </Button>
                 </HStack>
                 <HStack justifyContent="center">

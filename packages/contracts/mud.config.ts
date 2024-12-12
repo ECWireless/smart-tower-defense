@@ -15,10 +15,13 @@ export default defineWorld({
     Game: {
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
+        actionCount: "int8",
         endTimestamp: "uint256",
         player1: "address",
         player2: "address",
+        roundCount: "int8",
         startTimestamp: "uint256",
+        turn: "address",
       },
       key: ["id"],
     },

@@ -153,6 +153,28 @@ export function createSystemCalls(
     }
   };
 
+  const nextTurn = async (gameId: string) => {
+    try {
+      const tx = await worldContract.write.app__nextTurn([
+        gameId as `0x${string}`,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to change turn.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const runStateChange = async () => {
     try {
       const tx = await worldContract.write.app__runStateChange();
@@ -179,6 +201,7 @@ export function createSystemCalls(
     getContractSize,
     installTower,
     moveTower,
+    nextTurn,
     runStateChange,
   };
 }

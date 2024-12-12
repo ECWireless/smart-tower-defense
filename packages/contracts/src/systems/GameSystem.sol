@@ -21,7 +21,17 @@ contract GameSystem is System {
     uint256 timestamp = block.timestamp;
 
     bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
-    Game.set(gameId, GameData({ endTimestamp: 0, player1: player1Address, player2: player2Address, startTimestamp: timestamp }));
+
+    GameData memory newGame = GameData({
+      actionCount: 1,
+      endTimestamp: 0,
+      player1: player1Address,
+      player2: player2Address,
+      roundCount: 1,
+      startTimestamp: timestamp,
+      turn: player1Address
+    });
+    Game.set(gameId, newGame);
     CurrentGame.set(player1, gameId);
 
     bytes32 castle1Id = keccak256(abi.encodePacked(currentGameId, player1Address, timestamp));
@@ -43,5 +53,31 @@ contract GameSystem is System {
     EntityAtPosition.set(positionToEntityKey(13, 3), castle2Id);
 
     return gameId;
+  }
+
+  function nextTurn(bytes32 gameId) external {
+    GameData memory game = Game.get(gameId);
+    require(game.endTimestamp == 0, "GameSystem: game has ended");
+
+    address player1 = game.player1;
+    address player2 = game.player2;
+
+    address currentPlayer = game.turn;
+
+    if (player2 != address(0)) {
+      require(_msgSender() == currentPlayer, "GameSystem: it's not your turn");
+    }
+
+    GameData memory newGame = Game.get(gameId);
+
+    if (newGame.turn == player1) {
+      require(newGame.actionCount == 0, "GameSystem: player has actions remaining");
+    } else {
+      newGame.roundCount += 1;
+    }
+
+    newGame.turn = currentPlayer == player1 ? player2 : player1;
+    newGame.actionCount = 1;
+    Game.set(gameId, newGame);
   }
 }
