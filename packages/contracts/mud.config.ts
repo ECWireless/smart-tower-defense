@@ -22,6 +22,7 @@ export default defineWorld({
         roundCount: "uint8",
         startTimestamp: "uint256",
         turn: "address",
+        winner: "address",
       },
       key: ["id"],
     },

@@ -9,6 +9,7 @@ export type Game = {
   roundCount: number;
   startTimestamp: bigint;
   turn: Address;
+  winner: Address;
 };
 
 export type Tower = {

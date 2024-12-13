@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
 import { GiBulletBill, GiMineExplosion, GiStoneTower } from 'react-icons/gi';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
 import { StatsPanel } from '../components/StatsPanel';
@@ -40,13 +40,16 @@ import {
 import { toaster } from '../components/ui/toaster';
 import { Tooltip } from '../components/ui/tooltip';
 import { useMUD } from '../MUDContext';
+import { GAMES_PATH } from '../Routes';
 import { type Game, type Tower } from '../utils/types';
 
 const MAX_TICKS = 12;
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const {
+    network: { playerEntity },
     components: {
       Castle,
       CurrentGame,
@@ -58,7 +61,7 @@ export const GamePage = (): JSX.Element => {
       ProjectileTrajectory,
       Tower,
     },
-    systemCalls: { installTower, moveTower, nextTurn },
+    systemCalls: { createGame, installTower, moveTower, nextTurn },
   } = useMUD();
 
   const [game, setGame] = useState<Game | null>(null);
@@ -79,6 +82,9 @@ export const GamePage = (): JSX.Element => {
   const [tickCount, setTickCount] = useState(0);
 
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
+  const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
+
+  const [isCreatingGame, setIsCreatingGame] = useState(false);
 
   const myCastlePosition = useEntityQuery([
     Has(Castle),
@@ -155,6 +161,7 @@ export const GamePage = (): JSX.Element => {
         roundCount: _game.roundCount,
         startTimestamp: _game.startTimestamp,
         turn: _game.turn as Address,
+        winner: _game.winner as Address,
       });
     }
     setIsLoadingGame(false);
@@ -315,6 +322,55 @@ export const GamePage = (): JSX.Element => {
     }
   }, [fetchGame, game, nextTurn]);
 
+  const onCreateGame = useCallback(async () => {
+    try {
+      setIsCreatingGame(true);
+
+      let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
+      if (currentGame) {
+        const game = getComponentValueStrict(
+          GameComponent,
+          currentGame as Entity,
+        );
+        if (game.endTimestamp === BigInt(0)) {
+          navigate(`${GAMES_PATH}/${currentGame}`);
+          return;
+        }
+      }
+
+      const { error, success } = await createGame(zeroAddress);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toaster.create({
+        title: 'Game Created!',
+        type: 'success',
+      });
+
+      currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
+
+      if (!currentGame) {
+        throw new Error('No recent game found');
+      }
+
+      navigate(`${GAMES_PATH}/${currentGame}`);
+      setIsGameOverModalOpen(false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: 'Error Creating Game',
+        type: 'error',
+      });
+    } finally {
+      setIsCreatingGame(false);
+    }
+  }, [createGame, CurrentGame, GameComponent, navigate, playerEntity]);
+
   useEffect(() => {
     if (!game) return () => {};
     if (game.turn !== game.player1Address) return () => {};
@@ -330,6 +386,13 @@ export const GamePage = (): JSX.Element => {
     }, 100);
     return () => clearInterval(interval);
   }, [game, tickCount, triggerAnimation]);
+
+  useEffect(() => {
+    if (!game) return;
+    if (game.winner === zeroAddress) return;
+
+    setIsGameOverModalOpen(true);
+  }, [game]);
 
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
@@ -676,6 +739,32 @@ export const GamePage = (): JSX.Element => {
           </Box>
         </Box>
       </VStack>
+      <DialogRoot
+        open={isGameOverModalOpen}
+        onOpenChange={e => setIsGameOverModalOpen(e.open)}
+      >
+        <DialogBackdrop />
+        <DialogContent bgColor="white" color="black">
+          <DialogCloseTrigger bgColor="black" />
+          <DialogHeader>
+            <DialogTitle textTransform="uppercase">Game Over</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <Text>
+              {game.winner === game.player1Address ? 'You won!' : 'You lost!'}
+            </Text>
+            <Button
+              loading={isCreatingGame}
+              mt={4}
+              onClick={onCreateGame}
+              variant="surface"
+            >
+              Play Again
+            </Button>
+          </DialogBody>
+          <DialogFooter />
+        </DialogContent>
+      </DialogRoot>
     </DrawerRoot>
   );
 };

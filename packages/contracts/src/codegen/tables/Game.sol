@@ -24,6 +24,7 @@ struct GameData {
   uint8 roundCount;
   uint256 startTimestamp;
   address turn;
+  address winner;
 }
 
 library Game {
@@ -31,12 +32,12 @@ library Game {
   ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000047616d65000000000000000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x007e070001201414012014000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0092080001201414012014140000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (uint8, uint256, address, address, uint8, uint256, address)
-  Schema constant _valueSchema = Schema.wrap(0x007e0700001f6161001f61000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint8, uint256, address, address, uint8, uint256, address, address)
+  Schema constant _valueSchema = Schema.wrap(0x00920800001f6161001f61610000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -52,7 +53,7 @@ library Game {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](7);
+    fieldNames = new string[](8);
     fieldNames[0] = "actionCount";
     fieldNames[1] = "endTimestamp";
     fieldNames[2] = "player1Address";
@@ -60,6 +61,7 @@ library Game {
     fieldNames[4] = "roundCount";
     fieldNames[5] = "startTimestamp";
     fieldNames[6] = "turn";
+    fieldNames[7] = "winner";
   }
 
   /**
@@ -371,6 +373,48 @@ library Game {
   }
 
   /**
+   * @notice Get winner.
+   */
+  function getWinner(bytes32 id) internal view returns (address winner) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 7, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Get winner.
+   */
+  function _getWinner(bytes32 id) internal view returns (address winner) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 7, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Set winner.
+   */
+  function setWinner(bytes32 id, address winner) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 7, abi.encodePacked((winner)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set winner.
+   */
+  function _setWinner(bytes32 id, address winner) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 7, abi.encodePacked((winner)), _fieldLayout);
+  }
+
+  /**
    * @notice Get the full data.
    */
   function get(bytes32 id) internal view returns (GameData memory _table) {
@@ -411,7 +455,8 @@ library Game {
     address player2Address,
     uint8 roundCount,
     uint256 startTimestamp,
-    address turn
+    address turn,
+    address winner
   ) internal {
     bytes memory _staticData = encodeStatic(
       actionCount,
@@ -420,7 +465,8 @@ library Game {
       player2Address,
       roundCount,
       startTimestamp,
-      turn
+      turn,
+      winner
     );
 
     EncodedLengths _encodedLengths;
@@ -443,7 +489,8 @@ library Game {
     address player2Address,
     uint8 roundCount,
     uint256 startTimestamp,
-    address turn
+    address turn,
+    address winner
   ) internal {
     bytes memory _staticData = encodeStatic(
       actionCount,
@@ -452,7 +499,8 @@ library Game {
       player2Address,
       roundCount,
       startTimestamp,
-      turn
+      turn,
+      winner
     );
 
     EncodedLengths _encodedLengths;
@@ -475,7 +523,8 @@ library Game {
       _table.player2Address,
       _table.roundCount,
       _table.startTimestamp,
-      _table.turn
+      _table.turn,
+      _table.winner
     );
 
     EncodedLengths _encodedLengths;
@@ -498,7 +547,8 @@ library Game {
       _table.player2Address,
       _table.roundCount,
       _table.startTimestamp,
-      _table.turn
+      _table.turn,
+      _table.winner
     );
 
     EncodedLengths _encodedLengths;
@@ -525,7 +575,8 @@ library Game {
       address player2Address,
       uint8 roundCount,
       uint256 startTimestamp,
-      address turn
+      address turn,
+      address winner
     )
   {
     actionCount = (uint8(Bytes.getBytes1(_blob, 0)));
@@ -541,6 +592,8 @@ library Game {
     startTimestamp = (uint256(Bytes.getBytes32(_blob, 74)));
 
     turn = (address(Bytes.getBytes20(_blob, 106)));
+
+    winner = (address(Bytes.getBytes20(_blob, 126)));
   }
 
   /**
@@ -561,7 +614,8 @@ library Game {
       _table.player2Address,
       _table.roundCount,
       _table.startTimestamp,
-      _table.turn
+      _table.turn,
+      _table.winner
     ) = decodeStatic(_staticData);
   }
 
@@ -596,10 +650,20 @@ library Game {
     address player2Address,
     uint8 roundCount,
     uint256 startTimestamp,
-    address turn
+    address turn,
+    address winner
   ) internal pure returns (bytes memory) {
     return
-      abi.encodePacked(actionCount, endTimestamp, player1Address, player2Address, roundCount, startTimestamp, turn);
+      abi.encodePacked(
+        actionCount,
+        endTimestamp,
+        player1Address,
+        player2Address,
+        roundCount,
+        startTimestamp,
+        turn,
+        winner
+      );
   }
 
   /**
@@ -615,7 +679,8 @@ library Game {
     address player2Address,
     uint8 roundCount,
     uint256 startTimestamp,
-    address turn
+    address turn,
+    address winner
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData = encodeStatic(
       actionCount,
@@ -624,7 +689,8 @@ library Game {
       player2Address,
       roundCount,
       startTimestamp,
-      turn
+      turn,
+      winner
     );
 
     EncodedLengths _encodedLengths;
