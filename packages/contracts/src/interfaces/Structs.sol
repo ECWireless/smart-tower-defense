@@ -5,8 +5,8 @@ struct TowerDetails {
   bytes32 id;
   uint8 health;
   bool projectile;
-  uint8 projectileX;
-  uint8 projectileY;
-  uint8 x;
-  uint8 y;
+  int8 projectileX;
+  int8 projectileY;
+  int8 x;
+  int8 y;
 }

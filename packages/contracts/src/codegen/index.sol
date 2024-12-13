@@ -15,4 +15,5 @@ import { Owner } from "./tables/Owner.sol";
 import { OwnerTowers } from "./tables/OwnerTowers.sol";
 import { Position } from "./tables/Position.sol";
 import { Projectile } from "./tables/Projectile.sol";
+import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";
 import { Tower } from "./tables/Tower.sol";

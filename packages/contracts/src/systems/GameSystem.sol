@@ -2,7 +2,19 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, Owner, OwnerTowers, Position, Projectile } from "../codegen/index.sol";
+import {
+  Castle,
+  CurrentGame,
+  EntityAtPosition,
+  Health,
+  Game,
+  GameData,
+  Owner,
+  OwnerTowers,
+  Position,
+  Projectile,
+  ProjectileTrajectory
+} from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
@@ -80,6 +92,12 @@ contract GameSystem is System {
 
     if (newGame.turn == player1Address) {
       require(newGame.actionCount == 0, "GameSystem: player has actions remaining");
+
+      bytes32 player1 = addressToEntityKey(player1Address);
+      bytes32 player2 = addressToEntityKey(player2Address);
+
+      bytes32[] memory allTowers = _getAllTowers(player1, player2);
+      _clearAllProjectiles(allTowers);
     } else {
       newGame.roundCount += 1;
       _executeRoundResults(gameId);
@@ -96,125 +114,181 @@ contract GameSystem is System {
 
     bytes32 player1 = addressToEntityKey(player1Address);
     bytes32 player2 = addressToEntityKey(player2Address);
-    
-    // 1. Get all towers
+
+    bytes32[] memory allTowers = _getAllTowers(player1, player2);
+    TowerDetails[] memory towers = _getTowerDetails(allTowers);
+
+    _simulateTicks(towers);
+}
+
+function _clearAllProjectiles(bytes32[] memory allTowers) internal {
+    for (uint256 i = 0; i < allTowers.length; i++) {
+        bytes32 towerId = allTowers[i];
+        ProjectileTrajectory.set(towerId, new int8[](0), new int8[](0));
+    }
+}
+
+function _getAllTowers(bytes32 player1, bytes32 player2) internal view returns (bytes32[] memory) {
     bytes32[] memory towers1 = OwnerTowers.get(player1);
     bytes32[] memory towers2 = OwnerTowers.get(player2);
 
     bytes32[] memory allTowers = new bytes32[](towers1.length + towers2.length);
-
     uint256 index = 0;
+
     for (uint256 i = 0; i < towers1.length; i++) {
-      allTowers[index] = towers1[i];
-      index += 1;
+        allTowers[index++] = towers1[i];
     }
 
     for (uint256 i = 0; i < towers2.length; i++) {
-      allTowers[index] = towers2[i];
-      index += 1;
+        allTowers[index++] = towers2[i];
     }
 
-    // 2. Get details for all towers
+    return allTowers;
+}
+
+function _getTowerDetails(bytes32[] memory allTowers) internal view returns (TowerDetails[] memory) {
     TowerDetails[] memory towers = new TowerDetails[](allTowers.length);
+
     for (uint256 i = 0; i < allTowers.length; i++) {
-      bytes32 towerId = allTowers[i];
-      uint8 x = Position.getX(towerId);
-      uint8 y = Position.getY(towerId);
-      towers[i] = TowerDetails({
-        id: towerId,
-        health: Health.getCurrentHealth(towerId),
-        projectile: Projectile.get(towerId),
-        projectileX: x,
-        projectileY: y,
-        x: x,
-        y: y
-      });
+        bytes32 towerId = allTowers[i];
+        int8 x = Position.getX(towerId);
+        int8 y = Position.getY(towerId);
+
+        towers[i] = TowerDetails({
+            id: towerId,
+            health: Health.getCurrentHealth(towerId),
+            projectile: Projectile.get(towerId),
+            projectileX: x,
+            projectileY: y,
+            x: x,
+            y: y
+        });
     }
 
-    // 3. Loop through 20 ticks, checking for collisions based on:
-    //     - the tower's position
-    //     - the trajectory formula
-    //     - and the position of other entities
-    uint256 tick = 0;
-    while (tick < 20) {
-      for (uint256 i = 0; i < towers.length; i++) {
+    return towers;
+}
+
+function _simulateTicks(TowerDetails[] memory towers) internal {
+    for (uint256 tick = 0; tick < 12; tick++) {
+        _processTick(towers);
+    }
+}
+
+function _processTick(TowerDetails[] memory towers) internal {
+    for (uint256 i = 0; i < towers.length; i++) {
         TowerDetails memory tower = towers[i];
 
-        if (tower.health == 0) {
-          continue;
+        if (tower.health == 0 || !tower.projectile) {
+            continue;
         }
 
-        if (!tower.projectile) {
-          continue;
+        (int8 newProjectileX, int8 newProjectileY) = _getProjectilePosition(tower.projectileX, tower.projectileY);
+
+        if (newProjectileX > 13) {
+            towers[i].projectile = false;
+            continue;
         }
 
-        (uint8 newX, uint8 newY) = _getProjectilePosition(tower.projectileX, tower.projectileY);
+        (int8[] memory previousXTrajectory, int8[] memory previousYTrajectory) = ProjectileTrajectory.get(tower.id);
+
+        // Add the new position after the last position in the trajectory array
+        int8[] memory newXTrajectory = new int8[](previousXTrajectory.length + 1);
+        int8[] memory newYTrajectory = new int8[](previousYTrajectory.length + 1);
+
+        for (uint256 j = 0; j < previousXTrajectory.length; j++) {
+            newXTrajectory[j] = previousXTrajectory[j];
+            newYTrajectory[j] = previousYTrajectory[j];
+        }
+
+        newXTrajectory[previousXTrajectory.length] = newProjectileX;
+        newYTrajectory[previousYTrajectory.length] = newProjectileY;
+
+        ProjectileTrajectory.set(tower.id, newXTrajectory, newYTrajectory);
 
         for (uint256 j = 0; j < towers.length; j++) {
-          TowerDetails memory otherTower = towers[j];
-
-          if (otherTower.health == 0) {
-            continue;
-          }
-
-          if (!otherTower.projectile) {
-            continue;
-          }
-
-          if (newX == otherTower.projectileX && newY == otherTower.projectileY) {
-            // 3.1. If 2 projectiles collide, remove both projectiles
-            towers[i].projectile = false;
-
-            towers[j].projectile = false;
-          }
-        }
-
-        bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(newX, newY));
-
-        if (positionEntity != 0) {
-          uint8 newHealth = Health.getCurrentHealth(positionEntity) - 1;
-          if (Castle.get(positionEntity)) {
-            // 3.2. If a projectile hits a castle, apply 1 damage to the castle and remove the projectile
-            Health.setCurrentHealth(positionEntity, newHealth);
-            towers[i].projectile = false;
-          } else {
-            // 3.3. If a projectile hits a tower, apply 1 damage to the tower and remove the projectile
-            Health.setCurrentHealth(positionEntity, newHealth);
-            towers[i].projectile = false;
-
-            if (newHealth == 0) {
-              // 3.4. If the tower has 0 health, remove the tower
-              address ownerAddress = Owner.get(positionEntity);
-              bytes32 owner = addressToEntityKey(ownerAddress);
-              bytes32[] memory ownerTowers = OwnerTowers.get(owner);
-              bytes32[] memory updatedTowers = new bytes32[](ownerTowers.length - 1);
-
-              index = 0;
-              for (uint256 j = 0; j < ownerTowers.length; j++) {
-                if (ownerTowers[j] != positionEntity) {
-                  updatedTowers[index] = ownerTowers[j];
-                  index += 1;
-                }
-              }
-
-              OwnerTowers.set(owner, updatedTowers);
-
-              Owner.set(positionEntity, address(0));
-              Health.set(positionEntity, 0, 5);
-              EntityAtPosition.set(positionToEntityKey(newX, newY), 0);
+            if (_checkProjectileCollision(towers, i, j, newProjectileX, newProjectileY)) {
+                break;
             }
-          }
-        } else {
-          towers[i].projectileX = newX;
-          towers[i].projectileY = newY;
         }
-      }
 
-      tick += 1;
+        _handleProjectileMovement(towers, i, newProjectileX, newProjectileY);
     }
-  }
+}
 
-  function _getProjectilePosition(uint8 x, uint8 y) internal pure returns (uint8, uint8) {
+function _checkProjectileCollision(
+    TowerDetails[] memory towers,
+    uint256 i,
+    uint256 j,
+    int8 newProjectileX,
+    int8 newProjectileY
+) internal pure returns (bool) {
+    if (i == j || towers[j].health == 0 || !towers[j].projectile) {
+        return false;
+    }
+
+    if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
+        towers[i].projectile = false;
+        towers[j].projectile = false;
+        return true;
+    }
+
+    return false;
+}
+
+function _handleProjectileMovement(
+    TowerDetails[] memory towers,
+    uint256 i,
+    int8 newProjectileX,
+    int8 newProjectileY
+) internal {
+    bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(newProjectileX, newProjectileY));
+
+    if (positionEntity != 0) {
+        _handleCollision(towers, i, positionEntity);
+    } else {
+        towers[i].projectileX = newProjectileX;
+        towers[i].projectileY = newProjectileY;
+    }
+}
+
+function _handleCollision(TowerDetails[] memory towers, uint256 i, bytes32 positionEntity) internal {
+    uint8 newHealth = Health.getCurrentHealth(positionEntity) - 1;
+
+    if (Castle.get(positionEntity)) {
+        Health.setCurrentHealth(positionEntity, newHealth);
+        towers[i].projectile = false;
+    } else {
+        Health.setCurrentHealth(positionEntity, newHealth);
+        towers[i].projectile = false;
+
+        if (newHealth == 0) {
+            _removeDestroyedTower(positionEntity);
+        }
+    }
+}
+
+function _removeDestroyedTower(bytes32 positionEntity) internal {
+    address ownerAddress = Owner.get(positionEntity);
+    bytes32 owner = addressToEntityKey(ownerAddress);
+
+    bytes32[] memory ownerTowers = OwnerTowers.get(owner);
+    bytes32[] memory updatedTowers = new bytes32[](ownerTowers.length - 1);
+    uint256 index = 0;
+
+    for (uint256 i = 0; i < ownerTowers.length; i++) {
+        if (ownerTowers[i] != positionEntity) {
+            updatedTowers[index++] = ownerTowers[i];
+        }
+    }
+
+    OwnerTowers.set(owner, updatedTowers);
+    Owner.set(positionEntity, address(0));
+    Health.set(positionEntity, 0, 5);
+    EntityAtPosition.set(positionToEntityKey(Position.getX(positionEntity), Position.getY(positionEntity)), 0);
+    Position.set(positionEntity, -1, -1);
+}
+
+  function _getProjectilePosition(int8 x, int8 y) internal pure returns (int8, int8) {
     return (x + 1, y);
   }
 }

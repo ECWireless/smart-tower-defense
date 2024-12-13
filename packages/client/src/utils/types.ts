@@ -16,6 +16,7 @@ export type Tower = {
   currentHealth: number;
   maxHealth: number;
   projectile: boolean;
+  projectileTrajectory: { x: number; y: number }[];
   x: number;
   y: number;
 };

@@ -22,7 +22,7 @@ import { positionToEntityKey } from "../positionToEntityKey.sol";
 // bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
 
 contract TowerSystem is System {
-  function installTower(bytes32 potentialGameId, bool projectile, uint8 x, uint8 y) external returns (bytes32) {
+  function installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     bytes32 player = addressToEntityKey(playerAddress);
 
@@ -35,7 +35,7 @@ contract TowerSystem is System {
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
     require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
 
-    (uint8 height, uint8 width) = MapConfig.get();
+    (int8 height, int8 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
 
@@ -75,7 +75,7 @@ contract TowerSystem is System {
     return towerId;
   }
 
-  function moveTower(bytes32 potentialGameId, bytes32 towerId, uint8 x, uint8 y) external returns (bytes32) {
+  function moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     bytes32 player = addressToEntityKey(playerAddress);
 
@@ -90,7 +90,7 @@ contract TowerSystem is System {
 
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
 
-    (uint8 height, uint8 width) = MapConfig.get();
+    (int8 height, int8 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
 
@@ -99,7 +99,7 @@ contract TowerSystem is System {
     bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(x, y));
     require(positionEntity == 0, "TowerSystem: position is occupied");
 
-    (uint8 oldX, uint8 oldY) = Position.get(towerId);
+    (int8 oldX, int8 oldY) = Position.get(towerId);
     EntityAtPosition.set(positionToEntityKey(oldX, oldY), 0);
 
     Position.set(towerId, x, y);

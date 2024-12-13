@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
-import { GiStoneTower } from 'react-icons/gi';
+import { GiBulletBill, GiMineExplosion, GiStoneTower } from 'react-icons/gi';
 import { useParams } from 'react-router-dom';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
@@ -42,6 +42,8 @@ import { Tooltip } from '../components/ui/tooltip';
 import { useMUD } from '../MUDContext';
 import { type Game, type Tower } from '../utils/types';
 
+const MAX_TICKS = 12;
+
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
   const {
@@ -53,6 +55,7 @@ export const GamePage = (): JSX.Element => {
       Owner,
       Position,
       Projectile,
+      ProjectileTrajectory,
       Tower,
     },
     systemCalls: { installTower, moveTower, nextTurn },
@@ -72,6 +75,8 @@ export const GamePage = (): JSX.Element => {
   >('none');
 
   const [isChangingTurn, setIsChangingTurn] = useState(false);
+  const [triggerAnimation, setTriggerAnimation] = useState(false);
+  const [tickCount, setTickCount] = useState(0);
 
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
 
@@ -111,11 +116,27 @@ export const GamePage = (): JSX.Element => {
   ]).map(entity => {
     const position = getComponentValueStrict(Position, entity);
     const health = getComponentValueStrict(Health, entity);
+    const projectileTrajectoryUnformatted = getComponentValue(
+      ProjectileTrajectory,
+      entity,
+    );
+
+    const projectileTrajectory = [];
+    if (projectileTrajectoryUnformatted) {
+      for (let i = 0; i < projectileTrajectoryUnformatted.x.length; i++) {
+        projectileTrajectory.push({
+          x: projectileTrajectoryUnformatted.x[i],
+          y: projectileTrajectoryUnformatted.y[i],
+        });
+      }
+    }
+
     return {
       id: entity,
       currentHealth: health.currentHealth,
       maxHealth: health.maxHealth,
       projectile: !!getComponentValue(Projectile, entity),
+      projectileTrajectory,
       x: position.x,
       y: position.y,
     };
@@ -277,6 +298,9 @@ export const GamePage = (): JSX.Element => {
       });
 
       fetchGame();
+      if (game.turn === game.player2Address) {
+        setTriggerAnimation(true);
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -290,6 +314,22 @@ export const GamePage = (): JSX.Element => {
       setIsChangingTurn(false);
     }
   }, [fetchGame, game, nextTurn]);
+
+  useEffect(() => {
+    if (!game) return () => {};
+    if (game.turn !== game.player1Address) return () => {};
+    if (!triggerAnimation) return () => {};
+
+    const interval = setInterval(() => {
+      if (tickCount >= MAX_TICKS - 1) {
+        setTriggerAnimation(false);
+        setTickCount(0);
+        return;
+      }
+      setTickCount(prev => (prev + 1) % MAX_TICKS);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [game, tickCount, triggerAnimation]);
 
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
@@ -377,7 +417,7 @@ export const GamePage = (): JSX.Element => {
                           handleDragStart(e, zeroHash, 'defense')
                         }
                       >
-                        <GiStoneTower color="red" size={20} />
+                        <GiStoneTower color="orange" size={20} />
                       </Box>
                     </Tooltip>
                   </VStack>
@@ -389,8 +429,68 @@ export const GamePage = (): JSX.Element => {
                 gridTemplateColumns="repeat(14, 1fr)"
                 gridTemplateRows="repeat(7, 1fr)"
                 h="300px"
+                position="relative"
                 w="600px"
               >
+                {triggerAnimation &&
+                  towers.map(tower => {
+                    if (tower.projectileTrajectory[tickCount]) {
+                      const towerCollision = towers.find(
+                        _tower =>
+                          _tower.x ===
+                            tower.projectileTrajectory[tickCount].x &&
+                          _tower.y === tower.projectileTrajectory[tickCount].y,
+                      );
+
+                      const castleCollision =
+                        enemyCastlePosition?.x ===
+                          tower.projectileTrajectory[tickCount].x &&
+                        enemyCastlePosition?.y ===
+                          tower.projectileTrajectory[tickCount].y;
+
+                      const collision = towerCollision || castleCollision;
+
+                      if (collision) {
+                        return (
+                          <Box
+                            id={`projectile-${tower.id}`}
+                            key={`projectile-${tower.id}`}
+                            alignItems="center"
+                            display="flex"
+                            h="calc(100% / 7)"
+                            justifyContent="center"
+                            left={`calc((100% / 14) * ${tower.projectileTrajectory[tickCount].x})`}
+                            position="absolute"
+                            top={`calc((100% / 7) * ${tower.projectileTrajectory[tickCount].y})`}
+                            w="calc(100% / 14)"
+                            zIndex={1}
+                          >
+                            <GiMineExplosion color="red" size={20} />
+                          </Box>
+                        );
+                      }
+
+                      return (
+                        <Box
+                          id={`projectile-${tower.id}`}
+                          key={`projectile-${tower.id}`}
+                          alignItems="center"
+                          display="flex"
+                          h="calc(100% / 7)"
+                          justifyContent="center"
+                          left={`calc((100% / 14) * ${tower.projectileTrajectory[tickCount].x})`}
+                          position="absolute"
+                          top={`calc((100% / 7) * ${tower.projectileTrajectory[tickCount].y})`}
+                          w="calc(100% / 14)"
+                          zIndex={1}
+                        >
+                          <GiBulletBill color="black" size={20} />
+                        </Box>
+                      );
+                    } else {
+                      return null;
+                    }
+                  })}
                 {Array.from({ length: 98 }).map((_, index) => {
                   const row = Math.floor(index / 14);
                   const col = index % 14;
@@ -477,7 +577,9 @@ export const GamePage = (): JSX.Element => {
                               }
                             >
                               <GiStoneTower
-                                color={activeTower.projectile ? 'blue' : 'red'}
+                                color={
+                                  activeTower.projectile ? 'blue' : 'orange'
+                                }
                                 size={20}
                               />
                             </Box>

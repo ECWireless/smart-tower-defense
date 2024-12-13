@@ -44,8 +44,8 @@ export default defineWorld({
     },
     MapConfig: {
       schema: {
-        height: "uint8",
-        width: "uint8",
+        height: "int8",
+        width: "int8",
       },
       key: [],
       codegen: {
@@ -57,8 +57,8 @@ export default defineWorld({
     Position: {
       schema: {
         id: "bytes32",
-        x: "uint8",
-        y: "uint8",
+        x: "int8",
+        y: "int8",
       },
       key: ["id"],
       codegen: {
@@ -66,6 +66,17 @@ export default defineWorld({
       },
     },
     Projectile: "bool",
+    ProjectileTrajectory: {
+      schema: {
+        id: "bytes32",
+        x: "int8[]",
+        y: "int8[]",
+      },
+      key: ["id"],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     Tower: "bool",
   },
 });

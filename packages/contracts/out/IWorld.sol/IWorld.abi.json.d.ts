@@ -92,13 +92,13 @@ declare const abi: [
       },
       {
         "name": "x",
-        "type": "uint8",
-        "internalType": "uint8"
+        "type": "int8",
+        "internalType": "int8"
       },
       {
         "name": "y",
-        "type": "uint8",
-        "internalType": "uint8"
+        "type": "int8",
+        "internalType": "int8"
       }
     ],
     "outputs": [
@@ -126,13 +126,13 @@ declare const abi: [
       },
       {
         "name": "x",
-        "type": "uint8",
-        "internalType": "uint8"
+        "type": "int8",
+        "internalType": "int8"
       },
       {
         "name": "y",
-        "type": "uint8",
-        "internalType": "uint8"
+        "type": "int8",
+        "internalType": "int8"
       }
     ],
     "outputs": [
