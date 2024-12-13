@@ -92,13 +92,13 @@
       },
       {
         "name": "x",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "uint8",
+        "internalType": "uint8"
       },
       {
         "name": "y",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "uint8",
+        "internalType": "uint8"
       }
     ],
     "outputs": [
@@ -126,13 +126,13 @@
       },
       {
         "name": "x",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "uint8",
+        "internalType": "uint8"
       },
       {
         "name": "y",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "uint8",
+        "internalType": "uint8"
       }
     ],
     "outputs": [

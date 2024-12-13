@@ -2,7 +2,19 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, Position, Projectile, Tower } from "../codegen/index.sol";
+import {
+  CurrentGame,
+  EntityAtPosition,
+  Game,
+  GameData,
+  Health,
+  MapConfig,
+  Owner,
+  OwnerTowers,
+  Position,
+  Projectile,
+  Tower
+} from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 
@@ -10,7 +22,7 @@ import { positionToEntityKey } from "../positionToEntityKey.sol";
 // bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
 
 contract TowerSystem is System {
-  function installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) external returns (bytes32) {
+  function installTower(bytes32 potentialGameId, bool projectile, uint8 x, uint8 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     bytes32 player = addressToEntityKey(playerAddress);
 
@@ -23,7 +35,7 @@ contract TowerSystem is System {
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
     require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
 
-    (int8 height, int8 width) = MapConfig.get();
+    (uint8 height, uint8 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
 
@@ -37,8 +49,19 @@ contract TowerSystem is System {
     Tower.set(towerId, true);
     CurrentGame.set(towerId, currentGameId);
     Owner.set(towerId, playerAddress);
-    Health.set(towerId, 5, 5);
 
+    // Add tower to player's list of towers
+    bytes32[] memory playerTowers = OwnerTowers.get(player);
+    bytes32[] memory updatedTowers = new bytes32[](playerTowers.length + 1);
+
+    for (uint256 i = 0; i < playerTowers.length; i++) {
+      updatedTowers[i] = playerTowers[i];
+    }
+
+    updatedTowers[playerTowers.length] = towerId;
+    OwnerTowers.set(player, updatedTowers);
+    
+    Health.set(towerId, 2, 2);
     Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(x, y), towerId);
 
@@ -52,7 +75,7 @@ contract TowerSystem is System {
     return towerId;
   }
 
-  function moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external returns (bytes32) {
+  function moveTower(bytes32 potentialGameId, bytes32 towerId, uint8 x, uint8 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     bytes32 player = addressToEntityKey(playerAddress);
 
@@ -67,7 +90,7 @@ contract TowerSystem is System {
 
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
 
-    (int8 height, int8 width) = MapConfig.get();
+    (uint8 height, uint8 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
 
@@ -76,7 +99,7 @@ contract TowerSystem is System {
     bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(x, y));
     require(positionEntity == 0, "TowerSystem: position is occupied");
 
-    (int8 oldX, int8 oldY) = Position.get(towerId);
+    (uint8 oldX, uint8 oldY) = Position.get(towerId);
     EntityAtPosition.set(positionToEntityKey(oldX, oldY), 0);
 
     Position.set(towerId, x, y);

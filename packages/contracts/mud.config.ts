@@ -15,11 +15,11 @@ export default defineWorld({
     Game: {
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
-        actionCount: "int8",
+        actionCount: "uint8",
         endTimestamp: "uint256",
-        player1: "address",
-        player2: "address",
-        roundCount: "int8",
+        player1Address: "address",
+        player2Address: "address",
+        roundCount: "uint8",
         startTimestamp: "uint256",
         turn: "address",
       },
@@ -28,8 +28,8 @@ export default defineWorld({
     Health: {
       schema: {
         id: "bytes32",
-        currentHealth: "int8",
-        maxHealth: "int8",
+        currentHealth: "uint8",
+        maxHealth: "uint8",
       },
       key: ["id"],
       codegen: {
@@ -44,8 +44,8 @@ export default defineWorld({
     },
     MapConfig: {
       schema: {
-        height: "int8",
-        width: "int8",
+        height: "uint8",
+        width: "uint8",
       },
       key: [],
       codegen: {
@@ -53,11 +53,12 @@ export default defineWorld({
       },
     },
     Owner: "address",
+    OwnerTowers: "bytes32[]",
     Position: {
       schema: {
         id: "bytes32",
-        x: "int8",
-        y: "int8",
+        x: "uint8",
+        y: "uint8",
       },
       key: ["id"],
       codegen: {

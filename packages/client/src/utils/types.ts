@@ -4,8 +4,8 @@ export type Game = {
   id: string;
   actionCount: number;
   endTimestamp: bigint;
-  player1: Address;
-  player2: Address;
+  player1Address: Address;
+  player2Address: Address;
   roundCount: number;
   startTimestamp: bigint;
   turn: Address;

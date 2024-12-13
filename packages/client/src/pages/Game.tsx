@@ -78,7 +78,7 @@ export const GamePage = (): JSX.Element => {
   const myCastlePosition = useEntityQuery([
     Has(Castle),
     HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player1 }),
+    HasValue(Owner, { value: game?.player1Address }),
   ]).map(entity => {
     const _myCastlePosition = getComponentValueStrict(Position, entity);
     const _myCastleHealth = getComponentValueStrict(Health, entity);
@@ -93,7 +93,7 @@ export const GamePage = (): JSX.Element => {
   const enemyCastlePosition = useEntityQuery([
     Has(Castle),
     HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player2 }),
+    HasValue(Owner, { value: game?.player2Address }),
   ]).map(entity => {
     const _enemyCastlePosition = getComponentValueStrict(Position, entity);
     const _enemyCastleHealth = getComponentValueStrict(Health, entity);
@@ -129,8 +129,8 @@ export const GamePage = (): JSX.Element => {
         id,
         actionCount: _game.actionCount,
         endTimestamp: _game.endTimestamp,
-        player1: _game.player1 as Address,
-        player2: _game.player2 as Address,
+        player1Address: _game.player1Address as Address,
+        player2Address: _game.player2Address as Address,
         roundCount: _game.roundCount,
         startTimestamp: _game.startTimestamp,
         turn: _game.turn as Address,
@@ -294,7 +294,7 @@ export const GamePage = (): JSX.Element => {
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
     if (game.turn === zeroAddress) return true;
-    return game.turn === game.player1 && game.actionCount === 0;
+    return game.turn === game.player1Address && game.actionCount === 0;
   }, [game]);
 
   if (isLoadingGame) {

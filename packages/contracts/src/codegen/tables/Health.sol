@@ -25,8 +25,8 @@ library Health {
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (int8, int8)
-  Schema constant _valueSchema = Schema.wrap(0x0002020020200000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint8, uint8)
+  Schema constant _valueSchema = Schema.wrap(0x0002020000000000000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -64,29 +64,29 @@ library Health {
   /**
    * @notice Get currentHealth.
    */
-  function getCurrentHealth(bytes32 id) internal view returns (int8 currentHealth) {
+  function getCurrentHealth(bytes32 id) internal view returns (uint8 currentHealth) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (uint8(bytes1(_blob)));
   }
 
   /**
    * @notice Get currentHealth.
    */
-  function _getCurrentHealth(bytes32 id) internal view returns (int8 currentHealth) {
+  function _getCurrentHealth(bytes32 id) internal view returns (uint8 currentHealth) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (uint8(bytes1(_blob)));
   }
 
   /**
    * @notice Set currentHealth.
    */
-  function setCurrentHealth(bytes32 id, int8 currentHealth) internal {
+  function setCurrentHealth(bytes32 id, uint8 currentHealth) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -96,7 +96,7 @@ library Health {
   /**
    * @notice Set currentHealth.
    */
-  function _setCurrentHealth(bytes32 id, int8 currentHealth) internal {
+  function _setCurrentHealth(bytes32 id, uint8 currentHealth) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -106,29 +106,29 @@ library Health {
   /**
    * @notice Get maxHealth.
    */
-  function getMaxHealth(bytes32 id) internal view returns (int8 maxHealth) {
+  function getMaxHealth(bytes32 id) internal view returns (uint8 maxHealth) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (uint8(bytes1(_blob)));
   }
 
   /**
    * @notice Get maxHealth.
    */
-  function _getMaxHealth(bytes32 id) internal view returns (int8 maxHealth) {
+  function _getMaxHealth(bytes32 id) internal view returns (uint8 maxHealth) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (uint8(bytes1(_blob)));
   }
 
   /**
    * @notice Set maxHealth.
    */
-  function setMaxHealth(bytes32 id, int8 maxHealth) internal {
+  function setMaxHealth(bytes32 id, uint8 maxHealth) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -138,7 +138,7 @@ library Health {
   /**
    * @notice Set maxHealth.
    */
-  function _setMaxHealth(bytes32 id, int8 maxHealth) internal {
+  function _setMaxHealth(bytes32 id, uint8 maxHealth) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -148,7 +148,7 @@ library Health {
   /**
    * @notice Get the full data.
    */
-  function get(bytes32 id) internal view returns (int8 currentHealth, int8 maxHealth) {
+  function get(bytes32 id) internal view returns (uint8 currentHealth, uint8 maxHealth) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -163,7 +163,7 @@ library Health {
   /**
    * @notice Get the full data.
    */
-  function _get(bytes32 id) internal view returns (int8 currentHealth, int8 maxHealth) {
+  function _get(bytes32 id) internal view returns (uint8 currentHealth, uint8 maxHealth) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -178,7 +178,7 @@ library Health {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(bytes32 id, int8 currentHealth, int8 maxHealth) internal {
+  function set(bytes32 id, uint8 currentHealth, uint8 maxHealth) internal {
     bytes memory _staticData = encodeStatic(currentHealth, maxHealth);
 
     EncodedLengths _encodedLengths;
@@ -193,7 +193,7 @@ library Health {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(bytes32 id, int8 currentHealth, int8 maxHealth) internal {
+  function _set(bytes32 id, uint8 currentHealth, uint8 maxHealth) internal {
     bytes memory _staticData = encodeStatic(currentHealth, maxHealth);
 
     EncodedLengths _encodedLengths;
@@ -208,10 +208,10 @@ library Health {
   /**
    * @notice Decode the tightly packed blob of static data using this table's field layout.
    */
-  function decodeStatic(bytes memory _blob) internal pure returns (int8 currentHealth, int8 maxHealth) {
-    currentHealth = (int8(uint8(Bytes.getBytes1(_blob, 0))));
+  function decodeStatic(bytes memory _blob) internal pure returns (uint8 currentHealth, uint8 maxHealth) {
+    currentHealth = (uint8(Bytes.getBytes1(_blob, 0)));
 
-    maxHealth = (int8(uint8(Bytes.getBytes1(_blob, 1))));
+    maxHealth = (uint8(Bytes.getBytes1(_blob, 1)));
   }
 
   /**
@@ -224,7 +224,7 @@ library Health {
     bytes memory _staticData,
     EncodedLengths,
     bytes memory
-  ) internal pure returns (int8 currentHealth, int8 maxHealth) {
+  ) internal pure returns (uint8 currentHealth, uint8 maxHealth) {
     (currentHealth, maxHealth) = decodeStatic(_staticData);
   }
 
@@ -252,7 +252,7 @@ library Health {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(int8 currentHealth, int8 maxHealth) internal pure returns (bytes memory) {
+  function encodeStatic(uint8 currentHealth, uint8 maxHealth) internal pure returns (bytes memory) {
     return abi.encodePacked(currentHealth, maxHealth);
   }
 
@@ -263,8 +263,8 @@ library Health {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
-    int8 currentHealth,
-    int8 maxHealth
+    uint8 currentHealth,
+    uint8 maxHealth
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData = encodeStatic(currentHealth, maxHealth);
 
