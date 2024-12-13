@@ -15,15 +15,28 @@ export default defineWorld({
     Game: {
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
-        actionCount: "int8",
+        actionCount: "uint8",
         endTimestamp: "uint256",
-        player1: "address",
-        player2: "address",
-        roundCount: "int8",
+        player1Address: "address",
+        player2Address: "address",
+        roundCount: "uint8",
         startTimestamp: "uint256",
         turn: "address",
+        winner: "address",
       },
       key: ["id"],
+    },
+    SavedGame: "bytes32[]",
+    Health: {
+      schema: {
+        id: "bytes32",
+        currentHealth: "uint8",
+        maxHealth: "uint8",
+      },
+      key: ["id"],
+      codegen: {
+        dataStruct: false,
+      },
     },
     LogicSystemAddress: {
       schema: {
@@ -42,6 +55,7 @@ export default defineWorld({
       },
     },
     Owner: "address",
+    OwnerTowers: "bytes32[]",
     Position: {
       schema: {
         id: "bytes32",
@@ -54,6 +68,17 @@ export default defineWorld({
       },
     },
     Projectile: "bool",
+    ProjectileTrajectory: {
+      schema: {
+        id: "bytes32",
+        x: "int8[]",
+        y: "int8[]",
+      },
+      key: ["id"],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     Tower: "bool",
   },
 });

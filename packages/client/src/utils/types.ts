@@ -4,16 +4,20 @@ export type Game = {
   id: string;
   actionCount: number;
   endTimestamp: bigint;
-  player1: Address;
-  player2: Address;
+  player1Address: Address;
+  player2Address: Address;
   roundCount: number;
   startTimestamp: bigint;
   turn: Address;
+  winner: Address;
 };
 
 export type Tower = {
   id: string;
+  currentHealth: number;
+  maxHealth: number;
   projectile: boolean;
+  projectileTrajectory: { x: number; y: number }[];
   x: number;
   y: number;
 };
