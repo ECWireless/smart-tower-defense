@@ -26,6 +26,7 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    SavedGame: "bytes32[]",
     Health: {
       schema: {
         id: "bytes32",

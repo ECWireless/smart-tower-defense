@@ -8,6 +8,7 @@ import { Counter } from "./tables/Counter.sol";
 import { CurrentGame } from "./tables/CurrentGame.sol";
 import { EntityAtPosition } from "./tables/EntityAtPosition.sol";
 import { Game, GameData } from "./tables/Game.sol";
+import { SavedGame } from "./tables/SavedGame.sol";
 import { Health } from "./tables/Health.sol";
 import { LogicSystemAddress } from "./tables/LogicSystemAddress.sol";
 import { MapConfig } from "./tables/MapConfig.sol";
