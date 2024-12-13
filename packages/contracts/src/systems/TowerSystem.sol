@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { CurrentGame, EntityAtPosition, MapConfig, Owner, Game, GameData, Position, Projectile, Tower } from "../codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, Position, Projectile, Tower } from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 
@@ -37,6 +37,8 @@ contract TowerSystem is System {
     Tower.set(towerId, true);
     CurrentGame.set(towerId, currentGameId);
     Owner.set(towerId, playerAddress);
+    Health.set(towerId, 5, 5);
+
     Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(x, y), towerId);
 

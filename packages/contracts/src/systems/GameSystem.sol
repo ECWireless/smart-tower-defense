@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { Castle, CurrentGame, EntityAtPosition, Game, GameData, Owner, Position } from "../codegen/index.sol";
+import { Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, Owner, Position } from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 
@@ -48,6 +48,9 @@ contract GameSystem is System {
 
     Position.set(castle1Id, 0, 3);
     Position.set(castle2Id, 13, 3);
+
+    Health.set(castle1Id, 10, 10);
+    Health.set(castle2Id, 10, 10);
 
     EntityAtPosition.set(positionToEntityKey(0, 3), castle1Id);
     EntityAtPosition.set(positionToEntityKey(13, 3), castle2Id);

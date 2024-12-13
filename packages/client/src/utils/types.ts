@@ -13,6 +13,8 @@ export type Game = {
 
 export type Tower = {
   id: string;
+  currentHealth: number;
+  maxHealth: number;
   projectile: boolean;
   x: number;
   y: number;

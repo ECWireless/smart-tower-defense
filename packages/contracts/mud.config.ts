@@ -25,6 +25,17 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    Health: {
+      schema: {
+        id: "bytes32",
+        currentHealth: "int8",
+        maxHealth: "int8",
+      },
+      key: ["id"],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     LogicSystemAddress: {
       schema: {
         value: "address",

@@ -49,6 +49,7 @@ export const GamePage = (): JSX.Element => {
       Castle,
       CurrentGame,
       Game: GameComponent,
+      Health,
       Owner,
       Position,
       Projectile,
@@ -80,7 +81,10 @@ export const GamePage = (): JSX.Element => {
     HasValue(Owner, { value: game?.player1 }),
   ]).map(entity => {
     const _myCastlePosition = getComponentValueStrict(Position, entity);
+    const _myCastleHealth = getComponentValueStrict(Health, entity);
     return {
+      currentHealth: _myCastleHealth.currentHealth,
+      maxHealth: _myCastleHealth.maxHealth,
       x: _myCastlePosition.x,
       y: _myCastlePosition.y,
     };
@@ -92,7 +96,10 @@ export const GamePage = (): JSX.Element => {
     HasValue(Owner, { value: game?.player2 }),
   ]).map(entity => {
     const _enemyCastlePosition = getComponentValueStrict(Position, entity);
+    const _enemyCastleHealth = getComponentValueStrict(Health, entity);
     return {
+      currentHealth: _enemyCastleHealth.currentHealth,
+      maxHealth: _enemyCastleHealth.maxHealth,
       x: _enemyCastlePosition.x,
       y: _enemyCastlePosition.y,
     };
@@ -103,8 +110,11 @@ export const GamePage = (): JSX.Element => {
     HasValue(CurrentGame, { value: game?.id }),
   ]).map(entity => {
     const position = getComponentValueStrict(Position, entity);
+    const health = getComponentValueStrict(Health, entity);
     return {
       id: entity,
+      currentHealth: health.currentHealth,
+      maxHealth: health.maxHealth,
       projectile: !!getComponentValue(Projectile, entity),
       x: position.x,
       y: position.y,
@@ -446,11 +456,11 @@ export const GamePage = (): JSX.Element => {
                         >
                           <Tooltip
                             closeDelay={200}
-                            content={
+                            content={`${
                               activeTower.projectile
                                 ? 'Offensive Tower'
                                 : 'Defensive Tower'
-                            }
+                            } - Health: ${activeTower.currentHealth}/${activeTower.maxHealth}`}
                             openDelay={200}
                           >
                             <Box
@@ -478,7 +488,7 @@ export const GamePage = (): JSX.Element => {
                       {myCastle && (
                         <Tooltip
                           closeDelay={200}
-                          content="Your Castle"
+                          content={`Your Castle - Health: ${myCastlePosition?.currentHealth}/${myCastlePosition?.maxHealth}`}
                           openDelay={200}
                         >
                           <Box
@@ -497,7 +507,7 @@ export const GamePage = (): JSX.Element => {
                       {enemyCastle && (
                         <Tooltip
                           closeDelay={200}
-                          content="Enemy Castle"
+                          content={`Enemy Castle - Health: ${enemyCastlePosition?.currentHealth}/${enemyCastlePosition?.maxHealth}`}
                           openDelay={200}
                         >
                           <Box
