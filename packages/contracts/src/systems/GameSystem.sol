@@ -2,24 +2,19 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import {
-  Castle,
-  CurrentGame,
-  EntityAtPosition,
-  Health,
-  Game,
-  GameData,
-  Owner,
-  OwnerTowers,
-  Position,
-  Projectile,
-  ProjectileTrajectory
-} from "../codegen/index.sol";
+import { SystemSwitch } from "@latticexyz/world-modules/src/utils/SystemSwitch.sol";
+import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower } from "../codegen/index.sol";
+import { ActionType } from "../codegen/common.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
+import { ITowerSystem } from "../codegen/world/IWorld.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 
 contract GameSystem is System {
+  function getGameSystemAddress() external view returns (address) {
+    return address(this);
+  }
+
   function createGame(address player2Address) external returns (bytes32) {
     address player1Address = _msgSender();
     bytes32 player1 = addressToEntityKey(player1Address);
@@ -83,15 +78,15 @@ contract GameSystem is System {
     address player1Address = game.player1Address;
     address player2Address = game.player2Address;
 
-    address currentPlayer = game.turn;
+    address currentPlayerAddress = game.turn;
 
     if (player2Address != address(0)) {
-      require(_msgSender() == currentPlayer, "GameSystem: it's not your turn");
+      require(_msgSender() == currentPlayerAddress, "GameSystem: it's not your turn");
     }
 
     if (game.turn == player1Address) {
       // TODO: Maybe bring back this restriction
-      //   require(newGame.actionCount == 0, "GameSystem: player has actions remaining");
+      // require(newGame.actionCount == 0, "GameSystem: player has actions remaining");
 
       bytes32 player1 = addressToEntityKey(player1Address);
       bytes32 player2 = addressToEntityKey(player2Address);
@@ -103,8 +98,44 @@ contract GameSystem is System {
       _executeRoundResults(gameId);
     }
 
-    Game.setTurn(gameId, currentPlayer == player1Address ? player2Address : player1Address);
+    Game.setTurn(gameId, currentPlayerAddress == player1Address ? player2Address : player1Address);
     Game.setActionCount(gameId, 1);
+
+    if (Game.getTurn(gameId) == player2Address) {
+      _executePlayer2Actions(gameId, player1Address, player2Address);
+    }
+  }
+
+  function _executePlayer2Actions(bytes32 gameId, address player1Address, address player2Address) internal {
+    bytes32 player1 = addressToEntityKey(player1Address);
+    bytes32 player2 = addressToEntityKey(player2Address);
+    bytes32[] memory actionIds = SavedGame.get(player2);
+
+    uint256 turnCount = Game.getRoundCount(gameId) - 1;
+
+    if (actionIds.length > turnCount) {
+      ActionData memory action = Action.get(actionIds[turnCount]);
+      if (action.actionType == ActionType.Install) {
+        SystemSwitch.call(
+          abi.encodeCall(
+            ITowerSystem.app__installTower,
+            (CurrentGame.get(player1), action.projectile, action.newX, action.newY)
+          )
+        );
+      } else if (action.actionType == ActionType.Move) {
+        SystemSwitch.call(
+          abi.encodeCall(
+            ITowerSystem.app__moveTower,
+            (
+              CurrentGame.get(player1),
+              EntityAtPosition.get(positionToEntityKey(gameId, action.oldX, action.oldY)),
+              action.newX,
+              action.newY
+            )
+          )
+        );
+      }
+    }
   }
 
   function _executeRoundResults(bytes32 gameId) internal {
@@ -181,9 +212,14 @@ contract GameSystem is System {
         continue;
       }
 
-      (int8 newProjectileX, int8 newProjectileY) = _getProjectilePosition(tower.projectileX, tower.projectileY);
+      (int8 newProjectileX, int8 newProjectileY) = _getLeftProjectilePosition(tower.projectileX, tower.projectileY);
 
-      if (newProjectileX > 13) {
+      (int8 mapWidth, int8 mapHeight) = MapConfig.get();
+      if (mapWidth / 2 < tower.x) {
+        (newProjectileX, newProjectileY) = _getRightProjectilePosition(tower.projectileX, tower.projectileY);
+      }
+
+      if (newProjectileX > mapWidth - 1 || newProjectileX < 0 || newProjectileY > mapHeight - 1 || newProjectileY < 0) {
         towers[i].projectile = false;
         continue;
       }
@@ -215,30 +251,30 @@ contract GameSystem is System {
   }
 
   function _checkProjectileCollision(
-      TowerDetails[] memory towers,
-      uint256 i,
-      uint256 j,
-      int8 newProjectileX,
-      int8 newProjectileY
+    TowerDetails[] memory towers,
+    uint256 i,
+    uint256 j,
+    int8 newProjectileX,
+    int8 newProjectileY
   ) internal pure returns (bool) {
-      if (i == j || towers[j].health == 0 || !towers[j].projectile) {
-          return false;
-      }
-
-      if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
-          towers[i].projectile = false;
-          towers[j].projectile = false;
-          return true;
-      }
-
+    if (i == j || towers[j].health == 0 || !towers[j].projectile) {
       return false;
+    }
+
+    if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
+      towers[i].projectile = false;
+      towers[j].projectile = false;
+      return true;
+    }
+
+    return false;
   }
 
   function _handleProjectileMovement(
-      TowerDetails[] memory towers,
-      uint256 i,
-      int8 newProjectileX,
-      int8 newProjectileY
+    TowerDetails[] memory towers,
+    uint256 i,
+    int8 newProjectileX,
+    int8 newProjectileY
   ) internal {
     bytes32 gameId = CurrentGame.get(towers[i].id);
     bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(gameId, newProjectileX, newProjectileY));
@@ -260,6 +296,9 @@ contract GameSystem is System {
 
       if (newHealth == 0) {
         bytes32 gameId = CurrentGame.get(towers[i].id);
+        if (gameId == 0) {
+          gameId = CurrentGame.get(positionEntity);
+        }
         Game.setEndTimestamp(gameId, block.timestamp);
         Game.setWinner(gameId, Owner.get(towers[i].id));
       }
@@ -274,29 +313,33 @@ contract GameSystem is System {
   }
 
   function _removeDestroyedTower(bytes32 positionEntity) internal {
-      address ownerAddress = Owner.get(positionEntity);
-      bytes32 owner = addressToEntityKey(ownerAddress);
+    address ownerAddress = Owner.get(positionEntity);
+    bytes32 owner = addressToEntityKey(ownerAddress);
 
-      bytes32[] memory ownerTowers = OwnerTowers.get(owner);
-      bytes32[] memory updatedTowers = new bytes32[](ownerTowers.length - 1);
-      uint256 index = 0;
+    bytes32[] memory ownerTowers = OwnerTowers.get(owner);
+    bytes32[] memory updatedTowers = new bytes32[](ownerTowers.length - 1);
+    uint256 index = 0;
 
-      for (uint256 i = 0; i < ownerTowers.length; i++) {
-        if (ownerTowers[i] != positionEntity) {
-          updatedTowers[index++] = ownerTowers[i];
-        }
+    for (uint256 i = 0; i < ownerTowers.length; i++) {
+      if (ownerTowers[i] != positionEntity) {
+        updatedTowers[index++] = ownerTowers[i];
       }
+    }
 
-      bytes32 gameId = CurrentGame.get(positionEntity);
+    bytes32 gameId = CurrentGame.get(positionEntity);
 
-      OwnerTowers.set(owner, updatedTowers);
-      Owner.set(positionEntity, address(0));
-      Health.set(positionEntity, 0, 5);
-      EntityAtPosition.set(positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)), 0);
-      Position.set(positionEntity, -1, -1);
+    OwnerTowers.set(owner, updatedTowers);
+    Owner.set(positionEntity, address(0));
+    Health.set(positionEntity, 0, 5);
+    EntityAtPosition.set(positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)), 0);
+    Position.set(positionEntity, -1, -1);
   }
 
-  function _getProjectilePosition(int8 x, int8 y) internal pure returns (int8, int8) {
+  function _getLeftProjectilePosition(int8 x, int8 y) internal pure returns (int8, int8) {
     return (x + 1, y);
+  }
+
+  function _getRightProjectilePosition(int8 x, int8 y) internal pure returns (int8, int8) {
+    return (x - 1, y);
   }
 }
