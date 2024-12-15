@@ -65,6 +65,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__getGameSystemAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "app__getLogicSystemAddress",
     "inputs": [],
     "outputs": [

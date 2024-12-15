@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
-import { GiBulletBill, GiMineExplosion, GiStoneTower } from 'react-icons/gi';
+import { GiCannon, GiDefensiveWall, GiMineExplosion } from 'react-icons/gi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
@@ -120,8 +120,9 @@ export const GamePage = (): JSX.Element => {
     Has(Tower),
     HasValue(CurrentGame, { value: game?.id }),
   ]).map(entity => {
-    const position = getComponentValueStrict(Position, entity);
     const health = getComponentValueStrict(Health, entity);
+    const owner = getComponentValueStrict(Owner, entity).value;
+    const position = getComponentValueStrict(Position, entity);
     const projectileTrajectoryUnformatted = getComponentValue(
       ProjectileTrajectory,
       entity,
@@ -141,6 +142,7 @@ export const GamePage = (): JSX.Element => {
       id: entity,
       currentHealth: health.currentHealth,
       maxHealth: health.maxHealth,
+      owner: owner as Address,
       projectile: !!getComponentValue(Projectile, entity),
       projectileTrajectory,
       x: position.x,
@@ -389,7 +391,7 @@ export const GamePage = (): JSX.Element => {
 
   useEffect(() => {
     if (!game) return;
-    if (game.winner === zeroAddress) return;
+    if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
 
     setIsGameOverModalOpen(true);
   }, [game]);
@@ -458,7 +460,7 @@ export const GamePage = (): JSX.Element => {
                           handleDragStart(e, zeroHash, 'offense')
                         }
                       >
-                        <GiStoneTower color="blue" size={20} />
+                        <GiCannon color="blue" size={26} />
                       </Box>
                     </Tooltip>
                   </VStack>
@@ -480,7 +482,7 @@ export const GamePage = (): JSX.Element => {
                           handleDragStart(e, zeroHash, 'defense')
                         }
                       >
-                        <GiStoneTower color="orange" size={20} />
+                        <GiDefensiveWall color="blue" size={20} />
                       </Box>
                     </Tooltip>
                   </VStack>
@@ -505,13 +507,43 @@ export const GamePage = (): JSX.Element => {
                           _tower.y === tower.projectileTrajectory[tickCount].y,
                       );
 
-                      const castleCollision =
+                      const enemyCastleCollision =
                         enemyCastlePosition?.x ===
                           tower.projectileTrajectory[tickCount].x &&
                         enemyCastlePosition?.y ===
                           tower.projectileTrajectory[tickCount].y;
 
-                      const collision = towerCollision || castleCollision;
+                      const myCastleCollision =
+                        myCastlePosition?.x ===
+                          tower.projectileTrajectory[tickCount].x &&
+                        myCastlePosition?.y ===
+                          tower.projectileTrajectory[tickCount].y;
+
+                      const allOtherProjectileXPositions = towers
+                        .filter(_tower => _tower.projectile)
+                        .filter(_tower => _tower.id !== tower.id)
+                        .map(
+                          _tower => _tower.projectileTrajectory[tickCount]?.x,
+                        );
+                      const allOtherProjectileYPositions = towers
+                        .filter(_tower => _tower.projectile)
+                        .filter(_tower => _tower.id !== tower.id)
+                        .map(
+                          _tower => _tower.projectileTrajectory[tickCount]?.y,
+                        );
+                      const projectileCollision =
+                        allOtherProjectileXPositions.includes(
+                          tower.projectileTrajectory[tickCount]?.x,
+                        ) &&
+                        allOtherProjectileYPositions.includes(
+                          tower.projectileTrajectory[tickCount]?.y,
+                        );
+
+                      const collision =
+                        towerCollision ||
+                        enemyCastleCollision ||
+                        myCastleCollision ||
+                        projectileCollision;
 
                       if (collision) {
                         return (
@@ -547,7 +579,7 @@ export const GamePage = (): JSX.Element => {
                           w="calc(100% / 14)"
                           zIndex={1}
                         >
-                          <GiBulletBill color="black" size={20} />
+                          <Box bgColor="red" borderRadius="50%" h={2} w={2} />
                         </Box>
                       );
                     } else {
@@ -582,7 +614,7 @@ export const GamePage = (): JSX.Element => {
 
                   return (
                     <Box
-                      bg="green.400"
+                      bg="green.300"
                       border="1px solid black"
                       borderLeft={isMiddleLine ? '2px solid black' : 'none'}
                       h="100%"
@@ -627,8 +659,17 @@ export const GamePage = (): JSX.Element => {
                             openDelay={200}
                           >
                             <Box
-                              draggable="true"
-                              onClick={() => setIsSystemDrawerOpen(true)}
+                              draggable={!isEnemyTile}
+                              transform={
+                                activeTower.owner === game.player2Address
+                                  ? 'rotateY(180deg)'
+                                  : 'none'
+                              }
+                              onClick={() =>
+                                isEnemyTile
+                                  ? undefined
+                                  : setIsSystemDrawerOpen(true)
+                              }
                               onDragStart={e =>
                                 handleDragStart(
                                   e,
@@ -639,12 +680,25 @@ export const GamePage = (): JSX.Element => {
                                 )
                               }
                             >
-                              <GiStoneTower
-                                color={
-                                  activeTower.projectile ? 'blue' : 'orange'
-                                }
-                                size={20}
-                              />
+                              {activeTower.projectile ? (
+                                <GiCannon
+                                  color={
+                                    activeTower.owner === game.player1Address
+                                      ? 'blue'
+                                      : 'orange'
+                                  }
+                                  size={26}
+                                />
+                              ) : (
+                                <GiDefensiveWall
+                                  color={
+                                    activeTower.owner === game.player1Address
+                                      ? 'blue'
+                                      : 'orange'
+                                  }
+                                  size={20}
+                                />
+                              )}
                             </Box>
                           </Tooltip>
                         </Box>
@@ -664,7 +718,7 @@ export const GamePage = (): JSX.Element => {
                             justifyContent="center"
                             w="100%"
                           >
-                            <BiSolidCastle color="yellow" size={20} />
+                            <BiSolidCastle color="blue" size={20} />
                           </Box>
                         </Tooltip>
                       )}
@@ -683,7 +737,7 @@ export const GamePage = (): JSX.Element => {
                             justifyContent="center"
                             w="100%"
                           >
-                            <BiSolidCastle color="yellow" size={20} />
+                            <BiSolidCastle color="orange" size={20} />
                           </Box>
                         </Tooltip>
                       )}

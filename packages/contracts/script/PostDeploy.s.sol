@@ -4,9 +4,9 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { LogicSystemAddress, MapConfig, SavedGame } from "../src/codegen/index.sol";
+import { Action, ActionData, AddressBook, LogicSystemAddress, MapConfig, SavedGame } from "../src/codegen/index.sol";
+import { ActionType } from "../src/codegen/common.sol";
 import { addressToEntityKey } from "../src/addressToEntityKey.sol";
-import { ActionType, Action } from "../src/interfaces/Structs.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 
 contract PostDeploy is Script {
@@ -26,41 +26,32 @@ contract PostDeploy is Script {
 
     IWorld(worldAddress).app__runStateChange();
 
+    address gameSystemAddress = IWorld(worldAddress).app__getGameSystemAddress();
+    AddressBook.setGame(gameSystemAddress);
     MapConfig.set(7, 14);
 
-    Action[] memory actions = new Action[](2);
-    actions[0] = Action({
-      towerX: 0,
-      towerY: 0,
-      actionType: ActionType.Install,
-      projectile: true,
-      newTowerX: 11,
-      newTowerY: 3
-    });
+    ActionData[] memory actions = new ActionData[](3);
+    actions[0] = ActionData({ actionType: ActionType.Install, newX: 11, newY: 3, oldX: 0, oldY: 0, projectile: false });
+    actions[1] = ActionData({ actionType: ActionType.Move, newX: 9, newY: 3, oldX: 11, oldY: 3, projectile: false });
+    actions[2] = ActionData({ actionType: ActionType.Install, oldX: 0, oldY: 0, newX: 8, newY: 2, projectile: true });
 
-    actions[1] = Action({
-      towerX: 11,
-      towerY: 3,
-      actionType: ActionType.Move,
-      projectile: true,
-      newTowerX: 10,
-      newTowerY: 3
-    });
-
-    bytes32[] memory defaultActions = new bytes32[](2);
+    bytes32[] memory defaultActionIds = new bytes32[](3);
     for (uint256 i = 0; i < actions.length; i++) {
-      defaultActions[i] = keccak256(abi.encodePacked(
-        actions[i].towerX,
-        actions[i].towerY,
-        actions[i].actionType,
-        actions[i].projectile,
-        actions[i].newTowerX,
-        actions[i].newTowerY
-      ));
+      defaultActionIds[i] = keccak256(
+        abi.encodePacked(
+          actions[i].actionType,
+          actions[i].newX,
+          actions[i].newY,
+          actions[i].oldX,
+          actions[i].oldY,
+          actions[i].projectile
+        )
+      );
+      Action.set(defaultActionIds[i], actions[i]);
     }
 
     bytes32 playerId = addressToEntityKey(address(0));
-    SavedGame.set(playerId, defaultActions);
+    SavedGame.set(playerId, defaultActionIds);
 
     vm.stopBroadcast();
   }

@@ -2,7 +2,28 @@ import { defineWorld } from "@latticexyz/world";
 
 export default defineWorld({
   namespace: "app",
+  enums: {
+    ActionType: ["Install", "Move", "Modify"],
+  },
   tables: {
+    AddressBook: {
+      schema: {
+        game: "address",
+      },
+      key: [],
+    },
+    Action: {
+      schema: {
+        id: "bytes32",
+        actionType: "ActionType",
+        newX: "int8",
+        newY: "int8",
+        oldX: "int8",
+        oldY: "int8",
+        projectile: "bool",
+      },
+      key: ["id"],
+    },
     Castle: "bool",
     Counter: {
       schema: {
