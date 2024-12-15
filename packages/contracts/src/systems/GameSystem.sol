@@ -214,7 +214,7 @@ contract GameSystem is System {
 
       (int8 newProjectileX, int8 newProjectileY) = _getLeftProjectilePosition(tower.projectileX, tower.projectileY);
 
-      (int8 mapWidth, int8 mapHeight) = MapConfig.get();
+      (int8 mapHeight, int8 mapWidth) = MapConfig.get();
       if (mapWidth / 2 < tower.x) {
         (newProjectileX, newProjectileY) = _getRightProjectilePosition(tower.projectileX, tower.projectileY);
       }

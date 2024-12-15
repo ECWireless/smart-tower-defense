@@ -93,7 +93,6 @@ contract TowerSystem is System {
 
     GameData memory currentGame = Game.get(currentGameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
-    require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
 
     if (playerAddress == gameSystemAddress) {
       require(currentGame.turn == currentGame.player2Address, "TowerSystem: not player's turn");
@@ -101,6 +100,7 @@ contract TowerSystem is System {
       require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
     }
 
+    require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
 
     (int8 height, int8 width) = MapConfig.get();
