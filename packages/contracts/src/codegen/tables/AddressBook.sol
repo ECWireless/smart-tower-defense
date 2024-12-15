@@ -16,17 +16,23 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
+struct AddressBookData {
+  address game;
+  address tower;
+  address world;
+}
+
 library AddressBook {
   // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "AddressBook", typeId: RESOURCE_TABLE });`
   ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000041646472657373426f6f6b0000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0014010014000000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x003c030014141400000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of ()
   Schema constant _keySchema = Schema.wrap(0x0000000000000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address)
-  Schema constant _valueSchema = Schema.wrap(0x0014010061000000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (address, address, address)
+  Schema constant _valueSchema = Schema.wrap(0x003c030061616100000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -41,8 +47,10 @@ library AddressBook {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](1);
+    fieldNames = new string[](3);
     fieldNames[0] = "game";
+    fieldNames[1] = "tower";
+    fieldNames[2] = "world";
   }
 
   /**
@@ -80,26 +88,6 @@ library AddressBook {
   }
 
   /**
-   * @notice Get game.
-   */
-  function get() internal view returns (address game) {
-    bytes32[] memory _keyTuple = new bytes32[](0);
-
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
-  }
-
-  /**
-   * @notice Get game.
-   */
-  function _get() internal view returns (address game) {
-    bytes32[] memory _keyTuple = new bytes32[](0);
-
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
-  }
-
-  /**
    * @notice Set game.
    */
   function setGame(address game) internal {
@@ -118,21 +106,188 @@ library AddressBook {
   }
 
   /**
-   * @notice Set game.
+   * @notice Get tower.
    */
-  function set(address game) internal {
+  function getTower() internal view returns (address tower) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((game)), _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (address(bytes20(_blob)));
   }
 
   /**
-   * @notice Set game.
+   * @notice Get tower.
    */
-  function _set(address game) internal {
+  function _getTower() internal view returns (address tower) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((game)), _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Set tower.
+   */
+  function setTower(address tower) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((tower)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set tower.
+   */
+  function _setTower(address tower) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((tower)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get world.
+   */
+  function getWorld() internal view returns (address world) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Get world.
+   */
+  function _getWorld() internal view returns (address world) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Set world.
+   */
+  function setWorld(address world) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((world)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set world.
+   */
+  function _setWorld(address world) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((world)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get the full data.
+   */
+  function get() internal view returns (AddressBookData memory _table) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    (bytes memory _staticData, EncodedLengths _encodedLengths, bytes memory _dynamicData) = StoreSwitch.getRecord(
+      _tableId,
+      _keyTuple,
+      _fieldLayout
+    );
+    return decode(_staticData, _encodedLengths, _dynamicData);
+  }
+
+  /**
+   * @notice Get the full data.
+   */
+  function _get() internal view returns (AddressBookData memory _table) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    (bytes memory _staticData, EncodedLengths _encodedLengths, bytes memory _dynamicData) = StoreCore.getRecord(
+      _tableId,
+      _keyTuple,
+      _fieldLayout
+    );
+    return decode(_staticData, _encodedLengths, _dynamicData);
+  }
+
+  /**
+   * @notice Set the full data using individual values.
+   */
+  function set(address game, address tower, address world) internal {
+    bytes memory _staticData = encodeStatic(game, tower, world);
+
+    EncodedLengths _encodedLengths;
+    bytes memory _dynamicData;
+
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData);
+  }
+
+  /**
+   * @notice Set the full data using individual values.
+   */
+  function _set(address game, address tower, address world) internal {
+    bytes memory _staticData = encodeStatic(game, tower, world);
+
+    EncodedLengths _encodedLengths;
+    bytes memory _dynamicData;
+
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData, _fieldLayout);
+  }
+
+  /**
+   * @notice Set the full data using the data struct.
+   */
+  function set(AddressBookData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.game, _table.tower, _table.world);
+
+    EncodedLengths _encodedLengths;
+    bytes memory _dynamicData;
+
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData);
+  }
+
+  /**
+   * @notice Set the full data using the data struct.
+   */
+  function _set(AddressBookData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.game, _table.tower, _table.world);
+
+    EncodedLengths _encodedLengths;
+    bytes memory _dynamicData;
+
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData, _fieldLayout);
+  }
+
+  /**
+   * @notice Decode the tightly packed blob of static data using this table's field layout.
+   */
+  function decodeStatic(bytes memory _blob) internal pure returns (address game, address tower, address world) {
+    game = (address(Bytes.getBytes20(_blob, 0)));
+
+    tower = (address(Bytes.getBytes20(_blob, 20)));
+
+    world = (address(Bytes.getBytes20(_blob, 40)));
+  }
+
+  /**
+   * @notice Decode the tightly packed blobs using this table's field layout.
+   * @param _staticData Tightly packed static fields.
+   *
+   *
+   */
+  function decode(
+    bytes memory _staticData,
+    EncodedLengths,
+    bytes memory
+  ) internal pure returns (AddressBookData memory _table) {
+    (_table.game, _table.tower, _table.world) = decodeStatic(_staticData);
   }
 
   /**
@@ -157,8 +312,8 @@ library AddressBook {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(address game) internal pure returns (bytes memory) {
-    return abi.encodePacked(game);
+  function encodeStatic(address game, address tower, address world) internal pure returns (bytes memory) {
+    return abi.encodePacked(game, tower, world);
   }
 
   /**
@@ -167,8 +322,12 @@ library AddressBook {
    * @return The lengths of the dynamic fields (packed into a single bytes32 value).
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
-  function encode(address game) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(game);
+  function encode(
+    address game,
+    address tower,
+    address world
+  ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
+    bytes memory _staticData = encodeStatic(game, tower, world);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

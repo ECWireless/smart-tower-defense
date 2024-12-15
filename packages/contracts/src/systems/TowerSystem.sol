@@ -10,6 +10,10 @@ import { positionToEntityKey } from "../positionToEntityKey.sol";
 // bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
 
 contract TowerSystem is System {
+  function getTowerSystemAddress() external view returns (address) {
+    return address(this);
+  }
+
   function installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) public returns (bytes32) {
     address playerAddress = _msgSender();
     _validateInstallTower(potentialGameId, playerAddress, x, y);
