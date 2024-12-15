@@ -9,6 +9,8 @@ export default defineWorld({
     AddressBook: {
       schema: {
         game: "address",
+        tower: "address",
+        world: "address",
       },
       key: [],
     },

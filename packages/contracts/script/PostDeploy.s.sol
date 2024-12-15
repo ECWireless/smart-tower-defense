@@ -27,7 +27,10 @@ contract PostDeploy is Script {
     IWorld(worldAddress).app__runStateChange();
 
     address gameSystemAddress = IWorld(worldAddress).app__getGameSystemAddress();
+    address towerSystemAddress = IWorld(worldAddress).app__getTowerSystemAddress();
     AddressBook.setGame(gameSystemAddress);
+    AddressBook.setTower(towerSystemAddress);
+    AddressBook.setWorld(worldAddress);
     MapConfig.set(7, 14);
 
     ActionData[] memory actions = new ActionData[](3);

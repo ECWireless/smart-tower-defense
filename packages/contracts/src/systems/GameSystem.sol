@@ -2,8 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { SystemSwitch } from "@latticexyz/world-modules/src/utils/SystemSwitch.sol";
-import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower } from "../codegen/index.sol";
+import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { ITowerSystem } from "../codegen/world/IWorld.sol";
@@ -114,26 +113,30 @@ contract GameSystem is System {
     uint256 turnCount = Game.getRoundCount(gameId) - 1;
 
     if (actionIds.length > turnCount) {
+      address worldAddress = AddressBook.getWorld();
       ActionData memory action = Action.get(actionIds[turnCount]);
       if (action.actionType == ActionType.Install) {
-        SystemSwitch.call(
-          abi.encodeCall(
-            ITowerSystem.app__installTower,
-            (CurrentGame.get(player1), action.projectile, action.newX, action.newY)
-          )
+        bytes memory data = abi.encodeWithSignature(
+          "app__installTower(bytes32,bool,int8,int8)",
+          CurrentGame.get(player1),
+          action.projectile,
+          action.newX,
+          action.newY
         );
+
+        (bool success, ) = worldAddress.call(data);
+        require(success, "installTower call failed");
       } else if (action.actionType == ActionType.Move) {
-        SystemSwitch.call(
-          abi.encodeCall(
-            ITowerSystem.app__moveTower,
-            (
-              CurrentGame.get(player1),
-              EntityAtPosition.get(positionToEntityKey(gameId, action.oldX, action.oldY)),
-              action.newX,
-              action.newY
-            )
-          )
+        bytes memory data = abi.encodeWithSignature(
+          "app__moveTower(bytes32,bytes32,int8,int8)",
+          CurrentGame.get(player1),
+          EntityAtPosition.get(positionToEntityKey(gameId, action.oldX, action.oldY)),
+          action.newX,
+          action.newY
         );
+
+        (bool success, ) = worldAddress.call(data);
+        require(success, "moveTower call failed");
       }
     }
   }
