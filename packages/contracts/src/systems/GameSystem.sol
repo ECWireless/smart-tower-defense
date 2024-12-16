@@ -8,6 +8,7 @@ import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { ITowerSystem } from "../codegen/world/IWorld.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
+import { MAX_ACTIONS, MAX_CASTLE_HEALTH, MAX_TOWER_HEALTH, MAX_TICKS } from "../../constants.sol";
 
 contract GameSystem is System {
   function getGameSystemAddress() external view returns (address) {
@@ -39,7 +40,7 @@ contract GameSystem is System {
     bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
 
     GameData memory newGame = GameData({
-      actionCount: 1,
+      actionCount: MAX_ACTIONS,
       endTimestamp: 0,
       player1Address: player1Address,
       player2Address: player2Address,
@@ -66,14 +67,16 @@ contract GameSystem is System {
     Castle.set(castle1Id, true);
     Castle.set(castle2Id, true);
 
-    Position.set(castle1Id, 0, 3);
-    Position.set(castle2Id, 13, 3);
+    (int8 mapHeight, int8 mapWidth) = MapConfig.get();
 
-    Health.set(castle1Id, 2, 2);
-    Health.set(castle2Id, 2, 2);
+    Position.set(castle1Id, 0, mapHeight / 2);
+    Position.set(castle2Id, mapWidth - 1, mapHeight / 2);
 
-    EntityAtPosition.set(positionToEntityKey(gameId, 0, 3), castle1Id);
-    EntityAtPosition.set(positionToEntityKey(gameId, 13, 3), castle2Id);
+    Health.set(castle1Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
+    Health.set(castle2Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
+
+    EntityAtPosition.set(positionToEntityKey(gameId, 0, mapHeight / 2), castle1Id);
+    EntityAtPosition.set(positionToEntityKey(gameId, mapWidth - 1, mapHeight / 2), castle2Id);
 
     return gameId;
   }
@@ -210,7 +213,7 @@ contract GameSystem is System {
   }
 
   function _simulateTicks(TowerDetails[] memory towers) internal {
-    for (uint256 tick = 0; tick < 12; tick++) {
+    for (uint256 tick = 0; tick < MAX_TICKS; tick++) {
       _processTick(towers);
     }
   }
@@ -341,7 +344,7 @@ contract GameSystem is System {
 
     OwnerTowers.set(owner, updatedTowers);
     Owner.set(positionEntity, address(0));
-    Health.set(positionEntity, 0, 5);
+    Health.set(positionEntity, 0, MAX_TOWER_HEALTH);
     EntityAtPosition.set(positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)), 0);
     Position.set(positionEntity, -1, -1);
   }

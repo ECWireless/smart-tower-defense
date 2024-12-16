@@ -5,6 +5,7 @@ import { System } from "@latticexyz/world/src/System.sol";
 import { AddressBook, CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, Tower } from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
+import { MAX_TOWER_HEALTH } from "../../constants.sol";
 
 // TOWER ID
 // bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
@@ -142,7 +143,7 @@ contract TowerSystem is System {
     bytes32 player = addressToEntityKey(playerAddress);
     _addTowerToPlayer(player, towerId);
 
-    Health.set(towerId, 2, 2);
+    Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
     Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(gameId, x, y), towerId);
 
