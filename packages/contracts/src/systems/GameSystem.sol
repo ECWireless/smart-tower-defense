@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower } from "../codegen/index.sol";
+import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower, Username, UsernameTaken } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { ITowerSystem } from "../codegen/world/IWorld.sol";
@@ -14,10 +14,18 @@ contract GameSystem is System {
     return address(this);
   }
 
-  function createGame(address player2Address) external returns (bytes32) {
+  function createGame(address player2Address, string memory username) external returns (bytes32) {
     address player1Address = _msgSender();
     bytes32 player1 = addressToEntityKey(player1Address);
     bytes32 player2 = addressToEntityKey(player2Address);
+
+    string memory player1Username = Username.get(player1);
+    if (bytes(player1Username).length == 0) {
+      bytes32 usernameBytes = keccak256(abi.encodePacked(username));
+      require(!UsernameTaken.get(usernameBytes), "GameSystem: username is taken");
+      Username.set(player1, username);
+      UsernameTaken.set(usernameBytes, true);
+    }
 
     bytes32 currentGameId = CurrentGame.get(player1);
 

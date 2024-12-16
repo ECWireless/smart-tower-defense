@@ -103,5 +103,13 @@ export default defineWorld({
       },
     },
     Tower: "bool",
+    Username: "string",
+    UsernameTaken: {
+      schema: {
+        usernameBytes: "bytes32",
+        value: "bool",
+      },
+      key: ["usernameBytes"],
+    },
   },
 });

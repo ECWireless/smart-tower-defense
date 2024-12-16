@@ -20,3 +20,5 @@ import { Position } from "./tables/Position.sol";
 import { Projectile } from "./tables/Projectile.sol";
 import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";
 import { Tower } from "./tables/Tower.sol";
+import { Username } from "./tables/Username.sol";
+import { UsernameTaken } from "./tables/UsernameTaken.sol";

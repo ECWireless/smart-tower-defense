@@ -5,7 +5,9 @@ export type Game = {
   actionCount: number;
   endTimestamp: bigint;
   player1Address: Address;
+  player1Username: string;
   player2Address: Address;
+  player2Username: string;
   roundCount: number;
   startTimestamp: bigint;
   turn: Address;

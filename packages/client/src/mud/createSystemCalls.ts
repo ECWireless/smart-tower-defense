@@ -42,10 +42,11 @@ export function createSystemCalls(
    */
   { worldContract, waitForTransaction }: SetupNetworkResult,
 ) {
-  const createGame = async (player2: string) => {
+  const createGame = async (player2: string, username: string) => {
     try {
       const tx = await worldContract.write.app__createGame([
         player2 as `0x${string}`,
+        username,
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
