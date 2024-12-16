@@ -7,27 +7,15 @@ import {
   Has,
   HasValue,
 } from '@latticexyz/recs';
-import { encodeEntity } from '@latticexyz/store-sync/recs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
-import { FaInfoCircle, FaPlay } from 'react-icons/fa';
 import { GiCannon, GiDefensiveWall, GiMineExplosion } from 'react-icons/gi';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
+import { PlayAgainModal } from '../components/PlayAgainModal';
 import { StatsPanel } from '../components/StatsPanel';
-import { Button } from '../components/ui/button';
-import {
-  DialogBackdrop,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-  DialogTrigger,
-} from '../components/ui/dialog';
+import { TurnSidebar } from '../components/TurnSidebar';
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -40,34 +28,36 @@ import {
 } from '../components/ui/drawer';
 import { toaster } from '../components/ui/toaster';
 import { Tooltip } from '../components/ui/tooltip';
+import { GameProvider, useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
-import { GAMES_PATH } from '../Routes';
-import { type Game, type Tower } from '../utils/types';
+import { type Tower } from '../utils/types';
 
 const MAX_TICKS = 12;
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  return (
+    <GameProvider gameId={id as Entity}>
+      <InnerGamePage />
+    </GameProvider>
+  );
+};
+
+export const InnerGamePage = (): JSX.Element => {
   const {
-    network: { playerEntity },
     components: {
       Castle,
       CurrentGame,
-      Game: GameComponent,
       Health,
       Owner,
       Position,
       Projectile,
       ProjectileTrajectory,
       Tower,
-      Username,
     },
-    systemCalls: { createGame, installTower, moveTower, nextTurn },
+    systemCalls: { installTower, moveTower },
   } = useMUD();
-
-  const [game, setGame] = useState<Game | null>(null);
-  const [isLoadingGame, setIsLoadingGame] = useState(true);
+  const { game, isRefreshing, refreshGame } = useGame();
 
   const [activeTowerId, setActiveTowerId] = useState<string>(zeroHash);
   const [isInstallingTower, setIsInstallingTower] = useState(false);
@@ -79,14 +69,11 @@ export const GamePage = (): JSX.Element => {
     'offense' | 'defense' | 'none'
   >('none');
 
-  const [isChangingTurn, setIsChangingTurn] = useState(false);
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [tickCount, setTickCount] = useState(0);
 
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
-
-  const [isCreatingGame, setIsCreatingGame] = useState(false);
 
   const myCastlePosition = useEntityQuery([
     Has(Castle),
@@ -152,47 +139,6 @@ export const GamePage = (): JSX.Element => {
     };
   });
 
-  const fetchGame = useCallback(async () => {
-    if (!id) return;
-    const _game = getComponentValue(GameComponent, id as Entity);
-    if (_game) {
-      const player1Entity = encodeEntity(
-        { playerAddress: 'address' },
-        { playerAddress: _game.player1Address as Address },
-      );
-      const player2Entity = encodeEntity(
-        { playerAddress: 'address' },
-        { playerAddress: _game.player2Address as Address },
-      );
-      const _player1Username = getComponentValueStrict(
-        Username,
-        player1Entity,
-      ).value;
-      const _player2Username = getComponentValueStrict(
-        Username,
-        player2Entity,
-      ).value;
-      setGame({
-        id,
-        actionCount: _game.actionCount,
-        endTimestamp: _game.endTimestamp,
-        player1Address: _game.player1Address as Address,
-        player1Username: _player1Username,
-        player2Address: _game.player2Address as Address,
-        player2Username: _player2Username,
-        roundCount: _game.roundCount,
-        startTimestamp: _game.startTimestamp,
-        turn: _game.turn as Address,
-        winner: _game.winner as Address,
-      });
-    }
-    setIsLoadingGame(false);
-  }, [GameComponent, id, Username]);
-
-  useEffect(() => {
-    fetchGame();
-  }, [fetchGame]);
-
   const onInstallTower = useCallback(
     async (e: React.DragEvent, row: number, col: number) => {
       e.preventDefault();
@@ -226,7 +172,7 @@ export const GamePage = (): JSX.Element => {
           type: 'success',
         });
 
-        fetchGame();
+        refreshGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
@@ -241,7 +187,7 @@ export const GamePage = (): JSX.Element => {
         setInstallingPosition(null);
       }
     },
-    [activePiece, activeTowerId, fetchGame, game, installTower],
+    [activePiece, activeTowerId, game, installTower, refreshGame],
   );
 
   const onMoveTower = useCallback(
@@ -275,7 +221,7 @@ export const GamePage = (): JSX.Element => {
           type: 'success',
         });
 
-        fetchGame();
+        refreshGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
@@ -290,7 +236,7 @@ export const GamePage = (): JSX.Element => {
         setInstallingPosition(null);
       }
     },
-    [activeTowerId, fetchGame, game, moveTower],
+    [activeTowerId, game, moveTower, refreshGame],
   );
 
   const allowDrop = (e: React.DragEvent) => {
@@ -306,86 +252,6 @@ export const GamePage = (): JSX.Element => {
     setActivePiece(type);
     e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
   };
-
-  const onNextTurn = useCallback(async () => {
-    try {
-      setIsChangingTurn(true);
-
-      if (!game) {
-        throw new Error('Game not found.');
-      }
-
-      const { error, success } = await nextTurn(game.id);
-
-      if (error && !success) {
-        throw new Error(error);
-      }
-
-      toaster.create({
-        title: 'Turn Changed!',
-        type: 'success',
-      });
-
-      fetchGame();
-      if (game.turn === game.player2Address) {
-        setTriggerAnimation(true);
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`Smart contract error: ${(error as Error).message}`);
-
-      toaster.create({
-        description: (error as Error).message,
-        title: 'Error Changing Turn',
-        type: 'error',
-      });
-    } finally {
-      setIsChangingTurn(false);
-    }
-  }, [fetchGame, game, nextTurn]);
-
-  const onCreateGame = useCallback(async () => {
-    try {
-      setIsCreatingGame(true);
-
-      if (!game) {
-        throw new Error('Game not found.');
-      }
-
-      const { error, success } = await createGame(
-        zeroAddress,
-        game.player1Username,
-      );
-
-      if (error && !success) {
-        throw new Error(error);
-      }
-
-      toaster.create({
-        title: 'Game Created!',
-        type: 'success',
-      });
-
-      const newGame = getComponentValue(CurrentGame, playerEntity)?.value;
-      if (!newGame) {
-        throw new Error('No recent game found');
-      }
-
-      navigate(`${GAMES_PATH}/${newGame}`);
-      setIsGameOverModalOpen(false);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`Smart contract error: ${(error as Error).message}`);
-
-      toaster.create({
-        description: (error as Error).message,
-        title: 'Error Creating Game',
-        type: 'error',
-      });
-    } finally {
-      setIsCreatingGame(false);
-    }
-  }, [createGame, CurrentGame, game, navigate, playerEntity]);
 
   useEffect(() => {
     if (!game) return () => {};
@@ -410,13 +276,7 @@ export const GamePage = (): JSX.Element => {
     setIsGameOverModalOpen(true);
   }, [game]);
 
-  const canChangeTurn = useMemo(() => {
-    if (!game) return false;
-    if (game.turn === zeroAddress) return true;
-    return game.turn === game.player1Address && game.actionCount === 0;
-  }, [game]);
-
-  if (isLoadingGame) {
+  if (isRefreshing) {
     return (
       <VStack h="100vh" justifyContent="center">
         <Spinner borderWidth="4px" size="xl" />
@@ -759,80 +619,15 @@ export const GamePage = (): JSX.Element => {
                   );
                 })}
               </Box>
-              <VStack bgColor="white" color="black" p={2} w={120}>
-                <HStack justifyContent="center">
-                  <Text fontSize="sm">NEXT</Text>
-                  <Button
-                    loading={isChangingTurn}
-                    onClick={onNextTurn}
-                    p={0}
-                    variant="ghost"
-                    _hover={{
-                      bgColor: 'gray.200',
-                    }}
-                    _disabled={{
-                      bgColor: 'gray.500',
-                    }}
-                  >
-                    <FaPlay color={canChangeTurn ? 'green' : 'black'} />
-                  </Button>
-                </HStack>
-                <HStack justifyContent="center">
-                  <Text fontSize="sm">TIMER</Text>
-                  <Text fontWeight={900}>5:00</Text>
-                </HStack>
-                <DialogRoot>
-                  <DialogBackdrop />
-                  <DialogTrigger
-                    as={Button}
-                    _hover={{
-                      bgColor: 'gray.200',
-                    }}
-                  >
-                    <FaInfoCircle color="black" />
-                  </DialogTrigger>
-                  <DialogContent bgColor="white" color="black">
-                    <DialogCloseTrigger bgColor="black" />
-                    <DialogHeader>
-                      <DialogTitle textTransform="uppercase">
-                        How to Play
-                      </DialogTitle>
-                    </DialogHeader>
-                    <DialogBody>Just start clicking around!</DialogBody>
-                    <DialogFooter />
-                  </DialogContent>
-                </DialogRoot>
-              </VStack>
+              <TurnSidebar setTriggerAnimation={setTriggerAnimation} />
             </HStack>
           </Box>
         </Box>
       </VStack>
-      <DialogRoot
-        open={isGameOverModalOpen}
-        onOpenChange={e => setIsGameOverModalOpen(e.open)}
-      >
-        <DialogBackdrop />
-        <DialogContent bgColor="white" color="black">
-          <DialogCloseTrigger bgColor="black" />
-          <DialogHeader>
-            <DialogTitle textTransform="uppercase">Game Over</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <Text>
-              {game.winner === game.player1Address ? 'You won!' : 'You lost!'}
-            </Text>
-            <Button
-              loading={isCreatingGame}
-              mt={4}
-              onClick={onCreateGame}
-              variant="surface"
-            >
-              Play Again
-            </Button>
-          </DialogBody>
-          <DialogFooter />
-        </DialogContent>
-      </DialogRoot>
+      <PlayAgainModal
+        isGameOverModalOpen={isGameOverModalOpen}
+        setIsGameOverModalOpen={setIsGameOverModalOpen}
+      />
     </DrawerRoot>
   );
 };
