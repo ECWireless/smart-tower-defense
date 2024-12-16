@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { Action, ActionData, AddressBook, LogicSystemAddress, MapConfig, SavedGame } from "../src/codegen/index.sol";
+import { Action, ActionData, AddressBook, LogicSystemAddress, MapConfig, SavedGame, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { ActionType } from "../src/codegen/common.sol";
 import { addressToEntityKey } from "../src/addressToEntityKey.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
@@ -55,6 +55,9 @@ contract PostDeploy is Script {
 
     bytes32 playerId = addressToEntityKey(address(0));
     SavedGame.set(playerId, defaultActionIds);
+    Username.set(playerId, "ROB");
+    bytes32 usernameKey = keccak256(abi.encodePacked("ROB"));
+    UsernameTaken.set(usernameKey, true);
 
     vm.stopBroadcast();
   }

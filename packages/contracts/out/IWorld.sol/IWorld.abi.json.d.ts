@@ -26,6 +26,11 @@ declare const abi: [
         "name": "player2Address",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "username",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [

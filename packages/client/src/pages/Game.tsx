@@ -7,6 +7,7 @@ import {
   Has,
   HasValue,
 } from '@latticexyz/recs';
+import { encodeEntity } from '@latticexyz/store-sync/recs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
@@ -60,6 +61,7 @@ export const GamePage = (): JSX.Element => {
       Projectile,
       ProjectileTrajectory,
       Tower,
+      Username,
     },
     systemCalls: { createGame, installTower, moveTower, nextTurn },
   } = useMUD();
@@ -154,12 +156,30 @@ export const GamePage = (): JSX.Element => {
     if (!id) return;
     const _game = getComponentValue(GameComponent, id as Entity);
     if (_game) {
+      const player1Entity = encodeEntity(
+        { playerAddress: 'address' },
+        { playerAddress: _game.player1Address as Address },
+      );
+      const player2Entity = encodeEntity(
+        { playerAddress: 'address' },
+        { playerAddress: _game.player2Address as Address },
+      );
+      const _player1Username = getComponentValueStrict(
+        Username,
+        player1Entity,
+      ).value;
+      const _player2Username = getComponentValueStrict(
+        Username,
+        player2Entity,
+      ).value;
       setGame({
         id,
         actionCount: _game.actionCount,
         endTimestamp: _game.endTimestamp,
         player1Address: _game.player1Address as Address,
+        player1Username: _player1Username,
         player2Address: _game.player2Address as Address,
+        player2Username: _player2Username,
         roundCount: _game.roundCount,
         startTimestamp: _game.startTimestamp,
         turn: _game.turn as Address,
@@ -167,7 +187,7 @@ export const GamePage = (): JSX.Element => {
       });
     }
     setIsLoadingGame(false);
-  }, [GameComponent, id]);
+  }, [GameComponent, id, Username]);
 
   useEffect(() => {
     fetchGame();
@@ -328,19 +348,14 @@ export const GamePage = (): JSX.Element => {
     try {
       setIsCreatingGame(true);
 
-      let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
-      if (currentGame) {
-        const game = getComponentValueStrict(
-          GameComponent,
-          currentGame as Entity,
-        );
-        if (game.endTimestamp === BigInt(0)) {
-          navigate(`${GAMES_PATH}/${currentGame}`);
-          return;
-        }
+      if (!game) {
+        throw new Error('Game not found.');
       }
 
-      const { error, success } = await createGame(zeroAddress);
+      const { error, success } = await createGame(
+        zeroAddress,
+        game.player1Username,
+      );
 
       if (error && !success) {
         throw new Error(error);
@@ -351,13 +366,12 @@ export const GamePage = (): JSX.Element => {
         type: 'success',
       });
 
-      currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
-
-      if (!currentGame) {
+      const newGame = getComponentValue(CurrentGame, playerEntity)?.value;
+      if (!newGame) {
         throw new Error('No recent game found');
       }
 
-      navigate(`${GAMES_PATH}/${currentGame}`);
+      navigate(`${GAMES_PATH}/${newGame}`);
       setIsGameOverModalOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -371,7 +385,7 @@ export const GamePage = (): JSX.Element => {
     } finally {
       setIsCreatingGame(false);
     }
-  }, [createGame, CurrentGame, GameComponent, navigate, playerEntity]);
+  }, [createGame, CurrentGame, game, navigate, playerEntity]);
 
   useEffect(() => {
     if (!game) return () => {};
