@@ -194,6 +194,7 @@ export const InnerGamePage = (): JSX.Element => {
     async (e: React.DragEvent, row: number, col: number) => {
       e.preventDefault();
       try {
+        setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
 
         if (activeTowerId === zeroHash) {
@@ -231,6 +232,7 @@ export const InnerGamePage = (): JSX.Element => {
           type: 'error',
         });
       } finally {
+        setIsInstallingTower(false);
         setInstallingPosition(null);
       }
     },
