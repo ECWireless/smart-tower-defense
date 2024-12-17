@@ -1,5 +1,8 @@
+import { Entity } from '@latticexyz/recs';
+import { uuid } from '@latticexyz/utils';
 import { BaseError, ContractFunctionRevertedError } from 'viem';
 
+import { ClientComponents } from './createClientComponents';
 /*
  * Create the system calls that the client can use to ask
  * for changes in the World state (using the System contracts).
@@ -41,6 +44,7 @@ export function createSystemCalls(
    *   (https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
    */
   { worldContract, waitForTransaction }: SetupNetworkResult,
+  { Position }: ClientComponents,
 ) {
   const createGame = async (player2: string, username: string) => {
     try {
@@ -130,7 +134,14 @@ export function createSystemCalls(
     x: number,
     y: number,
   ) => {
+    const positionId = uuid();
+
     try {
+      Position.addOverride(positionId, {
+        entity: towerId as Entity,
+        value: { x, y },
+      });
+
       const tx = await worldContract.write.app__moveTower([
         gameId as `0x${string}`,
         towerId as `0x${string}`,
@@ -151,6 +162,8 @@ export function createSystemCalls(
         error: getContractError(error as BaseError),
         success: false,
       };
+    } finally {
+      Position.removeOverride(positionId);
     }
   };
 
