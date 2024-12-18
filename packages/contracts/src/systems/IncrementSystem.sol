@@ -10,7 +10,7 @@ import { ILogicSystem } from "../codegen/world/ILogicSystem.sol";
 
 contract IncrementSystem is System {
   function deploySystem(bytes memory bytecode) external {
-    System newSystem;
+    address newSystem;
 
     assembly {
       newSystem := create(0, add(bytecode, 0x20), mload(bytecode))

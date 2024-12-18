@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, Tower } from "../codegen/index.sol";
+import { AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, ProjectileLogic, Tower } from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { MAX_TOWER_HEALTH } from "../../constants.sol";
@@ -147,8 +147,15 @@ contract TowerSystem is System {
     Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(gameId, x, y), towerId);
 
-    if (projectile) {
-      Projectile.set(towerId, true);
+    (, int8 width) = MapConfig.get();
+    if (projectile && x < width / 2) {
+      address defaultProjectileLogicLeftAddress = DefaultLogicA.get();
+      ProjectileLogic.set(towerId, defaultProjectileLogicLeftAddress);
+    }
+
+    if (projectile && x > width / 2) {
+      address defaultProjectileLogicRightAddress = DefaultLogicB.get();
+      ProjectileLogic.set(towerId, defaultProjectileLogicRightAddress);
     }
 
     _decrementActionCount(gameId);

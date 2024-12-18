@@ -7,7 +7,7 @@ import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswith
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { Counter } from "../src/codegen/index.sol";
-import { CurrentGame, EntityAtPosition, Position, Projectile, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Position, ProjectileLogic, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { addressToEntityKey } from "../src/addressToEntityKey.sol";
 import { positionToEntityKey } from "../src/positionToEntityKey.sol";
 
@@ -34,8 +34,8 @@ contract TowerTest is MudTest {
     bool isTower = Tower.get(towerId);
     assertTrue(isTower);
 
-    bool isProjectile = Projectile.get(towerId);
-    assertTrue(isProjectile);
+    address projectileLogic = ProjectileLogic.get(towerId);
+    assertTrue(projectileLogic != address(0));
   }
 
   function testInstallWallTower() public {
@@ -45,8 +45,8 @@ contract TowerTest is MudTest {
     vm.prank(alice);
     bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, false, 3, 3);
 
-    bool isProjectile = Projectile.get(towerId);
-    assertFalse(isProjectile);
+    address projectileLogic = ProjectileLogic.get(towerId);
+    assertFalse(projectileLogic != address(0));
   }
 
   function testRevertInstallNoGame() public {
