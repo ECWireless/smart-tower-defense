@@ -1,25 +1,6 @@
 declare const abi: [
   {
     "type": "function",
-    "name": "app__applyStateChange",
-    "inputs": [
-      {
-        "name": "currentState",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "pure"
-  },
-  {
-    "type": "function",
     "name": "app__createGame",
     "inputs": [
       {
@@ -44,24 +25,17 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__deploySystem",
+    "name": "app__getContractSize",
     "inputs": [
       {
-        "name": "bytecode",
-        "type": "bytes",
-        "internalType": "bytes"
+        "name": "towerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__getContractSize",
-    "inputs": [],
     "outputs": [
       {
-        "name": "",
+        "name": "size",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -71,19 +45,6 @@ declare const abi: [
   {
     "type": "function",
     "name": "app__getGameSystemAddress",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "app__getLogicSystemAddress",
     "inputs": [],
     "outputs": [
       {
@@ -143,6 +104,30 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__modifyTowerSystem",
+    "inputs": [
+      {
+        "name": "towerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "bytecode",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "projectileLogicAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__moveTower",
     "inputs": [
       {
@@ -185,13 +170,6 @@ declare const abi: [
         "internalType": "bytes32"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__runStateChange",
-    "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },

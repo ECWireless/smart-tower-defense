@@ -23,12 +23,6 @@ contract PostDeploy is Script {
     // Start broadcasting transactions from the deployer account
     vm.startBroadcast(deployerPrivateKey);
 
-    address logicSystemAddress = IWorld(worldAddress).app__getLogicSystemAddress();
-    LogicSystemAddress.set(logicSystemAddress);
-    console.log("Logic System Address:", logicSystemAddress);
-
-    IWorld(worldAddress).app__runStateChange();
-
     address gameSystemAddress = IWorld(worldAddress).app__getGameSystemAddress();
     address towerSystemAddress = IWorld(worldAddress).app__getTowerSystemAddress();
     AddressBook.setGame(gameSystemAddress);

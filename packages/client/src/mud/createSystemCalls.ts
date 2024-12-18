@@ -65,32 +65,10 @@ export function createSystemCalls(
     }
   };
 
-  const deploySystem = async (bytecode: string) => {
-    try {
-      const tx = await worldContract.write.app__deploySystem([
-        bytecode as `0x${string}`,
-      ]);
-      await waitForTransaction(tx);
-
-      const txResult = await waitForTransaction(tx);
-      const { status } = txResult;
-
-      const success = status === 'success';
-
-      return {
-        error: success ? undefined : 'Failed to deploy system.',
-        success,
-      };
-    } catch (error) {
-      return {
-        error: getContractError(error as BaseError),
-        success: false,
-      };
-    }
-  };
-
-  const getContractSize = async () => {
-    const size = await worldContract.read.app__getContractSize();
+  const getContractSize = async (towerId: string) => {
+    const size = await worldContract.read.app__getContractSize([
+      towerId as `0x${string}`,
+    ]);
     return size;
   };
 
@@ -114,6 +92,29 @@ export function createSystemCalls(
 
       return {
         error: success ? undefined : 'Failed to install tower.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
+  const modifyTowerSystem = async (towerId: string, bytecode: string) => {
+    try {
+      const tx = await worldContract.write.app__modifyTowerSystem([
+        towerId as `0x${string}`,
+        bytecode as `0x${string}`,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to modify tower system.',
         success,
       };
     } catch (error) {
@@ -176,33 +177,12 @@ export function createSystemCalls(
     }
   };
 
-  const runStateChange = async () => {
-    try {
-      const tx = await worldContract.write.app__runStateChange();
-      const txResult = await waitForTransaction(tx);
-      const { status } = txResult;
-
-      const success = status === 'success';
-
-      return {
-        error: success ? undefined : 'Failed to run state change.',
-        success,
-      };
-    } catch (error) {
-      return {
-        error: getContractError(error as BaseError),
-        success: false,
-      };
-    }
-  };
-
   return {
     createGame,
-    deploySystem,
     getContractSize,
     installTower,
+    modifyTowerSystem,
     moveTower,
     nextTurn,
-    runStateChange,
   };
 }

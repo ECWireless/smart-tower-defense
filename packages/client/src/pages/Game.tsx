@@ -63,6 +63,7 @@ export const InnerGamePage = (): JSX.Element => {
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [tickCount, setTickCount] = useState(0);
 
+  const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
 
@@ -229,6 +230,14 @@ export const InnerGamePage = (): JSX.Element => {
       }
     },
     [activeTowerId, game, moveTower, refreshGame],
+  );
+
+  const onViewTower = useCallback(
+    (tower: Tower) => {
+      setSelectedTower(tower);
+      setIsSystemDrawerOpen(true);
+    },
+    [setSelectedTower],
   );
 
   const allowDrop = (e: React.DragEvent) => {
@@ -507,9 +516,7 @@ export const InnerGamePage = (): JSX.Element => {
                                 : 'none'
                             }
                             onClick={() =>
-                              isEnemyTile
-                                ? undefined
-                                : setIsSystemDrawerOpen(true)
+                              isEnemyTile ? undefined : onViewTower(activeTower)
                             }
                             onDragStart={e =>
                               handleDragStart(
@@ -590,10 +597,13 @@ export const InnerGamePage = (): JSX.Element => {
           </HStack>
         </Box>
       </Box>
-      <SystemModificationDrawer
-        isSystemDrawerOpen={isSystemDrawerOpen}
-        setIsSystemDrawerOpen={setIsSystemDrawerOpen}
-      />
+      {selectedTower && (
+        <SystemModificationDrawer
+          isSystemDrawerOpen={isSystemDrawerOpen}
+          setIsSystemDrawerOpen={setIsSystemDrawerOpen}
+          tower={selectedTower}
+        />
+      )}
       <PlayAgainModal
         isGameOverModalOpen={isGameOverModalOpen}
         setIsGameOverModalOpen={setIsGameOverModalOpen}

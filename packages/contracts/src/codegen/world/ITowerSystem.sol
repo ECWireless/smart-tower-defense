@@ -14,4 +14,11 @@ interface ITowerSystem {
   function app__installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) external returns (bytes32);
 
   function app__moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external returns (bytes32);
+
+  function app__modifyTowerSystem(
+    bytes32 towerId,
+    bytes memory bytecode
+  ) external returns (address projectileLogicAddress);
+
+  function app__getContractSize(bytes32 towerId) external view returns (uint256 size);
 }

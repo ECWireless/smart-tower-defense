@@ -15,7 +15,7 @@ contract TowerSystem is System {
     return address(this);
   }
 
-  function installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) public returns (bytes32) {
+  function installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     _validateInstallTower(potentialGameId, playerAddress, x, y);
 
@@ -27,7 +27,7 @@ contract TowerSystem is System {
     return towerId;
   }
 
-  function moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) public returns (bytes32) {
+  function moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     _validateMoveTower(potentialGameId, playerAddress, towerId, x, y);
 
@@ -40,6 +40,49 @@ contract TowerSystem is System {
     _decrementActionCount(potentialGameId);
 
     return towerId;
+  }
+
+  function modifyTowerSystem(bytes32 towerId, bytes memory bytecode) external returns (address projectileLogicAddress) {
+    address player = _msgSender();
+    address owner = Owner.get(towerId);
+    bytes32 gameId = CurrentGame.get(addressToEntityKey(player));
+    GameData memory currentGame = Game.get(gameId);
+
+    require(owner == player, "TowerSystem: not tower owner");
+    require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
+    require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
+    require(currentGame.turn == player, "TowerSystem: not player's turn");
+    require(Tower.get(towerId), "TowerSystem: entity is not a tower");
+    require(Health.getCurrentHealth(towerId) > 0, "TowerSystem: tower is destroyed");
+
+    address newSystem;
+
+    assembly {
+      newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
+      if iszero(extcodesize(newSystem)) {
+        revert(0, 0)
+      }
+    }
+
+    uint256 size;
+    assembly {
+      size := extcodesize(newSystem)
+    }
+
+    require(size <= 1000, "Contract cannot be larger than 1000 bytes");
+
+    Game.setActionCount(gameId, currentGame.actionCount - 1);
+    ProjectileLogic.set(towerId, address(newSystem));
+    return address(newSystem);
+  }
+
+  function getContractSize(bytes32 towerId) external view returns (uint256 size) {
+    address projectileLogicContract = ProjectileLogic.get(towerId);
+
+    assembly {
+      size := extcodesize(projectileLogicContract)
+    }
+    return size;
   }
 
   function _validateInstallTower(bytes32 potentialGameId, address playerAddress, int8 x, int8 y) internal view {

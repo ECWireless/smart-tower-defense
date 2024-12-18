@@ -1,8 +1,10 @@
 import { Box } from '@chakra-ui/react';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
+import { useMUD } from '../MUDContext';
+import { type Tower } from '../utils/types';
 import { Button } from './ui/button';
 import {
   DrawerBackdrop,
@@ -14,6 +16,7 @@ import {
   DrawerRoot,
   DrawerTitle,
 } from './ui/drawer';
+import { toaster } from './ui/toaster';
 
 const DEFAULT_SOURCE_CODE = `
 contract DefaultProjectileLogicLeft {
@@ -26,12 +29,84 @@ contract DefaultProjectileLogicLeft {
 type SystemModificationDrawerProps = {
   isSystemDrawerOpen: boolean;
   setIsSystemDrawerOpen: (isOpen: boolean) => void;
+  tower: Tower;
 };
 
 export const SystemModificationDrawer: React.FC<
   SystemModificationDrawerProps
-> = ({ isSystemDrawerOpen, setIsSystemDrawerOpen }) => {
+> = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
+  const {
+    systemCalls: { modifyTowerSystem },
+  } = useMUD();
+
   const [sourceCode, setSourceCode] = useState(DEFAULT_SOURCE_CODE.trim());
+  const [isDeploying, setIsDeploying] = useState<boolean>(false);
+
+  const onCompileCode = useCallback(async (): Promise<string | null> => {
+    try {
+      const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
+
+      const res = await fetch(`${API_ENDPOINT}/compile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sourceCode }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to compile code');
+      }
+
+      const bytecode = await res.text();
+
+      return `0x${bytecode}`;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error compiling code:', error);
+
+      toaster.create({
+        title: 'Error Compiling Code',
+        type: 'error',
+      });
+
+      return null;
+    }
+  }, [sourceCode]);
+
+  const onModifyTowerSystem = useCallback(async () => {
+    try {
+      setIsDeploying(true);
+      const bytecode = await onCompileCode();
+      if (!bytecode) {
+        setIsDeploying(false);
+        return;
+      }
+      const { error, success } = await modifyTowerSystem(tower.id, bytecode);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toaster.create({
+        title: 'System Deployed!',
+        type: 'success',
+      });
+
+      setIsSystemDrawerOpen(false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: 'Error Deploying System',
+        type: 'error',
+      });
+    } finally {
+      setIsDeploying(false);
+    }
+  }, [modifyTowerSystem, onCompileCode, setIsSystemDrawerOpen, tower]);
 
   // Configure Solidity language
   loader.init().then(monacoInstance => {
@@ -87,8 +162,13 @@ export const SystemModificationDrawer: React.FC<
               value={sourceCode}
             />
           </Box>
-          <Button mt={4} variant="surface">
-            Deploy
+          <Button
+            disabled={isDeploying}
+            mt={4}
+            onClick={onModifyTowerSystem}
+            variant="surface"
+          >
+            {isDeploying ? 'Deploying...' : 'Deploy'}
           </Button>
         </DrawerBody>
         <DrawerFooter />
