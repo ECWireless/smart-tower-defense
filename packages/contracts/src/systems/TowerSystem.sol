@@ -6,6 +6,7 @@ import { AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPositio
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { MAX_TOWER_HEALTH } from "../../constants.sol";
+import "forge-std/console.sol";
 
 // TOWER ID
 // bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
@@ -45,9 +46,12 @@ contract TowerSystem is System {
   function modifyTowerSystem(bytes32 towerId, bytes memory bytecode) external returns (address projectileLogicAddress) {
     address player = _msgSender();
     address owner = Owner.get(towerId);
-    bytes32 gameId = CurrentGame.get(addressToEntityKey(player));
-    GameData memory currentGame = Game.get(gameId);
+    bytes32 playerGameId = CurrentGame.get(addressToEntityKey(player));
+    bytes32 towerGameId = CurrentGame.get(towerId);
+    GameData memory currentGame = Game.get(playerGameId);
 
+    require(playerGameId != 0, "TowerSystem: player has no ongoing game");
+    require(playerGameId == towerGameId, "TowerSystem: game does not match player's ongoing game");
     require(owner == player, "TowerSystem: not tower owner");
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
@@ -59,9 +63,6 @@ contract TowerSystem is System {
 
     assembly {
       newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
-      if iszero(extcodesize(newSystem)) {
-        revert(0, 0)
-      }
     }
 
     uint256 size;
@@ -69,9 +70,10 @@ contract TowerSystem is System {
       size := extcodesize(newSystem)
     }
 
+    require(size > 0, "Contract creation failed");
     require(size <= 1000, "Contract cannot be larger than 1000 bytes");
 
-    Game.setActionCount(gameId, currentGame.actionCount - 1);
+    Game.setActionCount(playerGameId, currentGame.actionCount - 1);
     ProjectileLogic.set(towerId, address(newSystem));
     return address(newSystem);
   }
