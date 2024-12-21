@@ -7,7 +7,7 @@ import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswith
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { Counter } from "../src/codegen/index.sol";
-import { CurrentGame, EntityAtPosition, Health, Position, ProjectileLogic, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Health, Position, Projectile, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { addressToEntityKey } from "../src/addressToEntityKey.sol";
 import { positionToEntityKey } from "../src/positionToEntityKey.sol";
 
@@ -36,8 +36,8 @@ contract TowerTest is MudTest {
     bool isTower = Tower.get(towerId);
     assertTrue(isTower);
 
-    address projectileLogic = ProjectileLogic.get(towerId);
-    assertTrue(projectileLogic != address(0));
+    address projectileLogicAddress = Projectile.getLogicAddress(towerId);
+    assertTrue(projectileLogicAddress != address(0));
   }
 
   function testInstallWallTower() public {
@@ -47,8 +47,8 @@ contract TowerTest is MudTest {
     vm.prank(alice);
     bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, false, 3, 3);
 
-    address projectileLogic = ProjectileLogic.get(towerId);
-    assertFalse(projectileLogic != address(0));
+    address projectileLogicAddress = Projectile.getLogicAddress(towerId);
+    assertFalse(projectileLogicAddress != address(0));
   }
 
   function testRevertInstallNoGame() public {
@@ -156,7 +156,7 @@ contract TowerTest is MudTest {
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
 
-    IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE);
+    IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE, "");
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
     vm.stopPrank();
@@ -178,14 +178,14 @@ contract TowerTest is MudTest {
     bytes32 castleId = EntityAtPosition.get(positionEntity);
     console.logBytes32(castleId);
     vm.expectRevert(bytes("TowerSystem: entity is not a tower"));
-    IWorld(worldAddress).app__modifyTowerSystem(castleId, BYTECODE);
+    IWorld(worldAddress).app__modifyTowerSystem(castleId, BYTECODE, "");
     vm.stopPrank();
   }
 
   function testRevertModifyNoGame() public {
     vm.expectRevert(bytes("TowerSystem: player has no ongoing game"));
     vm.prank(alice);
-    IWorld(worldAddress).app__modifyTowerSystem(0, BYTECODE);
+    IWorld(worldAddress).app__modifyTowerSystem(0, BYTECODE, "");
   }
 
   function testRevertModifyNotPlayerGame() public {
@@ -199,6 +199,6 @@ contract TowerTest is MudTest {
     vm.startPrank(bob);
     IWorld(worldAddress).app__createGame(rob, "Bob");
     vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
-    IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE);
+    IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE, "");
   }
 }

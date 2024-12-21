@@ -110,7 +110,14 @@ export default defineWorld({
         dataStruct: false,
       },
     },
-    ProjectileLogic: "address", // ID is towerId
+    Projectile: {
+      schema: {
+        id: "bytes32", // ID is the tower ID,
+        logicAddress: "address",
+        sourceCode: "string",
+      },
+      key: ["id"],
+    },
     ProjectileTrajectory: {
       schema: {
         id: "bytes32",

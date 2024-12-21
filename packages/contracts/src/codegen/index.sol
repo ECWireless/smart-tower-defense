@@ -19,7 +19,7 @@ import { MapConfig } from "./tables/MapConfig.sol";
 import { Owner } from "./tables/Owner.sol";
 import { OwnerTowers } from "./tables/OwnerTowers.sol";
 import { Position } from "./tables/Position.sol";
-import { ProjectileLogic } from "./tables/ProjectileLogic.sol";
+import { Projectile, ProjectileData } from "./tables/Projectile.sol";
 import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";
 import { Tower } from "./tables/Tower.sol";
 import { Username } from "./tables/Username.sol";

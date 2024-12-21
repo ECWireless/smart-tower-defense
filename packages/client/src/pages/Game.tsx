@@ -42,7 +42,7 @@ export const InnerGamePage = (): JSX.Element => {
       Health,
       Owner,
       Position,
-      ProjectileLogic,
+      Projectile,
       ProjectileTrajectory,
       Tower,
     },
@@ -124,8 +124,8 @@ export const InnerGamePage = (): JSX.Element => {
       currentHealth: health.currentHealth,
       maxHealth: health.maxHealth,
       owner: owner as Address,
-      projectileLogic: (getComponentValue(ProjectileLogic, entity)?.value ??
-        zeroAddress) as Address,
+      projectileLogicAddress: (getComponentValue(Projectile, entity)
+        ?.logicAddress ?? zeroAddress) as Address,
       projectileTrajectory,
       x: position.x,
       y: position.y,
@@ -374,11 +374,15 @@ export const InnerGamePage = (): JSX.Element => {
                         tower.projectileTrajectory[tickCount].y;
 
                     const allOtherProjectileXPositions = towers
-                      .filter(_tower => _tower.projectileLogic !== zeroAddress)
+                      .filter(
+                        _tower => _tower.projectileLogicAddress !== zeroAddress,
+                      )
                       .filter(_tower => _tower.id !== tower.id)
                       .map(_tower => _tower.projectileTrajectory[tickCount]?.x);
                     const allOtherProjectileYPositions = towers
-                      .filter(_tower => _tower.projectileLogic !== zeroAddress)
+                      .filter(
+                        _tower => _tower.projectileLogicAddress !== zeroAddress,
+                      )
                       .filter(_tower => _tower.id !== tower.id)
                       .map(_tower => _tower.projectileTrajectory[tickCount]?.y);
                     const projectileCollision =
@@ -502,7 +506,7 @@ export const InnerGamePage = (): JSX.Element => {
                         <Tooltip
                           closeDelay={200}
                           content={`${
-                            activeTower.projectileLogic !== zeroAddress
+                            activeTower.projectileLogicAddress !== zeroAddress
                               ? 'Offensive Tower'
                               : 'Defensive Tower'
                           } - Health: ${activeTower.currentHealth}/${activeTower.maxHealth}`}
@@ -522,13 +526,15 @@ export const InnerGamePage = (): JSX.Element => {
                               handleDragStart(
                                 e,
                                 activeTower.id,
-                                activeTower.projectileLogic !== zeroAddress
+                                activeTower.projectileLogicAddress !==
+                                  zeroAddress
                                   ? 'offense'
                                   : 'defense',
                               )
                             }
                           >
-                            {activeTower.projectileLogic !== zeroAddress ? (
+                            {activeTower.projectileLogicAddress !==
+                            zeroAddress ? (
                               <GiCannon
                                 color={
                                   activeTower.owner === game.player1Address

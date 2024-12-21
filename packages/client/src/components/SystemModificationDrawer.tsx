@@ -1,7 +1,10 @@
 import { Box } from '@chakra-ui/react';
+import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
-import { useCallback, useState } from 'react';
+import { format } from 'prettier/standalone';
+import solidityPlugin from 'prettier-plugin-solidity/standalone';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
@@ -18,14 +21,6 @@ import {
 } from './ui/drawer';
 import { toaster } from './ui/toaster';
 
-const DEFAULT_SOURCE_CODE = `
-contract DefaultProjectileLogicLeft {
-  function getNextProjectilePosition(int8 x, int8 y) public pure returns (int8, int8) {
-    return (x + 1, y);
-  }
-}
-`;
-
 type SystemModificationDrawerProps = {
   isSystemDrawerOpen: boolean;
   setIsSystemDrawerOpen: (isOpen: boolean) => void;
@@ -36,11 +31,28 @@ export const SystemModificationDrawer: React.FC<
   SystemModificationDrawerProps
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
+    components: { Projectile },
     systemCalls: { modifyTowerSystem },
   } = useMUD();
 
-  const [sourceCode, setSourceCode] = useState(DEFAULT_SOURCE_CODE.trim());
+  const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
+
+  useEffect(() => {
+    (async () => {
+      const _sourceCode =
+        getComponentValue(Projectile, tower.id as Entity)?.sourceCode ?? null;
+
+      if (_sourceCode) {
+        const formattedSourceCode = await format(_sourceCode, {
+          parser: 'solidity-parse',
+          plugins: [solidityPlugin],
+        });
+
+        setSourceCode(formattedSourceCode.trim());
+      }
+    })();
+  }, [isSystemDrawerOpen, Projectile, tower.id]);
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
@@ -82,7 +94,11 @@ export const SystemModificationDrawer: React.FC<
         setIsDeploying(false);
         return;
       }
-      const { error, success } = await modifyTowerSystem(tower.id, bytecode);
+      const { error, success } = await modifyTowerSystem(
+        tower.id,
+        bytecode,
+        sourceCode,
+      );
 
       if (error && !success) {
         throw new Error(error);
@@ -106,7 +122,13 @@ export const SystemModificationDrawer: React.FC<
     } finally {
       setIsDeploying(false);
     }
-  }, [modifyTowerSystem, onCompileCode, setIsSystemDrawerOpen, tower]);
+  }, [
+    modifyTowerSystem,
+    onCompileCode,
+    setIsSystemDrawerOpen,
+    sourceCode,
+    tower,
+  ]);
 
   // Configure Solidity language
   loader.init().then(monacoInstance => {

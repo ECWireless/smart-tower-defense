@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, ProjectileLogic, Tower } from "../codegen/index.sol";
+import { AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, Tower } from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { MAX_TOWER_HEALTH } from "../../constants.sol";
@@ -43,7 +43,11 @@ contract TowerSystem is System {
     return towerId;
   }
 
-  function modifyTowerSystem(bytes32 towerId, bytes memory bytecode) external returns (address projectileLogicAddress) {
+  function modifyTowerSystem(
+    bytes32 towerId,
+    bytes memory bytecode,
+    string memory sourceCode
+  ) external returns (address projectileLogicAddress) {
     address player = _msgSender();
     address owner = Owner.get(towerId);
     bytes32 playerGameId = CurrentGame.get(addressToEntityKey(player));
@@ -74,15 +78,15 @@ contract TowerSystem is System {
     require(size <= 1000, "Contract cannot be larger than 1000 bytes");
 
     Game.setActionCount(playerGameId, currentGame.actionCount - 1);
-    ProjectileLogic.set(towerId, address(newSystem));
+    Projectile.set(towerId, address(newSystem), sourceCode);
     return address(newSystem);
   }
 
   function getContractSize(bytes32 towerId) external view returns (uint256 size) {
-    address projectileLogicContract = ProjectileLogic.get(towerId);
+    address projectileLogicAddress = Projectile.getLogicAddress(towerId);
 
     assembly {
-      size := extcodesize(projectileLogicContract)
+      size := extcodesize(projectileLogicAddress)
     }
     return size;
   }
@@ -195,12 +199,20 @@ contract TowerSystem is System {
     (, int8 width) = MapConfig.get();
     if (projectile && x < width / 2) {
       address defaultProjectileLogicLeftAddress = DefaultLogicA.get();
-      ProjectileLogic.set(towerId, defaultProjectileLogicLeftAddress);
+      Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
+      Projectile.setSourceCode(
+        towerId,
+        "contract DefaultProjectileLogic { function getNextProjectilePosition(int8 x, int8 y) public pure returns (int8, int8) { return (x + 1, y); }}"
+      );
     }
 
     if (projectile && x > width / 2) {
       address defaultProjectileLogicRightAddress = DefaultLogicB.get();
-      ProjectileLogic.set(towerId, defaultProjectileLogicRightAddress);
+      Projectile.setLogicAddress(towerId, defaultProjectileLogicRightAddress);
+      Projectile.setSourceCode(
+        towerId,
+        "contract DefaultProjectileLogic { function getNextProjectilePosition(int8 x, int8 y) public pure returns (int8, int8) { return (x - 1, y); }}"
+      );
     }
 
     _decrementActionCount(gameId);

@@ -102,11 +102,16 @@ export function createSystemCalls(
     }
   };
 
-  const modifyTowerSystem = async (towerId: string, bytecode: string) => {
+  const modifyTowerSystem = async (
+    towerId: string,
+    bytecode: string,
+    sourceCode: string,
+  ) => {
     try {
       const tx = await worldContract.write.app__modifyTowerSystem([
         towerId as `0x${string}`,
         bytecode as `0x${string}`,
+        sourceCode,
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
