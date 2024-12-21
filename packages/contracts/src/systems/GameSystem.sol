@@ -201,7 +201,7 @@ contract GameSystem is System {
       towers[i] = TowerDetails({
         id: towerId,
         health: Health.getCurrentHealth(towerId),
-        projectile: Projectile.get(towerId),
+        projectileAddress: Projectile.getLogicAddress(towerId),
         projectileX: x,
         projectileY: y,
         x: x,
@@ -222,19 +222,24 @@ contract GameSystem is System {
     for (uint256 i = 0; i < towers.length; i++) {
       TowerDetails memory tower = towers[i];
 
-      if (tower.health == 0 || !tower.projectile) {
+      if (tower.health == 0 || tower.projectileAddress == address(0)) {
         continue;
       }
 
-      (int8 newProjectileX, int8 newProjectileY) = _getLeftProjectilePosition(tower.projectileX, tower.projectileY);
+      bytes memory data = abi.encodeWithSignature(
+        "getNextProjectilePosition(int8,int8)",
+        tower.projectileX,
+        tower.projectileY
+      );
+
+      (bool success, bytes memory returndata) = tower.projectileAddress.call(data);
+      require(success, "getNextProjectilePosition call failed");
+
+      (int8 newProjectileX, int8 newProjectileY) = abi.decode(returndata, (int8, int8));
 
       (int8 mapHeight, int8 mapWidth) = MapConfig.get();
-      if (mapWidth / 2 < tower.x) {
-        (newProjectileX, newProjectileY) = _getRightProjectilePosition(tower.projectileX, tower.projectileY);
-      }
-
       if (newProjectileX > mapWidth - 1 || newProjectileX < 0 || newProjectileY > mapHeight - 1 || newProjectileY < 0) {
-        towers[i].projectile = false;
+        towers[i].projectileAddress = address(0);
         continue;
       }
 
@@ -271,13 +276,13 @@ contract GameSystem is System {
     int8 newProjectileX,
     int8 newProjectileY
   ) internal pure returns (bool) {
-    if (i == j || towers[j].health == 0 || !towers[j].projectile) {
+    if (i == j || towers[j].health == 0 || towers[j].projectileAddress == address(0)) {
       return false;
     }
 
     if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
-      towers[i].projectile = false;
-      towers[j].projectile = false;
+      towers[i].projectileAddress = address(0);
+      towers[j].projectileAddress = address(0);
       return true;
     }
 
@@ -306,7 +311,7 @@ contract GameSystem is System {
 
     if (Castle.get(positionEntity)) {
       Health.setCurrentHealth(positionEntity, newHealth);
-      towers[i].projectile = false;
+      towers[i].projectileAddress = address(0);
 
       if (newHealth == 0) {
         bytes32 gameId = CurrentGame.get(towers[i].id);
@@ -318,7 +323,7 @@ contract GameSystem is System {
       }
     } else {
       Health.setCurrentHealth(positionEntity, newHealth);
-      towers[i].projectile = false;
+      towers[i].projectileAddress = address(0);
 
       if (newHealth == 0) {
         _removeDestroyedTower(positionEntity);
@@ -347,13 +352,5 @@ contract GameSystem is System {
     Health.set(positionEntity, 0, MAX_TOWER_HEALTH);
     EntityAtPosition.set(positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)), 0);
     Position.set(positionEntity, -1, -1);
-  }
-
-  function _getLeftProjectilePosition(int8 x, int8 y) internal pure returns (int8, int8) {
-    return (x + 1, y);
-  }
-
-  function _getRightProjectilePosition(int8 x, int8 y) internal pure returns (int8, int8) {
-    return (x - 1, y);
   }
 }

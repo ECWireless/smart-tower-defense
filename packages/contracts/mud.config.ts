@@ -34,6 +34,26 @@ export default defineWorld({
       key: [],
     },
     CurrentGame: "bytes32", // Game.id || towerId
+    DefaultLogicA: {
+      // DefaultProjectileLogicLeft address
+      schema: {
+        value: "address",
+      },
+      key: [],
+      codegen: {
+        dataStruct: false,
+      },
+    },
+    DefaultLogicB: {
+      // DefaultProjectileLogicRight address
+      schema: {
+        vlue: "address",
+      },
+      key: [],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     EntityAtPosition: "bytes32",
     Game: {
       schema: {
@@ -90,7 +110,14 @@ export default defineWorld({
         dataStruct: false,
       },
     },
-    Projectile: "bool",
+    Projectile: {
+      schema: {
+        id: "bytes32", // ID is the tower ID,
+        logicAddress: "address",
+        sourceCode: "string",
+      },
+      key: ["id"],
+    },
     ProjectileTrajectory: {
       schema: {
         id: "bytes32",

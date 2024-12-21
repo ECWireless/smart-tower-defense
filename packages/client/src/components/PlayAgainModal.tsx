@@ -4,7 +4,10 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zeroAddress } from 'viem';
 
-import { Button } from '../components/ui/button';
+import { useGame } from '../contexts/GameContext';
+import { useMUD } from '../MUDContext';
+import { GAMES_PATH } from '../Routes';
+import { Button } from './ui/button';
 import {
   DialogBackdrop,
   DialogBody,
@@ -14,11 +17,8 @@ import {
   DialogHeader,
   DialogRoot,
   DialogTitle,
-} from '../components/ui/dialog';
-import { toaster } from '../components/ui/toaster';
-import { useGame } from '../contexts/GameContext';
-import { useMUD } from '../MUDContext';
-import { GAMES_PATH } from '../Routes';
+} from './ui/dialog';
+import { toaster } from './ui/toaster';
 
 type PlayAgainModalProps = {
   isGameOverModalOpen: boolean;
