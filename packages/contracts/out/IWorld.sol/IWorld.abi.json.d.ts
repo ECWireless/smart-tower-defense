@@ -28,9 +28,9 @@ declare const abi: [
     "name": "app__getContractSize",
     "inputs": [
       {
-        "name": "towerId",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "bytecode",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
     "outputs": [
@@ -40,7 +40,7 @@ declare const abi: [
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",

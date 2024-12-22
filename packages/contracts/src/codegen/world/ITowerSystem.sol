@@ -21,5 +21,5 @@ interface ITowerSystem {
     string memory sourceCode
   ) external returns (address projectileLogicAddress);
 
-  function app__getContractSize(bytes32 towerId) external view returns (uint256 size);
+  function app__getContractSize(bytes memory bytecode) external returns (uint256 size);
 }

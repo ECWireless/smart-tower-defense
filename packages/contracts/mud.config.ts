@@ -114,6 +114,7 @@ export default defineWorld({
       schema: {
         id: "bytes32", // ID is the tower ID,
         logicAddress: "address",
+        sizeLimit: "uint256",
         sourceCode: "string",
       },
       key: ["id"],

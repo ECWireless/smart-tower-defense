@@ -5,8 +5,9 @@ import { System } from "@latticexyz/world/src/System.sol";
 import { AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, Tower } from "../codegen/index.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
-import { MAX_TOWER_HEALTH } from "../../constants.sol";
+import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
 import "forge-std/console.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 // TOWER ID
 // bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
@@ -75,18 +76,24 @@ contract TowerSystem is System {
     }
 
     require(size > 0, "Contract creation failed");
-    require(size <= 1000, "Contract cannot be larger than 1000 bytes");
+    require(
+      size <= DEFAULT_LOGIC_SIZE_LIMIT,
+      string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
+    );
 
     Game.setActionCount(playerGameId, currentGame.actionCount - 1);
-    Projectile.set(towerId, address(newSystem), sourceCode);
+    Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, sourceCode);
     return address(newSystem);
   }
 
-  function getContractSize(bytes32 towerId) external view returns (uint256 size) {
-    address projectileLogicAddress = Projectile.getLogicAddress(towerId);
+  function getContractSize(bytes memory bytecode) external returns (uint256 size) {
+    address newSystem;
+    assembly {
+      newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
+    }
 
     assembly {
-      size := extcodesize(projectileLogicAddress)
+      size := extcodesize(newSystem)
     }
     return size;
   }
@@ -215,6 +222,7 @@ contract TowerSystem is System {
       );
     }
 
+    Projectile.setSizeLimit(towerId, DEFAULT_LOGIC_SIZE_LIMIT);
     _decrementActionCount(gameId);
   }
 

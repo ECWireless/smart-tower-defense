@@ -1,4 +1,4 @@
-import { Box } from '@chakra-ui/react';
+import { Box, Text } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
@@ -35,20 +35,21 @@ export const SystemModificationDrawer: React.FC<
     systemCalls: { modifyTowerSystem },
   } = useMUD();
 
+  const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
-      const _sourceCode =
-        getComponentValue(Projectile, tower.id as Entity)?.sourceCode ?? null;
+      const projectile = getComponentValue(Projectile, tower.id as Entity);
 
-      if (_sourceCode) {
-        const formattedSourceCode = await format(_sourceCode, {
+      if (projectile) {
+        const formattedSourceCode = await format(projectile.sourceCode, {
           parser: 'solidity-parse',
           plugins: [solidityPlugin],
         });
 
+        setSizeLimit(projectile.sizeLimit);
         setSourceCode(formattedSourceCode.trim());
       }
     })();
@@ -170,7 +171,18 @@ export const SystemModificationDrawer: React.FC<
             System Modification
           </DrawerTitle>
         </DrawerHeader>
-        <DrawerBody>
+        <DrawerBody color="black">
+          <Box mb={4}>
+            <Text>Rules:</Text>
+            <Text>
+              Modify the code to change the behavior of the projectile. The
+              projectile will be deployed as a smart contract.
+            </Text>
+            <Text>
+              - The size limit of the projectile logic code is{' '}
+              {sizeLimit.toString()}.
+            </Text>
+          </Box>
           <Box border="1px solid black" h="200px" w="100%">
             <Editor
               defaultLanguage="solidity"
