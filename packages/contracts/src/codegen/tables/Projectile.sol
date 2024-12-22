@@ -18,6 +18,7 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct ProjectileData {
   address logicAddress;
+  uint256 sizeLimit;
   string sourceCode;
 }
 
@@ -26,12 +27,12 @@ library Projectile {
   ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000050726f6a656374696c65000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0014010114000000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0034020114200000000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address, string)
-  Schema constant _valueSchema = Schema.wrap(0x0014010161c50000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (address, uint256, string)
+  Schema constant _valueSchema = Schema.wrap(0x00340201611fc500000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -47,9 +48,10 @@ library Projectile {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](2);
+    fieldNames = new string[](3);
     fieldNames[0] = "logicAddress";
-    fieldNames[1] = "sourceCode";
+    fieldNames[1] = "sizeLimit";
+    fieldNames[2] = "sourceCode";
   }
 
   /**
@@ -106,6 +108,48 @@ library Projectile {
     _keyTuple[0] = id;
 
     StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((logicAddress)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get sizeLimit.
+   */
+  function getSizeLimit(bytes32 id) internal view returns (uint256 sizeLimit) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Get sizeLimit.
+   */
+  function _getSizeLimit(bytes32 id) internal view returns (uint256 sizeLimit) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Set sizeLimit.
+   */
+  function setSizeLimit(bytes32 id, uint256 sizeLimit) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((sizeLimit)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set sizeLimit.
+   */
+  function _setSizeLimit(bytes32 id, uint256 sizeLimit) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((sizeLimit)), _fieldLayout);
   }
 
   /**
@@ -303,8 +347,8 @@ library Projectile {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(bytes32 id, address logicAddress, string memory sourceCode) internal {
-    bytes memory _staticData = encodeStatic(logicAddress);
+  function set(bytes32 id, address logicAddress, uint256 sizeLimit, string memory sourceCode) internal {
+    bytes memory _staticData = encodeStatic(logicAddress, sizeLimit);
 
     EncodedLengths _encodedLengths = encodeLengths(sourceCode);
     bytes memory _dynamicData = encodeDynamic(sourceCode);
@@ -318,8 +362,8 @@ library Projectile {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(bytes32 id, address logicAddress, string memory sourceCode) internal {
-    bytes memory _staticData = encodeStatic(logicAddress);
+  function _set(bytes32 id, address logicAddress, uint256 sizeLimit, string memory sourceCode) internal {
+    bytes memory _staticData = encodeStatic(logicAddress, sizeLimit);
 
     EncodedLengths _encodedLengths = encodeLengths(sourceCode);
     bytes memory _dynamicData = encodeDynamic(sourceCode);
@@ -334,7 +378,7 @@ library Projectile {
    * @notice Set the full data using the data struct.
    */
   function set(bytes32 id, ProjectileData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.logicAddress);
+    bytes memory _staticData = encodeStatic(_table.logicAddress, _table.sizeLimit);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.sourceCode);
     bytes memory _dynamicData = encodeDynamic(_table.sourceCode);
@@ -349,7 +393,7 @@ library Projectile {
    * @notice Set the full data using the data struct.
    */
   function _set(bytes32 id, ProjectileData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.logicAddress);
+    bytes memory _staticData = encodeStatic(_table.logicAddress, _table.sizeLimit);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.sourceCode);
     bytes memory _dynamicData = encodeDynamic(_table.sourceCode);
@@ -363,8 +407,10 @@ library Projectile {
   /**
    * @notice Decode the tightly packed blob of static data using this table's field layout.
    */
-  function decodeStatic(bytes memory _blob) internal pure returns (address logicAddress) {
+  function decodeStatic(bytes memory _blob) internal pure returns (address logicAddress, uint256 sizeLimit) {
     logicAddress = (address(Bytes.getBytes20(_blob, 0)));
+
+    sizeLimit = (uint256(Bytes.getBytes32(_blob, 20)));
   }
 
   /**
@@ -393,7 +439,7 @@ library Projectile {
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
   ) internal pure returns (ProjectileData memory _table) {
-    (_table.logicAddress) = decodeStatic(_staticData);
+    (_table.logicAddress, _table.sizeLimit) = decodeStatic(_staticData);
 
     (_table.sourceCode) = decodeDynamic(_encodedLengths, _dynamicData);
   }
@@ -422,8 +468,8 @@ library Projectile {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(address logicAddress) internal pure returns (bytes memory) {
-    return abi.encodePacked(logicAddress);
+  function encodeStatic(address logicAddress, uint256 sizeLimit) internal pure returns (bytes memory) {
+    return abi.encodePacked(logicAddress, sizeLimit);
   }
 
   /**
@@ -453,9 +499,10 @@ library Projectile {
    */
   function encode(
     address logicAddress,
+    uint256 sizeLimit,
     string memory sourceCode
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(logicAddress);
+    bytes memory _staticData = encodeStatic(logicAddress, sizeLimit);
 
     EncodedLengths _encodedLengths = encodeLengths(sourceCode);
     bytes memory _dynamicData = encodeDynamic(sourceCode);

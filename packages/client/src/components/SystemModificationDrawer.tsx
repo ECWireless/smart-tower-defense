@@ -1,4 +1,4 @@
-import { Box } from '@chakra-ui/react';
+import { Box, Text } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
@@ -6,6 +6,7 @@ import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
 import { Button } from './ui/button';
@@ -32,23 +33,25 @@ export const SystemModificationDrawer: React.FC<
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
     components: { Projectile },
-    systemCalls: { modifyTowerSystem },
+    systemCalls: { getContractSize, modifyTowerSystem },
   } = useMUD();
+  const { refreshGame } = useGame();
 
+  const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
-      const _sourceCode =
-        getComponentValue(Projectile, tower.id as Entity)?.sourceCode ?? null;
+      const projectile = getComponentValue(Projectile, tower.id as Entity);
 
-      if (_sourceCode) {
-        const formattedSourceCode = await format(_sourceCode, {
+      if (projectile) {
+        const formattedSourceCode = await format(projectile.sourceCode, {
           parser: 'solidity-parse',
           plugins: [solidityPlugin],
         });
 
+        setSizeLimit(projectile.sizeLimit);
         setSourceCode(formattedSourceCode.trim());
       }
     })();
@@ -94,6 +97,18 @@ export const SystemModificationDrawer: React.FC<
         setIsDeploying(false);
         return;
       }
+
+      const currentContractSize = await getContractSize(bytecode);
+      if (!currentContractSize) {
+        throw new Error('Failed to get contract size');
+      }
+
+      if (currentContractSize > sizeLimit) {
+        throw new Error(
+          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit}`,
+        );
+      }
+
       const { error, success } = await modifyTowerSystem(
         tower.id,
         bytecode,
@@ -110,6 +125,7 @@ export const SystemModificationDrawer: React.FC<
       });
 
       setIsSystemDrawerOpen(false);
+      refreshGame();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -123,9 +139,12 @@ export const SystemModificationDrawer: React.FC<
       setIsDeploying(false);
     }
   }, [
+    getContractSize,
     modifyTowerSystem,
     onCompileCode,
+    refreshGame,
     setIsSystemDrawerOpen,
+    sizeLimit,
     sourceCode,
     tower,
   ]);
@@ -170,7 +189,22 @@ export const SystemModificationDrawer: React.FC<
             System Modification
           </DrawerTitle>
         </DrawerHeader>
-        <DrawerBody>
+        <DrawerBody color="black">
+          <Box mb={4}>
+            <Text fontWeight={600}>Rules:</Text>
+            <Text>
+              - Modify the code to change the behavior of the projectile. The
+              projectile will be deployed as a smart contract.
+            </Text>
+            <Text>
+              - Projectiles move at a speed of 1 tile per tick, and this speed
+              cannot be exceeded. There are 12 ticks when the round results run.
+            </Text>
+            <Text>
+              - The size limit of the projectile logic code is{' '}
+              {sizeLimit.toString()}.
+            </Text>
+          </Box>
           <Box border="1px solid black" h="200px" w="100%">
             <Editor
               defaultLanguage="solidity"
