@@ -9,6 +9,7 @@ import { ITowerSystem } from "../codegen/world/IWorld.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH, MAX_TOWER_HEALTH, MAX_TICKS } from "../../constants.sol";
+import { Math } from "../Libraries/Math.sol";
 
 contract GameSystem is System {
   function getGameSystemAddress() external view returns (address) {
@@ -220,52 +221,96 @@ contract GameSystem is System {
 
   function _processTick(TowerDetails[] memory towers) internal {
     for (uint256 i = 0; i < towers.length; i++) {
-      TowerDetails memory tower = towers[i];
-
-      if (tower.health == 0 || tower.projectileAddress == address(0)) {
+      // Step 1: early checks
+      if (towers[i].health == 0 || towers[i].projectileAddress == address(0)) {
         continue;
       }
 
-      bytes memory data = abi.encodeWithSignature(
-        "getNextProjectilePosition(int8,int8)",
-        tower.projectileX,
-        tower.projectileY
-      );
+      // Step 2: get the next projectile position
+      (int8 newX, int8 newY) = _getNextProjectilePosition(towers[i]);
 
-      (bool success, bytes memory returndata) = tower.projectileAddress.call(data);
-      require(success, "getNextProjectilePosition call failed");
-
-      (int8 newProjectileX, int8 newProjectileY) = abi.decode(returndata, (int8, int8));
-
-      (int8 mapHeight, int8 mapWidth) = MapConfig.get();
-      if (newProjectileX > mapWidth - 1 || newProjectileX < 0 || newProjectileY > mapHeight - 1 || newProjectileY < 0) {
+      // Step 3: validate distance and check out-of-bounds
+      bool isValidMove = _validateProjectileMovement(towers, i, newX, newY);
+      if (!isValidMove) {
+        // either set projectile to 0 or continue, depending on your logic
         towers[i].projectileAddress = address(0);
         continue;
       }
 
-      (int8[] memory previousXTrajectory, int8[] memory previousYTrajectory) = ProjectileTrajectory.get(tower.id);
+      // Step 4: update the trajectory
+      _updateProjectileTrajectory(towers[i].id, newX, newY);
 
-      // Add the new position after the last position in the trajectory array
-      int8[] memory newXTrajectory = new int8[](previousXTrajectory.length + 1);
-      int8[] memory newYTrajectory = new int8[](previousYTrajectory.length + 1);
+      // Step 5: handle collisions
+      _handleCollisions(towers, i, newX, newY);
 
-      for (uint256 j = 0; j < previousXTrajectory.length; j++) {
-        newXTrajectory[j] = previousXTrajectory[j];
-        newYTrajectory[j] = previousYTrajectory[j];
+      // Step 6: finalize the projectile movement
+      _handleProjectileMovement(towers, i, newX, newY);
+    }
+  }
+
+  function _getNextProjectilePosition(TowerDetails memory tower) internal returns (int8 newX, int8 newY) {
+    // get position from call to Tower System
+    bytes memory data = abi.encodeWithSignature(
+      "getNextProjectilePosition(int8,int8)",
+      tower.projectileX,
+      tower.projectileY
+    );
+
+    (bool success, bytes memory returndata) = tower.projectileAddress.call(data);
+    require(success, "getNextProjectilePosition call failed");
+
+    (newX, newY) = abi.decode(returndata, (int8, int8));
+  }
+
+  function _validateProjectileMovement(
+    TowerDetails[] memory towers,
+    uint256 towerIndex,
+    int8 newX,
+    int8 newY
+  ) internal view returns (bool) {
+    TowerDetails memory tower = towers[towerIndex];
+
+    // Check distance > 1 => invalid
+    uint16 distance = Math.chebyshevDistance(
+      uint256(int256(tower.projectileX)),
+      uint256(int256(tower.projectileY)),
+      uint256(int256(newX)),
+      uint256(int256(newY))
+    );
+    if (distance > 1) {
+      return false;
+    }
+
+    // Check out-of-bounds
+    (int8 mapHeight, int8 mapWidth) = MapConfig.get();
+    if (newX > mapWidth - 1 || newX < 0 || newY > mapHeight - 1 || newY < 0) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function _updateProjectileTrajectory(bytes32 towerId, int8 newProjectileX, int8 newProjectileY) internal {
+    (int8[] memory prevX, int8[] memory prevY) = ProjectileTrajectory.get(towerId);
+
+    int8[] memory newX = new int8[](prevX.length + 1);
+    int8[] memory newY = new int8[](prevY.length + 1);
+
+    for (uint256 j = 0; j < prevX.length; j++) {
+      newX[j] = prevX[j];
+      newY[j] = prevY[j];
+    }
+    newX[prevX.length] = newProjectileX;
+    newY[prevY.length] = newProjectileY;
+
+    ProjectileTrajectory.set(towerId, newX, newY);
+  }
+
+  function _handleCollisions(TowerDetails[] memory towers, uint256 towerIndex, int8 newX, int8 newY) internal pure {
+    for (uint256 j = 0; j < towers.length; j++) {
+      if (_checkProjectileCollision(towers, towerIndex, j, newX, newY)) {
+        break;
       }
-
-      newXTrajectory[previousXTrajectory.length] = newProjectileX;
-      newYTrajectory[previousYTrajectory.length] = newProjectileY;
-
-      ProjectileTrajectory.set(tower.id, newXTrajectory, newYTrajectory);
-
-      for (uint256 j = 0; j < towers.length; j++) {
-        if (_checkProjectileCollision(towers, i, j, newProjectileX, newProjectileY)) {
-          break;
-        }
-      }
-
-      _handleProjectileMovement(towers, i, newProjectileX, newProjectileY);
     }
   }
 
@@ -275,7 +320,7 @@ contract GameSystem is System {
     uint256 j,
     int8 newProjectileX,
     int8 newProjectileY
-  ) internal pure returns (bool) {
+  ) public pure returns (bool) {
     if (i == j || towers[j].health == 0 || towers[j].projectileAddress == address(0)) {
       return false;
     }

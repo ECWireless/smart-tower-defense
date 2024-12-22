@@ -1,6 +1,82 @@
 declare const abi: [
   {
     "type": "function",
+    "name": "app___checkProjectileCollision",
+    "inputs": [
+      {
+        "name": "towers",
+        "type": "tuple[]",
+        "internalType": "struct TowerDetails[]",
+        "components": [
+          {
+            "name": "id",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "health",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "projectileAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "projectileX",
+            "type": "int8",
+            "internalType": "int8"
+          },
+          {
+            "name": "projectileY",
+            "type": "int8",
+            "internalType": "int8"
+          },
+          {
+            "name": "x",
+            "type": "int8",
+            "internalType": "int8"
+          },
+          {
+            "name": "y",
+            "type": "int8",
+            "internalType": "int8"
+          }
+        ]
+      },
+      {
+        "name": "i",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "j",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newProjectileX",
+        "type": "int8",
+        "internalType": "int8"
+      },
+      {
+        "name": "newProjectileY",
+        "type": "int8",
+        "internalType": "int8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
     "name": "app__createGame",
     "inputs": [
       {
