@@ -40,7 +40,7 @@ export function createSystemCalls(
    *   syncToRecs
    *   (https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
    */
-  { worldContract, waitForTransaction }: SetupNetworkResult,
+  { publicClient, worldContract, waitForTransaction }: SetupNetworkResult,
 ) {
   const createGame = async (player2: string, username: string) => {
     try {
@@ -65,11 +65,20 @@ export function createSystemCalls(
     }
   };
 
-  const getContractSize = async (towerId: string) => {
-    const size = await worldContract.read.app__getContractSize([
-      towerId as `0x${string}`,
-    ]);
-    return size;
+  const getContractSize = async (bytecode: string) => {
+    try {
+      const simulatedTx = await publicClient.simulateContract({
+        abi: worldContract.abi,
+        address: worldContract.address,
+        args: [bytecode as `0x${string}`],
+        functionName: 'app__getContractSize',
+      });
+
+      const sizeLimit = simulatedTx.result;
+      return sizeLimit;
+    } catch (error) {
+      return false;
+    }
   };
 
   const installTower = async (

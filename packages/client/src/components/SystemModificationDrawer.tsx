@@ -6,6 +6,7 @@ import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
 import { Button } from './ui/button';
@@ -32,8 +33,9 @@ export const SystemModificationDrawer: React.FC<
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
     components: { Projectile },
-    systemCalls: { modifyTowerSystem },
+    systemCalls: { getContractSize, modifyTowerSystem },
   } = useMUD();
+  const { refreshGame } = useGame();
 
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
@@ -95,6 +97,18 @@ export const SystemModificationDrawer: React.FC<
         setIsDeploying(false);
         return;
       }
+
+      const currentContractSize = await getContractSize(bytecode);
+      if (!currentContractSize) {
+        throw new Error('Failed to get contract size');
+      }
+
+      if (currentContractSize > sizeLimit) {
+        throw new Error(
+          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit}`,
+        );
+      }
+
       const { error, success } = await modifyTowerSystem(
         tower.id,
         bytecode,
@@ -111,6 +125,7 @@ export const SystemModificationDrawer: React.FC<
       });
 
       setIsSystemDrawerOpen(false);
+      refreshGame();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -124,9 +139,12 @@ export const SystemModificationDrawer: React.FC<
       setIsDeploying(false);
     }
   }, [
+    getContractSize,
     modifyTowerSystem,
     onCompileCode,
+    refreshGame,
     setIsSystemDrawerOpen,
+    sizeLimit,
     sourceCode,
     tower,
   ]);
@@ -173,9 +191,9 @@ export const SystemModificationDrawer: React.FC<
         </DrawerHeader>
         <DrawerBody color="black">
           <Box mb={4}>
-            <Text>Rules:</Text>
+            <Text fontWeight={600}>Rules:</Text>
             <Text>
-              Modify the code to change the behavior of the projectile. The
+              - Modify the code to change the behavior of the projectile. The
               projectile will be deployed as a smart contract.
             </Text>
             <Text>
