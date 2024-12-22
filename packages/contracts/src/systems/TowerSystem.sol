@@ -6,6 +6,7 @@ import { AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPositio
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
+import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import "forge-std/console.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -50,22 +51,12 @@ contract TowerSystem is System {
     string memory sourceCode
   ) external returns (address projectileLogicAddress) {
     address player = _msgSender();
-    address owner = Owner.get(towerId);
     bytes32 playerGameId = CurrentGame.get(addressToEntityKey(player));
-    bytes32 towerGameId = CurrentGame.get(towerId);
     GameData memory currentGame = Game.get(playerGameId);
 
-    require(playerGameId != 0, "TowerSystem: player has no ongoing game");
-    require(playerGameId == towerGameId, "TowerSystem: game does not match player's ongoing game");
-    require(owner == player, "TowerSystem: not tower owner");
-    require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
-    require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
-    require(currentGame.turn == player, "TowerSystem: not player's turn");
-    require(Tower.get(towerId), "TowerSystem: entity is not a tower");
-    require(Health.getCurrentHealth(towerId) > 0, "TowerSystem: tower is destroyed");
+    _validModifySystem(towerId, player);
 
     address newSystem;
-
     assembly {
       newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
     }
@@ -240,5 +231,40 @@ contract TowerSystem is System {
 
   function _decrementActionCount(bytes32 gameId) internal {
     Game.setActionCount(gameId, Game.getActionCount(gameId) - 1);
+  }
+
+  function _validModifySystem(bytes32 towerId, address player) internal {
+    bytes32 playerGameId = CurrentGame.get(addressToEntityKey(player));
+    bytes32 towerGameId = CurrentGame.get(towerId);
+    GameData memory currentGame = Game.get(playerGameId);
+
+    require(playerGameId != 0, "TowerSystem: player has no ongoing game");
+    require(playerGameId == towerGameId, "TowerSystem: game does not match player's ongoing game");
+    require(Owner.get(towerId) == player, "TowerSystem: not tower owner");
+    require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
+    require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
+    require(currentGame.turn == player, "TowerSystem: not player's turn");
+    require(Tower.get(towerId), "TowerSystem: entity is not a tower");
+    require(Health.getCurrentHealth(towerId) > 0, "TowerSystem: tower is destroyed");
+
+    (int8 oldX, int8 oldY) = Position.get(towerId);
+
+    bytes memory data = abi.encodeWithSignature("getNextProjectilePosition(int8,int8)", oldX, oldY);
+    address projectileAddress = Projectile.getLogicAddress(towerId);
+    (bool success, bytes memory returndata) = projectileAddress.call(data);
+    require(success, "getNextProjectilePosition call failed");
+    (oldX, oldY) = abi.decode(returndata, (int8, int8));
+
+    (success, returndata) = projectileAddress.call(data);
+    require(success, "getNextProjectilePosition call failed");
+    (int8 newX, int8 newY) = abi.decode(returndata, (int8, int8));
+
+    uint16 distance = ProjectileHelpers.chebyshevDistance(
+      uint256(int256(oldX)),
+      uint256(int256(oldY)),
+      uint256(int256(newX)),
+      uint256(int256(newY))
+    );
+    require(distance == 1, "TowerSystem: projectile speed exceeds rules");
   }
 }

@@ -9,7 +9,7 @@ import { ITowerSystem } from "../codegen/world/IWorld.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH, MAX_TOWER_HEALTH, MAX_TICKS } from "../../constants.sol";
-import { Math } from "../Libraries/Math.sol";
+import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 
 contract GameSystem is System {
   function getGameSystemAddress() external view returns (address) {
@@ -271,7 +271,7 @@ contract GameSystem is System {
     TowerDetails memory tower = towers[towerIndex];
 
     // Check distance > 1 => invalid
-    uint16 distance = Math.chebyshevDistance(
+    uint16 distance = ProjectileHelpers.chebyshevDistance(
       uint256(int256(tower.projectileX)),
       uint256(int256(tower.projectileY)),
       uint256(int256(newX)),
