@@ -5,7 +5,6 @@ import { System } from "@latticexyz/world/src/System.sol";
 import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower, Username, UsernameTaken } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
-import { ITowerSystem } from "../codegen/world/IWorld.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH, MAX_TOWER_HEALTH, MAX_TICKS } from "../../constants.sol";
@@ -71,7 +70,7 @@ contract GameSystem is System {
     (int16 mapHeight, int16 mapWidth) = MapConfig.get();
 
     Position.set(castle1Id, 0, mapHeight / 2);
-    Position.set(castle2Id, mapWidth - 1, mapHeight / 2);
+    Position.set(castle2Id, mapWidth - 5, mapHeight / 2);
 
     Health.set(castle1Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
     Health.set(castle2Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
@@ -241,7 +240,7 @@ contract GameSystem is System {
       _updateProjectileTrajectory(towers[i].id, newX, newY);
 
       // Step 5: handle collisions
-      _handleCollisions(towers, i, newX, newY);
+      _handleCollisions(towers, i);
 
       // Step 6: finalize the projectile movement
       _handleProjectileMovement(towers, i, newX, newY);
@@ -306,9 +305,9 @@ contract GameSystem is System {
     ProjectileTrajectory.set(towerId, newX, newY);
   }
 
-  function _handleCollisions(TowerDetails[] memory towers, uint256 towerIndex, int16 newX, int16 newY) internal pure {
+  function _handleCollisions(TowerDetails[] memory towers, uint256 towerIndex) internal pure {
     for (uint256 j = 0; j < towers.length; j++) {
-      if (_checkProjectileCollision(towers, towerIndex, j, newX, newY)) {
+      if (_checkProjectileCollision(towers, towerIndex, j)) {
         break;
       }
     }
@@ -317,19 +316,26 @@ contract GameSystem is System {
   function _checkProjectileCollision(
     TowerDetails[] memory towers,
     uint256 i,
-    uint256 j,
-    int16 newProjectileX,
-    int16 newProjectileY
-  ) public pure returns (bool) {
+    uint256 j
+  )
+    public
+    pure
+    returns (
+      // int16 newProjectileX,
+      // int16 newProjectileY
+      bool
+    )
+  {
     if (i == j || towers[j].health == 0 || towers[j].projectileAddress == address(0)) {
       return false;
     }
 
-    if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
-      towers[i].projectileAddress = address(0);
-      towers[j].projectileAddress = address(0);
-      return true;
-    }
+    // TODO: Maybe bring this back later
+    // if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
+    //   towers[i].projectileAddress = address(0);
+    //   towers[j].projectileAddress = address(0);
+    //   return true;
+    // }
 
     return false;
   }

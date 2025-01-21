@@ -20,8 +20,6 @@ interface IGameSystem {
   function app___checkProjectileCollision(
     TowerDetails[] memory towers,
     uint256 i,
-    uint256 j,
-    int16 newProjectileX,
-    int16 newProjectileY
+    uint256 j
   ) external pure returns (bool);
 }

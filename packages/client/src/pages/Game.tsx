@@ -358,34 +358,33 @@ export const InnerGamePage = (): JSX.Element => {
                     const towerCollision = towers.find(
                       _tower =>
                         _tower.id !== tower.id &&
-                        _tower.projectileLogicAddress === zeroAddress &&
                         Math.abs(
                           _tower.x - tower.projectileTrajectory[tickCount].x,
-                        ) <= 10 &&
+                        ) < 10 &&
                         Math.abs(
                           _tower.y - tower.projectileTrajectory[tickCount].y,
-                        ) <= 10,
+                        ) < 10,
                     );
 
                     const enemyCastleCollision =
                       Math.abs(
                         enemyCastlePosition.x -
                           tower.projectileTrajectory[tickCount].x,
-                      ) <= 10 &&
+                      ) < 10 &&
                       Math.abs(
                         enemyCastlePosition.y -
                           tower.projectileTrajectory[tickCount].y,
-                      ) <= 10;
+                      ) < 10;
 
                     const myCastleCollision =
                       Math.abs(
                         myCastlePosition.x -
                           tower.projectileTrajectory[tickCount].x,
-                      ) <= 10 &&
+                      ) < 10 &&
                       Math.abs(
                         myCastlePosition.y -
                           tower.projectileTrajectory[tickCount].y,
-                      ) <= 10;
+                      ) < 10;
 
                     let collisionEntity:
                       | Tower
@@ -417,7 +416,7 @@ export const InnerGamePage = (): JSX.Element => {
                           left={`calc((100% / 14) * ${collisionEntity.x / 10})`}
                           position="absolute"
                           top={`calc((100% / 7) * ${collisionEntity.y / 10})`}
-                          transform="translateX(-90%) translateY(-50%)"
+                          transform="translateX(-50%) translateY(-50%)"
                           w="calc(100% / 14)"
                           zIndex={1}
                         >

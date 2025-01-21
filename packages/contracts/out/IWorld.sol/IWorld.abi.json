@@ -54,16 +54,6 @@
         "name": "j",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "newProjectileX",
-        "type": "int16",
-        "internalType": "int16"
-      },
-      {
-        "name": "newProjectileY",
-        "type": "int16",
-        "internalType": "int16"
       }
     ],
     "outputs": [
