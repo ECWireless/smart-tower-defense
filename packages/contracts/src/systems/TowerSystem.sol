@@ -100,7 +100,6 @@ contract TowerSystem is System {
       actualX = (x / 10) * 10 + 5;
     }
 
-
     if (y == 0) {
       actualY = 5;
     } else {
@@ -211,7 +210,11 @@ contract TowerSystem is System {
     bytes32 player = addressToEntityKey(playerAddress);
     _addTowerToPlayer(player, towerId);
 
-    Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
+    if (projectile) {
+      Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
+    } else {
+      Health.set(towerId, MAX_TOWER_HEALTH * 2, MAX_TOWER_HEALTH * 2);
+    }
     Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(gameId, x, y), towerId);
 

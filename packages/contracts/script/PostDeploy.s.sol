@@ -36,26 +36,17 @@ contract PostDeploy is Script {
     address defaultProjectileLogicRightAddress = address(new DefaultProjectileLogicRight());
     DefaultLogicB.set(defaultProjectileLogicRightAddress);
 
-    ActionData[] memory actions = new ActionData[](3);
+    ActionData[] memory actions = new ActionData[](1);
     actions[0] = ActionData({
       actionType: ActionType.Install,
       newX: 115,
       newY: 35,
       oldX: 0,
       oldY: 0,
-      projectile: false
+      projectile: true
     });
-    actions[1] = ActionData({
-      actionType: ActionType.Move,
-      newX: 90,
-      newY: 35,
-      oldX: 115,
-      oldY: 35,
-      projectile: false
-    });
-    actions[2] = ActionData({ actionType: ActionType.Install, oldX: 0, oldY: 0, newX: 80, newY: 20, projectile: true });
 
-    bytes32[] memory defaultActionIds = new bytes32[](3);
+    bytes32[] memory defaultActionIds = new bytes32[](1);
     for (uint256 i = 0; i < actions.length; i++) {
       defaultActionIds[i] = keccak256(
         abi.encodePacked(

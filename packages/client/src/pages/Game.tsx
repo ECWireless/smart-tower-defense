@@ -360,31 +360,31 @@ export const InnerGamePage = (): JSX.Element => {
                         _tower.id !== tower.id &&
                         Math.abs(
                           _tower.x - tower.projectileTrajectory[tickCount].x,
-                        ) < 10 &&
+                        ) <= 5 &&
                         Math.abs(
                           _tower.y - tower.projectileTrajectory[tickCount].y,
-                        ) < 10,
+                        ) <= 5,
                     );
 
                     const enemyCastleCollision =
                       Math.abs(
                         enemyCastlePosition.x -
                           tower.projectileTrajectory[tickCount].x,
-                      ) < 10 &&
+                      ) <= 5 &&
                       Math.abs(
                         enemyCastlePosition.y -
                           tower.projectileTrajectory[tickCount].y,
-                      ) < 10;
+                      ) <= 5;
 
                     const myCastleCollision =
                       Math.abs(
                         myCastlePosition.x -
                           tower.projectileTrajectory[tickCount].x,
-                      ) < 10 &&
+                      ) <= 5 &&
                       Math.abs(
                         myCastlePosition.y -
                           tower.projectileTrajectory[tickCount].y,
-                      ) < 10;
+                      ) <= 5;
 
                     let collisionEntity:
                       | Tower

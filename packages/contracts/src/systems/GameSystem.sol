@@ -269,12 +269,12 @@ contract GameSystem is System {
   ) internal view returns (bool) {
     TowerDetails memory tower = towers[towerIndex];
 
-    // Check distance > 1 => invalid
+    // If x distance > 1 => invalid
     uint16 distance = ProjectileHelpers.chebyshevDistance(
       uint256(int256(tower.projectileX)),
       uint256(int256(tower.projectileY)),
       uint256(int256(newX)),
-      uint256(int256(newY))
+      uint256(int256(tower.projectileY))
     );
     if (distance > 1) {
       return false;
