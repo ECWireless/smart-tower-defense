@@ -25,23 +25,23 @@ declare const abi: [
           },
           {
             "name": "projectileX",
-            "type": "int8",
-            "internalType": "int8"
+            "type": "int16",
+            "internalType": "int16"
           },
           {
             "name": "projectileY",
-            "type": "int8",
-            "internalType": "int8"
+            "type": "int16",
+            "internalType": "int16"
           },
           {
             "name": "x",
-            "type": "int8",
-            "internalType": "int8"
+            "type": "int16",
+            "internalType": "int16"
           },
           {
             "name": "y",
-            "type": "int8",
-            "internalType": "int8"
+            "type": "int16",
+            "internalType": "int16"
           }
         ]
       },
@@ -54,16 +54,6 @@ declare const abi: [
         "name": "j",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "newProjectileX",
-        "type": "int8",
-        "internalType": "int8"
-      },
-      {
-        "name": "newProjectileY",
-        "type": "int8",
-        "internalType": "int8"
       }
     ],
     "outputs": [
@@ -160,13 +150,13 @@ declare const abi: [
       },
       {
         "name": "x",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "int16",
+        "internalType": "int16"
       },
       {
         "name": "y",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "int16",
+        "internalType": "int16"
       }
     ],
     "outputs": [
@@ -223,13 +213,13 @@ declare const abi: [
       },
       {
         "name": "x",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "int16",
+        "internalType": "int16"
       },
       {
         "name": "y",
-        "type": "int8",
-        "internalType": "int8"
+        "type": "int16",
+        "internalType": "int16"
       }
     ],
     "outputs": [

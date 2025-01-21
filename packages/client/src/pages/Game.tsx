@@ -23,7 +23,7 @@ import { GameProvider, useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
 
-const MAX_TICKS = 12;
+const MAX_TICKS = 140;
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
@@ -152,8 +152,8 @@ export const InnerGamePage = (): JSX.Element => {
         const { error, success } = await installTower(
           game.id,
           hasProjectile,
-          col,
-          row,
+          col * 10,
+          row * 10,
         );
 
         if (error && !success) {
@@ -201,8 +201,8 @@ export const InnerGamePage = (): JSX.Element => {
         const { error, success } = await moveTower(
           game.id,
           activeTowerId,
-          col,
-          row,
+          col * 10,
+          row * 10,
         );
 
         if (error && !success) {
@@ -266,7 +266,7 @@ export const InnerGamePage = (): JSX.Element => {
         return;
       }
       setTickCount(prev => (prev + 1) % MAX_TICKS);
-    }, 100);
+    }, 1);
     return () => clearInterval(interval);
   }, [game, tickCount, triggerAnimation]);
 
@@ -357,49 +357,54 @@ export const InnerGamePage = (): JSX.Element => {
                   if (tower.projectileTrajectory[tickCount]) {
                     const towerCollision = towers.find(
                       _tower =>
-                        _tower.x === tower.projectileTrajectory[tickCount].x &&
-                        _tower.y === tower.projectileTrajectory[tickCount].y,
+                        _tower.id !== tower.id &&
+                        Math.abs(
+                          _tower.x - tower.projectileTrajectory[tickCount].x,
+                        ) <= 5 &&
+                        Math.abs(
+                          _tower.y - tower.projectileTrajectory[tickCount].y,
+                        ) <= 5,
                     );
 
                     const enemyCastleCollision =
-                      enemyCastlePosition?.x ===
-                        tower.projectileTrajectory[tickCount].x &&
-                      enemyCastlePosition?.y ===
-                        tower.projectileTrajectory[tickCount].y;
+                      Math.abs(
+                        enemyCastlePosition.x -
+                          tower.projectileTrajectory[tickCount].x,
+                      ) <= 5 &&
+                      Math.abs(
+                        enemyCastlePosition.y -
+                          tower.projectileTrajectory[tickCount].y,
+                      ) <= 5;
 
                     const myCastleCollision =
-                      myCastlePosition?.x ===
-                        tower.projectileTrajectory[tickCount].x &&
-                      myCastlePosition?.y ===
-                        tower.projectileTrajectory[tickCount].y;
+                      Math.abs(
+                        myCastlePosition.x -
+                          tower.projectileTrajectory[tickCount].x,
+                      ) <= 5 &&
+                      Math.abs(
+                        myCastlePosition.y -
+                          tower.projectileTrajectory[tickCount].y,
+                      ) <= 5;
 
-                    const allOtherProjectileXPositions = towers
-                      .filter(
-                        _tower => _tower.projectileLogicAddress !== zeroAddress,
-                      )
-                      .filter(_tower => _tower.id !== tower.id)
-                      .map(_tower => _tower.projectileTrajectory[tickCount]?.x);
-                    const allOtherProjectileYPositions = towers
-                      .filter(
-                        _tower => _tower.projectileLogicAddress !== zeroAddress,
-                      )
-                      .filter(_tower => _tower.id !== tower.id)
-                      .map(_tower => _tower.projectileTrajectory[tickCount]?.y);
-                    const projectileCollision =
-                      allOtherProjectileXPositions.includes(
-                        tower.projectileTrajectory[tickCount]?.x,
-                      ) &&
-                      allOtherProjectileYPositions.includes(
-                        tower.projectileTrajectory[tickCount]?.y,
-                      );
+                    let collisionEntity:
+                      | Tower
+                      | {
+                          currentHealth: number;
+                          maxHealth: number;
+                          x: number;
+                          y: number;
+                        }
+                      | null = towerCollision ?? null;
 
-                    const collision =
-                      towerCollision ||
-                      enemyCastleCollision ||
-                      myCastleCollision ||
-                      projectileCollision;
+                    if (myCastleCollision) {
+                      collisionEntity = myCastlePosition;
+                    }
 
-                    if (collision) {
+                    if (enemyCastleCollision) {
+                      collisionEntity = enemyCastlePosition;
+                    }
+
+                    if (collisionEntity) {
                       return (
                         <Box
                           id={`projectile-${tower.id}`}
@@ -408,9 +413,10 @@ export const InnerGamePage = (): JSX.Element => {
                           display="flex"
                           h="calc(100% / 7)"
                           justifyContent="center"
-                          left={`calc((100% / 14) * ${tower.projectileTrajectory[tickCount].x})`}
+                          left={`calc((100% / 14) * ${collisionEntity.x / 10})`}
                           position="absolute"
-                          top={`calc((100% / 7) * ${tower.projectileTrajectory[tickCount].y})`}
+                          top={`calc((100% / 7) * ${collisionEntity.y / 10})`}
+                          transform="translateX(-50%) translateY(-50%)"
                           w="calc(100% / 14)"
                           zIndex={1}
                         >
@@ -427,9 +433,10 @@ export const InnerGamePage = (): JSX.Element => {
                         display="flex"
                         h="calc(100% / 7)"
                         justifyContent="center"
-                        left={`calc((100% / 14) * ${tower.projectileTrajectory[tickCount].x})`}
+                        left={`calc((100% / 14) * ${tower.projectileTrajectory[tickCount].x / 10})`}
                         position="absolute"
-                        top={`calc((100% / 7) * ${tower.projectileTrajectory[tickCount].y})`}
+                        top={`calc((100% / 7) * ${tower.projectileTrajectory[tickCount].y / 10})`}
+                        transform="translateX(-50%) translateY(-50%)"
                         w="calc(100% / 14)"
                         zIndex={1}
                       >
@@ -445,16 +452,31 @@ export const InnerGamePage = (): JSX.Element => {
                 const col = index % 14;
                 const isMiddleLine = index % 14 === 7;
 
+                const myCastlePositionX = Math.floor(
+                  (myCastlePosition?.x ?? 10) / 10,
+                );
+                const myCastlePositionY = Math.floor(
+                  (myCastlePosition?.y ?? 10) / 10,
+                );
+
+                const enemyCastlePositionX = Math.floor(
+                  (enemyCastlePosition?.x ?? 10) / 10,
+                );
+                const enemyCastlePositionY = Math.floor(
+                  (enemyCastlePosition?.y ?? 10) / 10,
+                );
+
                 const myCastle =
-                  row === myCastlePosition?.y && col === myCastlePosition?.x;
+                  row === myCastlePositionY && col === myCastlePositionX;
                 const enemyCastle =
-                  row === enemyCastlePosition?.y &&
-                  col === enemyCastlePosition?.x;
+                  row === enemyCastlePositionY && col === enemyCastlePositionX;
 
                 const isEnemyTile = col > 6;
 
                 const activeTower = towers.find(
-                  tower => tower.x === col && tower.y === row,
+                  tower =>
+                    Math.floor(tower.x / 10) === col &&
+                    Math.floor(tower.y / 10) === row,
                 );
 
                 const canInstall =

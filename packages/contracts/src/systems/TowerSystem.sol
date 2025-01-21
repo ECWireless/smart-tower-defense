@@ -18,27 +18,31 @@ contract TowerSystem is System {
     return address(this);
   }
 
-  function installTower(bytes32 potentialGameId, bool projectile, int8 x, int8 y) external returns (bytes32) {
+  function installTower(bytes32 potentialGameId, bool projectile, int16 x, int16 y) external returns (bytes32) {
     address playerAddress = _msgSender();
-    _validateInstallTower(potentialGameId, playerAddress, x, y);
+
+    (int16 actualX, int16 actualY) = _getActualCoordinates(x, y);
+    _validateInstallTower(potentialGameId, playerAddress, actualX, actualY);
 
     uint256 timestamp = block.timestamp;
     address actualPlayerAddress = Game.get(potentialGameId).turn;
     bytes32 towerId = keccak256(abi.encodePacked(potentialGameId, actualPlayerAddress, timestamp));
-    _initializeTower(towerId, potentialGameId, actualPlayerAddress, x, y, projectile);
+    _initializeTower(towerId, potentialGameId, actualPlayerAddress, actualX, actualY, projectile);
 
     return towerId;
   }
 
-  function moveTower(bytes32 potentialGameId, bytes32 towerId, int8 x, int8 y) external returns (bytes32) {
+  function moveTower(bytes32 potentialGameId, bytes32 towerId, int16 x, int16 y) external returns (bytes32) {
     address playerAddress = _msgSender();
     _validateMoveTower(potentialGameId, playerAddress, towerId, x, y);
 
-    (int8 oldX, int8 oldY) = Position.get(towerId);
+    (int16 oldX, int16 oldY) = Position.get(towerId);
+
+    (int16 actualX, int16 actualY) = _getActualCoordinates(x, y);
     EntityAtPosition.set(positionToEntityKey(potentialGameId, oldX, oldY), 0);
 
-    Position.set(towerId, x, y);
-    EntityAtPosition.set(positionToEntityKey(potentialGameId, x, y), towerId);
+    Position.set(towerId, actualX, actualY);
+    EntityAtPosition.set(positionToEntityKey(potentialGameId, actualX, actualY), towerId);
 
     _decrementActionCount(potentialGameId);
 
@@ -89,7 +93,23 @@ contract TowerSystem is System {
     return size;
   }
 
-  function _validateInstallTower(bytes32 potentialGameId, address playerAddress, int8 x, int8 y) internal view {
+  function _getActualCoordinates(int16 x, int16 y) internal pure returns (int16 actualX, int16 actualY) {
+    if (x == 0) {
+      actualX = 5;
+    } else {
+      actualX = (x / 10) * 10 + 5;
+    }
+
+    if (y == 0) {
+      actualY = 5;
+    } else {
+      actualY = (y / 10) * 10 + 5;
+    }
+
+    return (actualX, actualY);
+  }
+
+  function _validateInstallTower(bytes32 potentialGameId, address playerAddress, int16 x, int16 y) internal view {
     address gameSystemAddress = AddressBook.getGame();
     bytes32 player = addressToEntityKey(playerAddress);
     bytes32 currentGameId = CurrentGame.get(player);
@@ -111,7 +131,7 @@ contract TowerSystem is System {
       require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
     }
 
-    (int8 height, int8 width) = MapConfig.get();
+    (int16 height, int16 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
 
@@ -129,8 +149,8 @@ contract TowerSystem is System {
     bytes32 potentialGameId,
     address playerAddress,
     bytes32 towerId,
-    int8 x,
-    int8 y
+    int16 x,
+    int16 y
   ) internal view {
     address gameSystemAddress = AddressBook.getGame();
     bytes32 player = addressToEntityKey(playerAddress);
@@ -155,7 +175,7 @@ contract TowerSystem is System {
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
 
-    (int8 height, int8 width) = MapConfig.get();
+    (int16 height, int16 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
 
@@ -179,8 +199,8 @@ contract TowerSystem is System {
     bytes32 towerId,
     bytes32 gameId,
     address playerAddress,
-    int8 x,
-    int8 y,
+    int16 x,
+    int16 y,
     bool projectile
   ) internal {
     Tower.set(towerId, true);
@@ -190,17 +210,21 @@ contract TowerSystem is System {
     bytes32 player = addressToEntityKey(playerAddress);
     _addTowerToPlayer(player, towerId);
 
-    Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
+    if (projectile) {
+      Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
+    } else {
+      Health.set(towerId, MAX_TOWER_HEALTH * 2, MAX_TOWER_HEALTH * 2);
+    }
     Position.set(towerId, x, y);
     EntityAtPosition.set(positionToEntityKey(gameId, x, y), towerId);
 
-    (, int8 width) = MapConfig.get();
+    (, int16 width) = MapConfig.get();
     if (projectile && x < width / 2) {
       address defaultProjectileLogicLeftAddress = DefaultLogicA.get();
       Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
       Projectile.setSourceCode(
         towerId,
-        "contract DefaultProjectileLogic { function getNextProjectilePosition(int8 x, int8 y) public pure returns (int8, int8) { return (x + 1, y); }}"
+        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 1, y); }}"
       );
     }
 
@@ -209,7 +233,7 @@ contract TowerSystem is System {
       Projectile.setLogicAddress(towerId, defaultProjectileLogicRightAddress);
       Projectile.setSourceCode(
         towerId,
-        "contract DefaultProjectileLogic { function getNextProjectilePosition(int8 x, int8 y) public pure returns (int8, int8) { return (x - 1, y); }}"
+        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x - 1, y); }}"
       );
     }
 
@@ -247,17 +271,17 @@ contract TowerSystem is System {
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
     require(Health.getCurrentHealth(towerId) > 0, "TowerSystem: tower is destroyed");
 
-    (int8 oldX, int8 oldY) = Position.get(towerId);
+    (int16 oldX, int16 oldY) = Position.get(towerId);
 
-    bytes memory data = abi.encodeWithSignature("getNextProjectilePosition(int8,int8)", oldX, oldY);
+    bytes memory data = abi.encodeWithSignature("getNextProjectilePosition(int16,int16)", oldX, oldY);
     address projectileAddress = Projectile.getLogicAddress(towerId);
     (bool success, bytes memory returndata) = projectileAddress.call(data);
     require(success, "getNextProjectilePosition call failed");
-    (oldX, oldY) = abi.decode(returndata, (int8, int8));
+    (oldX, oldY) = abi.decode(returndata, (int16, int16));
 
     (success, returndata) = projectileAddress.call(data);
     require(success, "getNextProjectilePosition call failed");
-    (int8 newX, int8 newY) = abi.decode(returndata, (int8, int8));
+    (int16 newX, int16 newY) = abi.decode(returndata, (int16, int16));
 
     uint16 distance = ProjectileHelpers.chebyshevDistance(
       uint256(int256(oldX)),
@@ -265,6 +289,6 @@ contract TowerSystem is System {
       uint256(int256(newX)),
       uint256(int256(newY))
     );
-    require(distance == 1, "TowerSystem: projectile speed exceeds rules");
+    require(distance <= 1, "TowerSystem: projectile speed exceeds rules");
   }
 }

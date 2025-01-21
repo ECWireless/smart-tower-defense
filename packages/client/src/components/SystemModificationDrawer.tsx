@@ -205,7 +205,7 @@ export const SystemModificationDrawer: React.FC<
               {sizeLimit.toString()}.
             </Text>
           </Box>
-          <Box border="1px solid black" h="200px" w="100%">
+          <Box border="1px solid black" h="400px" w="100%">
             <Editor
               defaultLanguage="solidity"
               height="100%"

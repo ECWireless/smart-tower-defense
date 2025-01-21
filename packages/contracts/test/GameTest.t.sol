@@ -17,7 +17,7 @@ contract GameTest is MudTest {
 
   function endGame(address player, bytes32 gameId) public {
     vm.startPrank(player);
-    IWorld(worldAddress).app__installTower(gameId, true, 3, 3);
+    IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
     // Need to go through 8 turns to end the game
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);

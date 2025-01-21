@@ -25,8 +25,8 @@ library ProjectileTrajectory {
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (int8[], int8[])
-  Schema constant _valueSchema = Schema.wrap(0x0000000282820000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (int16[], int16[])
+  Schema constant _valueSchema = Schema.wrap(0x0000000283830000000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -64,29 +64,29 @@ library ProjectileTrajectory {
   /**
    * @notice Get x.
    */
-  function getX(bytes32 id) internal view returns (int8[] memory x) {
+  function getX(bytes32 id) internal view returns (int16[] memory x) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes memory _blob = StoreSwitch.getDynamicField(_tableId, _keyTuple, 0);
-    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int8());
+    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int16());
   }
 
   /**
    * @notice Get x.
    */
-  function _getX(bytes32 id) internal view returns (int8[] memory x) {
+  function _getX(bytes32 id) internal view returns (int16[] memory x) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes memory _blob = StoreCore.getDynamicField(_tableId, _keyTuple, 0);
-    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int8());
+    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int16());
   }
 
   /**
    * @notice Set x.
    */
-  function setX(bytes32 id, int8[] memory x) internal {
+  function setX(bytes32 id, int16[] memory x) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -96,7 +96,7 @@ library ProjectileTrajectory {
   /**
    * @notice Set x.
    */
-  function _setX(bytes32 id, int8[] memory x) internal {
+  function _setX(bytes32 id, int16[] memory x) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -112,7 +112,7 @@ library ProjectileTrajectory {
 
     uint256 _byteLength = StoreSwitch.getDynamicFieldLength(_tableId, _keyTuple, 0);
     unchecked {
-      return _byteLength / 1;
+      return _byteLength / 2;
     }
   }
 
@@ -125,7 +125,7 @@ library ProjectileTrajectory {
 
     uint256 _byteLength = StoreCore.getDynamicFieldLength(_tableId, _keyTuple, 0);
     unchecked {
-      return _byteLength / 1;
+      return _byteLength / 2;
     }
   }
 
@@ -133,13 +133,13 @@ library ProjectileTrajectory {
    * @notice Get an item of x.
    * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
    */
-  function getItemX(bytes32 id, uint256 _index) internal view returns (int8) {
+  function getItemX(bytes32 id, uint256 _index) internal view returns (int16) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
-      bytes memory _blob = StoreSwitch.getDynamicFieldSlice(_tableId, _keyTuple, 0, _index * 1, (_index + 1) * 1);
-      return (int8(uint8(bytes1(_blob))));
+      bytes memory _blob = StoreSwitch.getDynamicFieldSlice(_tableId, _keyTuple, 0, _index * 2, (_index + 1) * 2);
+      return (int16(uint16(bytes2(_blob))));
     }
   }
 
@@ -147,20 +147,20 @@ library ProjectileTrajectory {
    * @notice Get an item of x.
    * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
    */
-  function _getItemX(bytes32 id, uint256 _index) internal view returns (int8) {
+  function _getItemX(bytes32 id, uint256 _index) internal view returns (int16) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
-      bytes memory _blob = StoreCore.getDynamicFieldSlice(_tableId, _keyTuple, 0, _index * 1, (_index + 1) * 1);
-      return (int8(uint8(bytes1(_blob))));
+      bytes memory _blob = StoreCore.getDynamicFieldSlice(_tableId, _keyTuple, 0, _index * 2, (_index + 1) * 2);
+      return (int16(uint16(bytes2(_blob))));
     }
   }
 
   /**
    * @notice Push an element to x.
    */
-  function pushX(bytes32 id, int8 _element) internal {
+  function pushX(bytes32 id, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -170,7 +170,7 @@ library ProjectileTrajectory {
   /**
    * @notice Push an element to x.
    */
-  function _pushX(bytes32 id, int8 _element) internal {
+  function _pushX(bytes32 id, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -184,7 +184,7 @@ library ProjectileTrajectory {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.popFromDynamicField(_tableId, _keyTuple, 0, 1);
+    StoreSwitch.popFromDynamicField(_tableId, _keyTuple, 0, 2);
   }
 
   /**
@@ -194,61 +194,61 @@ library ProjectileTrajectory {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.popFromDynamicField(_tableId, _keyTuple, 0, 1);
+    StoreCore.popFromDynamicField(_tableId, _keyTuple, 0, 2);
   }
 
   /**
    * @notice Update an element of x at `_index`.
    */
-  function updateX(bytes32 id, uint256 _index, int8 _element) internal {
+  function updateX(bytes32 id, uint256 _index, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
       bytes memory _encoded = abi.encodePacked((_element));
-      StoreSwitch.spliceDynamicData(_tableId, _keyTuple, 0, uint40(_index * 1), uint40(_encoded.length), _encoded);
+      StoreSwitch.spliceDynamicData(_tableId, _keyTuple, 0, uint40(_index * 2), uint40(_encoded.length), _encoded);
     }
   }
 
   /**
    * @notice Update an element of x at `_index`.
    */
-  function _updateX(bytes32 id, uint256 _index, int8 _element) internal {
+  function _updateX(bytes32 id, uint256 _index, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
       bytes memory _encoded = abi.encodePacked((_element));
-      StoreCore.spliceDynamicData(_tableId, _keyTuple, 0, uint40(_index * 1), uint40(_encoded.length), _encoded);
+      StoreCore.spliceDynamicData(_tableId, _keyTuple, 0, uint40(_index * 2), uint40(_encoded.length), _encoded);
     }
   }
 
   /**
    * @notice Get y.
    */
-  function getY(bytes32 id) internal view returns (int8[] memory y) {
+  function getY(bytes32 id) internal view returns (int16[] memory y) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes memory _blob = StoreSwitch.getDynamicField(_tableId, _keyTuple, 1);
-    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int8());
+    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int16());
   }
 
   /**
    * @notice Get y.
    */
-  function _getY(bytes32 id) internal view returns (int8[] memory y) {
+  function _getY(bytes32 id) internal view returns (int16[] memory y) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes memory _blob = StoreCore.getDynamicField(_tableId, _keyTuple, 1);
-    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int8());
+    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_int16());
   }
 
   /**
    * @notice Set y.
    */
-  function setY(bytes32 id, int8[] memory y) internal {
+  function setY(bytes32 id, int16[] memory y) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -258,7 +258,7 @@ library ProjectileTrajectory {
   /**
    * @notice Set y.
    */
-  function _setY(bytes32 id, int8[] memory y) internal {
+  function _setY(bytes32 id, int16[] memory y) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -274,7 +274,7 @@ library ProjectileTrajectory {
 
     uint256 _byteLength = StoreSwitch.getDynamicFieldLength(_tableId, _keyTuple, 1);
     unchecked {
-      return _byteLength / 1;
+      return _byteLength / 2;
     }
   }
 
@@ -287,7 +287,7 @@ library ProjectileTrajectory {
 
     uint256 _byteLength = StoreCore.getDynamicFieldLength(_tableId, _keyTuple, 1);
     unchecked {
-      return _byteLength / 1;
+      return _byteLength / 2;
     }
   }
 
@@ -295,13 +295,13 @@ library ProjectileTrajectory {
    * @notice Get an item of y.
    * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
    */
-  function getItemY(bytes32 id, uint256 _index) internal view returns (int8) {
+  function getItemY(bytes32 id, uint256 _index) internal view returns (int16) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
-      bytes memory _blob = StoreSwitch.getDynamicFieldSlice(_tableId, _keyTuple, 1, _index * 1, (_index + 1) * 1);
-      return (int8(uint8(bytes1(_blob))));
+      bytes memory _blob = StoreSwitch.getDynamicFieldSlice(_tableId, _keyTuple, 1, _index * 2, (_index + 1) * 2);
+      return (int16(uint16(bytes2(_blob))));
     }
   }
 
@@ -309,20 +309,20 @@ library ProjectileTrajectory {
    * @notice Get an item of y.
    * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
    */
-  function _getItemY(bytes32 id, uint256 _index) internal view returns (int8) {
+  function _getItemY(bytes32 id, uint256 _index) internal view returns (int16) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
-      bytes memory _blob = StoreCore.getDynamicFieldSlice(_tableId, _keyTuple, 1, _index * 1, (_index + 1) * 1);
-      return (int8(uint8(bytes1(_blob))));
+      bytes memory _blob = StoreCore.getDynamicFieldSlice(_tableId, _keyTuple, 1, _index * 2, (_index + 1) * 2);
+      return (int16(uint16(bytes2(_blob))));
     }
   }
 
   /**
    * @notice Push an element to y.
    */
-  function pushY(bytes32 id, int8 _element) internal {
+  function pushY(bytes32 id, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -332,7 +332,7 @@ library ProjectileTrajectory {
   /**
    * @notice Push an element to y.
    */
-  function _pushY(bytes32 id, int8 _element) internal {
+  function _pushY(bytes32 id, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -346,7 +346,7 @@ library ProjectileTrajectory {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.popFromDynamicField(_tableId, _keyTuple, 1, 1);
+    StoreSwitch.popFromDynamicField(_tableId, _keyTuple, 1, 2);
   }
 
   /**
@@ -356,39 +356,39 @@ library ProjectileTrajectory {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.popFromDynamicField(_tableId, _keyTuple, 1, 1);
+    StoreCore.popFromDynamicField(_tableId, _keyTuple, 1, 2);
   }
 
   /**
    * @notice Update an element of y at `_index`.
    */
-  function updateY(bytes32 id, uint256 _index, int8 _element) internal {
+  function updateY(bytes32 id, uint256 _index, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
       bytes memory _encoded = abi.encodePacked((_element));
-      StoreSwitch.spliceDynamicData(_tableId, _keyTuple, 1, uint40(_index * 1), uint40(_encoded.length), _encoded);
+      StoreSwitch.spliceDynamicData(_tableId, _keyTuple, 1, uint40(_index * 2), uint40(_encoded.length), _encoded);
     }
   }
 
   /**
    * @notice Update an element of y at `_index`.
    */
-  function _updateY(bytes32 id, uint256 _index, int8 _element) internal {
+  function _updateY(bytes32 id, uint256 _index, int16 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     unchecked {
       bytes memory _encoded = abi.encodePacked((_element));
-      StoreCore.spliceDynamicData(_tableId, _keyTuple, 1, uint40(_index * 1), uint40(_encoded.length), _encoded);
+      StoreCore.spliceDynamicData(_tableId, _keyTuple, 1, uint40(_index * 2), uint40(_encoded.length), _encoded);
     }
   }
 
   /**
    * @notice Get the full data.
    */
-  function get(bytes32 id) internal view returns (int8[] memory x, int8[] memory y) {
+  function get(bytes32 id) internal view returns (int16[] memory x, int16[] memory y) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -403,7 +403,7 @@ library ProjectileTrajectory {
   /**
    * @notice Get the full data.
    */
-  function _get(bytes32 id) internal view returns (int8[] memory x, int8[] memory y) {
+  function _get(bytes32 id) internal view returns (int16[] memory x, int16[] memory y) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -418,7 +418,7 @@ library ProjectileTrajectory {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(bytes32 id, int8[] memory x, int8[] memory y) internal {
+  function set(bytes32 id, int16[] memory x, int16[] memory y) internal {
     bytes memory _staticData;
     EncodedLengths _encodedLengths = encodeLengths(x, y);
     bytes memory _dynamicData = encodeDynamic(x, y);
@@ -432,7 +432,7 @@ library ProjectileTrajectory {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(bytes32 id, int8[] memory x, int8[] memory y) internal {
+  function _set(bytes32 id, int16[] memory x, int16[] memory y) internal {
     bytes memory _staticData;
     EncodedLengths _encodedLengths = encodeLengths(x, y);
     bytes memory _dynamicData = encodeDynamic(x, y);
@@ -449,19 +449,19 @@ library ProjectileTrajectory {
   function decodeDynamic(
     EncodedLengths _encodedLengths,
     bytes memory _blob
-  ) internal pure returns (int8[] memory x, int8[] memory y) {
+  ) internal pure returns (int16[] memory x, int16[] memory y) {
     uint256 _start;
     uint256 _end;
     unchecked {
       _end = _encodedLengths.atIndex(0);
     }
-    x = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_int8());
+    x = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_int16());
 
     _start = _end;
     unchecked {
       _end += _encodedLengths.atIndex(1);
     }
-    y = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_int8());
+    y = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_int16());
   }
 
   /**
@@ -474,7 +474,7 @@ library ProjectileTrajectory {
     bytes memory,
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
-  ) internal pure returns (int8[] memory x, int8[] memory y) {
+  ) internal pure returns (int16[] memory x, int16[] memory y) {
     (x, y) = decodeDynamic(_encodedLengths, _dynamicData);
   }
 
@@ -502,10 +502,10 @@ library ProjectileTrajectory {
    * @notice Tightly pack dynamic data lengths using this table's schema.
    * @return _encodedLengths The lengths of the dynamic fields (packed into a single bytes32 value).
    */
-  function encodeLengths(int8[] memory x, int8[] memory y) internal pure returns (EncodedLengths _encodedLengths) {
+  function encodeLengths(int16[] memory x, int16[] memory y) internal pure returns (EncodedLengths _encodedLengths) {
     // Lengths are effectively checked during copy by 2**40 bytes exceeding gas limits
     unchecked {
-      _encodedLengths = EncodedLengthsLib.pack(x.length * 1, y.length * 1);
+      _encodedLengths = EncodedLengthsLib.pack(x.length * 2, y.length * 2);
     }
   }
 
@@ -513,7 +513,7 @@ library ProjectileTrajectory {
    * @notice Tightly pack dynamic (variable length) data using this table's schema.
    * @return The dynamic data, encoded into a sequence of bytes.
    */
-  function encodeDynamic(int8[] memory x, int8[] memory y) internal pure returns (bytes memory) {
+  function encodeDynamic(int16[] memory x, int16[] memory y) internal pure returns (bytes memory) {
     return abi.encodePacked(EncodeArray.encode((x)), EncodeArray.encode((y)));
   }
 
@@ -523,7 +523,10 @@ library ProjectileTrajectory {
    * @return The lengths of the dynamic fields (packed into a single bytes32 value).
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
-  function encode(int8[] memory x, int8[] memory y) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
+  function encode(
+    int16[] memory x,
+    int16[] memory y
+  ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData;
     EncodedLengths _encodedLengths = encodeLengths(x, y);
     bytes memory _dynamicData = encodeDynamic(x, y);
