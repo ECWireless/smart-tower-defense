@@ -21,10 +21,10 @@ import { ActionType } from "../common.sol";
 
 struct ActionData {
   ActionType actionType;
-  int8 newX;
-  int8 newY;
-  int8 oldX;
-  int8 oldY;
+  int16 newX;
+  int16 newY;
+  int16 oldX;
+  int16 oldY;
   bool projectile;
 }
 
@@ -33,12 +33,12 @@ library Action {
   ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000416374696f6e00000000000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0006060001010101010100000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x000a060001020202020100000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (uint8, int8, int8, int8, int8, bool)
-  Schema constant _valueSchema = Schema.wrap(0x0006060000202020206000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint8, int16, int16, int16, int16, bool)
+  Schema constant _valueSchema = Schema.wrap(0x000a060000212121216000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -122,29 +122,29 @@ library Action {
   /**
    * @notice Get newX.
    */
-  function getNewX(bytes32 id) internal view returns (int8 newX) {
+  function getNewX(bytes32 id) internal view returns (int16 newX) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Get newX.
    */
-  function _getNewX(bytes32 id) internal view returns (int8 newX) {
+  function _getNewX(bytes32 id) internal view returns (int16 newX) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Set newX.
    */
-  function setNewX(bytes32 id, int8 newX) internal {
+  function setNewX(bytes32 id, int16 newX) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -154,7 +154,7 @@ library Action {
   /**
    * @notice Set newX.
    */
-  function _setNewX(bytes32 id, int8 newX) internal {
+  function _setNewX(bytes32 id, int16 newX) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -164,29 +164,29 @@ library Action {
   /**
    * @notice Get newY.
    */
-  function getNewY(bytes32 id) internal view returns (int8 newY) {
+  function getNewY(bytes32 id) internal view returns (int16 newY) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Get newY.
    */
-  function _getNewY(bytes32 id) internal view returns (int8 newY) {
+  function _getNewY(bytes32 id) internal view returns (int16 newY) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Set newY.
    */
-  function setNewY(bytes32 id, int8 newY) internal {
+  function setNewY(bytes32 id, int16 newY) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -196,7 +196,7 @@ library Action {
   /**
    * @notice Set newY.
    */
-  function _setNewY(bytes32 id, int8 newY) internal {
+  function _setNewY(bytes32 id, int16 newY) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -206,29 +206,29 @@ library Action {
   /**
    * @notice Get oldX.
    */
-  function getOldX(bytes32 id) internal view returns (int8 oldX) {
+  function getOldX(bytes32 id) internal view returns (int16 oldX) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Get oldX.
    */
-  function _getOldX(bytes32 id) internal view returns (int8 oldX) {
+  function _getOldX(bytes32 id) internal view returns (int16 oldX) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Set oldX.
    */
-  function setOldX(bytes32 id, int8 oldX) internal {
+  function setOldX(bytes32 id, int16 oldX) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -238,7 +238,7 @@ library Action {
   /**
    * @notice Set oldX.
    */
-  function _setOldX(bytes32 id, int8 oldX) internal {
+  function _setOldX(bytes32 id, int16 oldX) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -248,29 +248,29 @@ library Action {
   /**
    * @notice Get oldY.
    */
-  function getOldY(bytes32 id) internal view returns (int8 oldY) {
+  function getOldY(bytes32 id) internal view returns (int16 oldY) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Get oldY.
    */
-  function _getOldY(bytes32 id) internal view returns (int8 oldY) {
+  function _getOldY(bytes32 id) internal view returns (int16 oldY) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
-    return (int8(uint8(bytes1(_blob))));
+    return (int16(uint16(bytes2(_blob))));
   }
 
   /**
    * @notice Set oldY.
    */
-  function setOldY(bytes32 id, int8 oldY) internal {
+  function setOldY(bytes32 id, int16 oldY) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -280,7 +280,7 @@ library Action {
   /**
    * @notice Set oldY.
    */
-  function _setOldY(bytes32 id, int8 oldY) internal {
+  function _setOldY(bytes32 id, int16 oldY) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -365,10 +365,10 @@ library Action {
   function set(
     bytes32 id,
     ActionType actionType,
-    int8 newX,
-    int8 newY,
-    int8 oldX,
-    int8 oldY,
+    int16 newX,
+    int16 newY,
+    int16 oldX,
+    int16 oldY,
     bool projectile
   ) internal {
     bytes memory _staticData = encodeStatic(actionType, newX, newY, oldX, oldY, projectile);
@@ -388,10 +388,10 @@ library Action {
   function _set(
     bytes32 id,
     ActionType actionType,
-    int8 newX,
-    int8 newY,
-    int8 oldX,
-    int8 oldY,
+    int16 newX,
+    int16 newY,
+    int16 oldX,
+    int16 oldY,
     bool projectile
   ) internal {
     bytes memory _staticData = encodeStatic(actionType, newX, newY, oldX, oldY, projectile);
@@ -454,18 +454,18 @@ library Action {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (ActionType actionType, int8 newX, int8 newY, int8 oldX, int8 oldY, bool projectile) {
+  ) internal pure returns (ActionType actionType, int16 newX, int16 newY, int16 oldX, int16 oldY, bool projectile) {
     actionType = ActionType(uint8(Bytes.getBytes1(_blob, 0)));
 
-    newX = (int8(uint8(Bytes.getBytes1(_blob, 1))));
+    newX = (int16(uint16(Bytes.getBytes2(_blob, 1))));
 
-    newY = (int8(uint8(Bytes.getBytes1(_blob, 2))));
+    newY = (int16(uint16(Bytes.getBytes2(_blob, 3))));
 
-    oldX = (int8(uint8(Bytes.getBytes1(_blob, 3))));
+    oldX = (int16(uint16(Bytes.getBytes2(_blob, 5))));
 
-    oldY = (int8(uint8(Bytes.getBytes1(_blob, 4))));
+    oldY = (int16(uint16(Bytes.getBytes2(_blob, 7))));
 
-    projectile = (_toBool(uint8(Bytes.getBytes1(_blob, 5))));
+    projectile = (_toBool(uint8(Bytes.getBytes1(_blob, 9))));
   }
 
   /**
@@ -510,10 +510,10 @@ library Action {
    */
   function encodeStatic(
     ActionType actionType,
-    int8 newX,
-    int8 newY,
-    int8 oldX,
-    int8 oldY,
+    int16 newX,
+    int16 newY,
+    int16 oldX,
+    int16 oldY,
     bool projectile
   ) internal pure returns (bytes memory) {
     return abi.encodePacked(actionType, newX, newY, oldX, oldY, projectile);
@@ -527,10 +527,10 @@ library Action {
    */
   function encode(
     ActionType actionType,
-    int8 newX,
-    int8 newY,
-    int8 oldX,
-    int8 oldY,
+    int16 newX,
+    int16 newY,
+    int16 oldX,
+    int16 oldY,
     bool projectile
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData = encodeStatic(actionType, newX, newY, oldX, oldY, projectile);

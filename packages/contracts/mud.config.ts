@@ -18,10 +18,10 @@ export default defineWorld({
       schema: {
         id: "bytes32",
         actionType: "ActionType",
-        newX: "int8",
-        newY: "int8",
-        oldX: "int8",
-        oldY: "int8",
+        newX: "int16",
+        newY: "int16",
+        oldX: "int16",
+        oldY: "int16",
         projectile: "bool",
       },
       key: ["id"],
@@ -89,8 +89,8 @@ export default defineWorld({
     },
     MapConfig: {
       schema: {
-        height: "int8",
-        width: "int8",
+        height: "int16",
+        width: "int16",
       },
       key: [],
       codegen: {
@@ -102,8 +102,8 @@ export default defineWorld({
     Position: {
       schema: {
         id: "bytes32",
-        x: "int8",
-        y: "int8",
+        x: "int16",
+        y: "int16",
       },
       key: ["id"],
       codegen: {
@@ -122,8 +122,8 @@ export default defineWorld({
     ProjectileTrajectory: {
       schema: {
         id: "bytes32",
-        x: "int8[]",
-        y: "int8[]",
+        x: "int16[]",
+        y: "int16[]",
       },
       key: ["id"],
       codegen: {

@@ -28,7 +28,7 @@ contract PostDeploy is Script {
     AddressBook.setGame(gameSystemAddress);
     AddressBook.setTower(towerSystemAddress);
     AddressBook.setWorld(worldAddress);
-    MapConfig.set(7, 14);
+    MapConfig.set(70, 140);
 
     // Set logic defaults
     address defaultProjectileLogicLeftAddress = address(new DefaultProjectileLogicLeft());
@@ -37,9 +37,23 @@ contract PostDeploy is Script {
     DefaultLogicB.set(defaultProjectileLogicRightAddress);
 
     ActionData[] memory actions = new ActionData[](3);
-    actions[0] = ActionData({ actionType: ActionType.Install, newX: 11, newY: 3, oldX: 0, oldY: 0, projectile: false });
-    actions[1] = ActionData({ actionType: ActionType.Move, newX: 9, newY: 3, oldX: 11, oldY: 3, projectile: false });
-    actions[2] = ActionData({ actionType: ActionType.Install, oldX: 0, oldY: 0, newX: 8, newY: 2, projectile: true });
+    actions[0] = ActionData({
+      actionType: ActionType.Install,
+      newX: 115,
+      newY: 35,
+      oldX: 0,
+      oldY: 0,
+      projectile: false
+    });
+    actions[1] = ActionData({
+      actionType: ActionType.Move,
+      newX: 90,
+      newY: 35,
+      oldX: 115,
+      oldY: 35,
+      projectile: false
+    });
+    actions[2] = ActionData({ actionType: ActionType.Install, oldX: 0, oldY: 0, newX: 80, newY: 20, projectile: true });
 
     bytes32[] memory defaultActionIds = new bytes32[](3);
     for (uint256 i = 0; i < actions.length; i++) {

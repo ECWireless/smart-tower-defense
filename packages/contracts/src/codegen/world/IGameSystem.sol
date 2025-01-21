@@ -21,7 +21,7 @@ interface IGameSystem {
     TowerDetails[] memory towers,
     uint256 i,
     uint256 j,
-    int8 newProjectileX,
-    int8 newProjectileY
+    int16 newProjectileX,
+    int16 newProjectileY
   ) external pure returns (bool);
 }
