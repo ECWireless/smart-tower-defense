@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Health, Game, GameData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower, Username, UsernameTaken } from "../codegen/index.sol";
+import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower, Username, UsernameTaken } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
@@ -76,7 +76,7 @@ contract GameSystem is System {
     Health.set(castle2Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
 
     EntityAtPosition.set(positionToEntityKey(gameId, 0, mapHeight / 2), castle1Id);
-    EntityAtPosition.set(positionToEntityKey(gameId, mapWidth - 1, mapHeight / 2), castle2Id);
+    EntityAtPosition.set(positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2), castle2Id);
 
     return gameId;
   }
@@ -347,14 +347,31 @@ contract GameSystem is System {
     int16 newProjectileY
   ) internal {
     bytes32 gameId = CurrentGame.get(towers[i].id);
-    bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(gameId, newProjectileX, newProjectileY));
+    (int16 actualX, int16 actualY) = _getActualCoordinates(newProjectileX, newProjectileY);
+    bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(gameId, actualX, actualY));
 
-    if (positionEntity != 0) {
+    if (positionEntity != 0 && towers[i].id != positionEntity) {
       _handleCollision(towers, i, positionEntity);
     } else {
       towers[i].projectileX = newProjectileX;
       towers[i].projectileY = newProjectileY;
     }
+  }
+
+  function _getActualCoordinates(int16 x, int16 y) internal pure returns (int16 actualX, int16 actualY) {
+    if (x == 0) {
+      actualX = 5;
+    } else {
+      actualX = (x / 10) * 10 + 5;
+    }
+
+    if (y == 0) {
+      actualY = 5;
+    } else {
+      actualY = (y / 10) * 10 + 5;
+    }
+
+    return (actualX, actualY);
   }
 
   function _handleCollision(TowerDetails[] memory towers, uint256 i, bytes32 positionEntity) internal {
