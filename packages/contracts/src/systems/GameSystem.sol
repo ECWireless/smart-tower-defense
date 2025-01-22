@@ -347,7 +347,7 @@ contract GameSystem is System {
     int16 newProjectileY
   ) internal {
     bytes32 gameId = CurrentGame.get(towers[i].id);
-    (int16 actualX, int16 actualY) = _getActualCoordinates(newProjectileX, newProjectileY);
+    (int16 actualX, int16 actualY) = ProjectileHelpers.getActualCoordinates(newProjectileX, newProjectileY);
     bytes32 positionEntity = EntityAtPosition.get(positionToEntityKey(gameId, actualX, actualY));
 
     if (positionEntity != 0 && towers[i].id != positionEntity) {
@@ -356,22 +356,6 @@ contract GameSystem is System {
       towers[i].projectileX = newProjectileX;
       towers[i].projectileY = newProjectileY;
     }
-  }
-
-  function _getActualCoordinates(int16 x, int16 y) internal pure returns (int16 actualX, int16 actualY) {
-    if (x == 0) {
-      actualX = 5;
-    } else {
-      actualX = (x / 10) * 10 + 5;
-    }
-
-    if (y == 0) {
-      actualY = 5;
-    } else {
-      actualY = (y / 10) * 10 + 5;
-    }
-
-    return (actualX, actualY);
   }
 
   function _handleCollision(TowerDetails[] memory towers, uint256 i, bytes32 positionEntity) internal {
