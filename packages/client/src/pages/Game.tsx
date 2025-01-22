@@ -36,7 +36,6 @@ export const InnerGamePage = (): JSX.Element => {
     myCastlePosition,
     onInstallTower,
     onMoveTower,
-    setTriggerAnimation,
     tickCount,
     towers,
     triggerAnimation,
@@ -138,7 +137,11 @@ export const InnerGamePage = (): JSX.Element => {
             >
               {triggerAnimation &&
                 towers.map(tower => {
-                  if (tower.projectileTrajectory[tickCount]) {
+                  if (
+                    myCastlePosition &&
+                    enemyCastlePosition &&
+                    tower.projectileTrajectory[tickCount]
+                  ) {
                     const towerCollision = towers.find(
                       _tower =>
                         _tower.id !== tower.id &&
@@ -405,7 +408,7 @@ export const InnerGamePage = (): JSX.Element => {
                 );
               })}
             </Box>
-            <TurnSidebar setTriggerAnimation={setTriggerAnimation} />
+            <TurnSidebar />
           </HStack>
         </Box>
       </Box>

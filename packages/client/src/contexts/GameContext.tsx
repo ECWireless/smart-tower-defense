@@ -5,6 +5,7 @@ import {
   getComponentValueStrict,
   Has,
   HasValue,
+  runQuery,
 } from '@latticexyz/recs';
 import { encodeEntity } from '@latticexyz/store-sync/recs';
 import {
@@ -39,7 +40,8 @@ type GameContextType = {
   myCastlePosition: Castle;
   onInstallTower: (e: React.DragEvent, row: number, col: number) => void;
   onMoveTower: (e: React.DragEvent, row: number, col: number) => void;
-  refreshGame: () => Promise<void>;
+  refreshGame: () => void;
+  setTowers: (towers: Tower[]) => void;
   setTriggerAnimation: (value: boolean) => void;
   tickCount: number;
   towers: Tower[];
@@ -71,6 +73,7 @@ const GameContext = createContext<GameContextType>({
   onInstallTower: () => {},
   onMoveTower: () => {},
   refreshGame: async () => {},
+  setTowers: () => {},
   setTriggerAnimation: () => {},
   tickCount: 0,
   towers: [],
@@ -115,6 +118,7 @@ export const GameProvider = ({
     'offense' | 'defense' | 'none'
   >('none');
 
+  const [towers, setTowers] = useState<Tower[]>([]);
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [tickCount, setTickCount] = useState(0);
 
@@ -150,42 +154,7 @@ export const GameProvider = ({
     };
   })[0];
 
-  const towers: Tower[] = useEntityQuery([
-    Has(Tower),
-    HasValue(CurrentGame, { value: game?.id }),
-  ]).map(entity => {
-    const health = getComponentValueStrict(Health, entity);
-    const owner = getComponentValueStrict(Owner, entity).value;
-    const position = getComponentValueStrict(Position, entity);
-    const projectileTrajectoryUnformatted = getComponentValue(
-      ProjectileTrajectory,
-      entity,
-    );
-
-    const projectileTrajectory = [];
-    if (projectileTrajectoryUnformatted) {
-      for (let i = 0; i < projectileTrajectoryUnformatted.x.length; i++) {
-        projectileTrajectory.push({
-          x: projectileTrajectoryUnformatted.x[i],
-          y: projectileTrajectoryUnformatted.y[i],
-        });
-      }
-    }
-
-    return {
-      id: entity,
-      currentHealth: health.currentHealth,
-      maxHealth: health.maxHealth,
-      owner: owner as Address,
-      projectileLogicAddress: (getComponentValue(Projectile, entity)
-        ?.logicAddress ?? zeroAddress) as Address,
-      projectileTrajectory,
-      x: position.x,
-      y: position.y,
-    };
-  });
-
-  const fetchGame = useCallback(async () => {
+  const fetchGame = useCallback(() => {
     if (!gameId) return;
     const _game = getComponentValue(GameComponent, gameId as Entity);
     if (_game) {
@@ -219,9 +188,55 @@ export const GameProvider = ({
         turn: _game.turn as Address,
         winner: _game.winner as Address,
       });
+
+      const _towers = Array.from(
+        runQuery([Has(Tower), HasValue(CurrentGame, { value: gameId })]),
+      ).map(entity => {
+        const health = getComponentValueStrict(Health, entity);
+        const owner = getComponentValueStrict(Owner, entity).value;
+        const position = getComponentValueStrict(Position, entity);
+        const projectileTrajectoryUnformatted = getComponentValue(
+          ProjectileTrajectory,
+          entity,
+        );
+
+        const projectileTrajectory = [];
+        if (projectileTrajectoryUnformatted) {
+          for (let i = 0; i < projectileTrajectoryUnformatted.x.length; i++) {
+            projectileTrajectory.push({
+              x: projectileTrajectoryUnformatted.x[i],
+              y: projectileTrajectoryUnformatted.y[i],
+            });
+          }
+        }
+
+        return {
+          id: entity,
+          currentHealth: health.currentHealth,
+          maxHealth: health.maxHealth,
+          owner: owner as Address,
+          projectileLogicAddress: (getComponentValue(Projectile, entity)
+            ?.logicAddress ?? zeroAddress) as Address,
+          projectileTrajectory,
+          x: position.x,
+          y: position.y,
+        };
+      });
+      setTowers(_towers.filter(tower => tower.currentHealth > 0));
     }
     setIsLoadingGame(false);
-  }, [GameComponent, gameId, Username]);
+  }, [
+    CurrentGame,
+    GameComponent,
+    gameId,
+    Health,
+    Owner,
+    Position,
+    Projectile,
+    ProjectileTrajectory,
+    Tower,
+    Username,
+  ]);
 
   useEffect(() => {
     fetchGame();
@@ -342,21 +357,73 @@ export const GameProvider = ({
 
   useEffect(() => {
     if (!game) return () => {};
-    if (game.turn !== game.player1Address) return () => {};
+    if (game.turn !== game.player2Address) return () => {};
     if (!triggerAnimation) return () => {};
+
+    const _towers = Array.from(
+      runQuery([Has(Tower), HasValue(CurrentGame, { value: game.id })]),
+    ).map(entity => {
+      const projectileTrajectoryUnformatted = getComponentValue(
+        ProjectileTrajectory,
+        entity,
+      );
+
+      const projectileTrajectory = [];
+      if (projectileTrajectoryUnformatted) {
+        for (let i = 0; i < projectileTrajectoryUnformatted.x.length; i++) {
+          projectileTrajectory.push({
+            x: projectileTrajectoryUnformatted.x[i],
+            y: projectileTrajectoryUnformatted.y[i],
+          });
+        }
+      }
+
+      return {
+        id: entity,
+        projectileTrajectory,
+      };
+    });
+
+    setTowers(prev => {
+      const _test = prev.map(tower => {
+        const towerWithNewProjectile = _towers.find(
+          newTower => newTower.id === tower.id,
+        );
+        if (towerWithNewProjectile) {
+          return {
+            ...tower,
+            projectileTrajectory: towerWithNewProjectile.projectileTrajectory,
+          };
+        }
+        return tower;
+      });
+      return _test;
+    });
 
     let _tickCount = 0;
     const interval = setInterval(() => {
       if (_tickCount >= MAX_TICKS - 1) {
         setTriggerAnimation(false);
         setTickCount(0);
+        fetchGame();
         return;
       }
       _tickCount += 1;
       setTickCount(prev => (prev + 1) % MAX_TICKS);
-    }, 1);
+    }, 10);
     return () => clearInterval(interval);
-  }, [game, triggerAnimation]);
+  }, [
+    CurrentGame,
+    fetchGame,
+    game,
+    Health,
+    Position,
+    Projectile,
+    ProjectileTrajectory,
+    Owner,
+    Tower,
+    triggerAnimation,
+  ]);
 
   return (
     <GameContext.Provider
@@ -373,6 +440,7 @@ export const GameProvider = ({
         onInstallTower,
         onMoveTower,
         refreshGame: fetchGame,
+        setTowers,
         setTriggerAnimation,
         tickCount,
         towers,
