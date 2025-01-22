@@ -1,29 +1,18 @@
 import { Box, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
-import { useEntityQuery } from '@latticexyz/react';
-import {
-  Entity,
-  getComponentValue,
-  getComponentValueStrict,
-  Has,
-  HasValue,
-} from '@latticexyz/recs';
+import { Entity } from '@latticexyz/recs';
 import { useCallback, useEffect, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
 import { GiCannon, GiDefensiveWall, GiMineExplosion } from 'react-icons/gi';
 import { useParams } from 'react-router-dom';
-import { Address, zeroAddress, zeroHash } from 'viem';
+import { zeroAddress, zeroHash } from 'viem';
 
 import { PlayAgainModal } from '../components/PlayAgainModal';
 import { StatsPanel } from '../components/StatsPanel';
 import { SystemModificationDrawer } from '../components/SystemModificationDrawer';
 import { TurnSidebar } from '../components/TurnSidebar';
-import { toaster } from '../components/ui/toaster';
 import { Tooltip } from '../components/ui/tooltip';
 import { GameProvider, useGame } from '../contexts/GameContext';
-import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
-
-const MAX_TICKS = 140;
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
@@ -36,201 +25,26 @@ export const GamePage = (): JSX.Element => {
 
 export const InnerGamePage = (): JSX.Element => {
   const {
-    components: {
-      Castle,
-      CurrentGame,
-      Health,
-      Owner,
-      Position,
-      Projectile,
-      ProjectileTrajectory,
-      Tower,
-    },
-    systemCalls: { installTower, moveTower },
-  } = useMUD();
-  const { game, isRefreshing, refreshGame } = useGame();
-
-  const [activeTowerId, setActiveTowerId] = useState<string>(zeroHash);
-  const [isInstallingTower, setIsInstallingTower] = useState(false);
-  const [installingPosition, setInstallingPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const [activePiece, setActivePiece] = useState<
-    'offense' | 'defense' | 'none'
-  >('none');
-
-  const [triggerAnimation, setTriggerAnimation] = useState(false);
-  const [tickCount, setTickCount] = useState(0);
+    activeTowerId,
+    allowDrop,
+    enemyCastlePosition,
+    game,
+    handleDragStart,
+    installingPosition,
+    isInstallingTower,
+    isRefreshing,
+    myCastlePosition,
+    onInstallTower,
+    onMoveTower,
+    setTriggerAnimation,
+    tickCount,
+    towers,
+    triggerAnimation,
+  } = useGame();
 
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
-
-  const myCastlePosition = useEntityQuery([
-    Has(Castle),
-    HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player1Address }),
-  ]).map(entity => {
-    const _myCastlePosition = getComponentValueStrict(Position, entity);
-    const _myCastleHealth = getComponentValueStrict(Health, entity);
-    return {
-      currentHealth: _myCastleHealth.currentHealth,
-      maxHealth: _myCastleHealth.maxHealth,
-      x: _myCastlePosition.x,
-      y: _myCastlePosition.y,
-    };
-  })[0];
-
-  const enemyCastlePosition = useEntityQuery([
-    Has(Castle),
-    HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player2Address }),
-  ]).map(entity => {
-    const _enemyCastlePosition = getComponentValueStrict(Position, entity);
-    const _enemyCastleHealth = getComponentValueStrict(Health, entity);
-    return {
-      currentHealth: _enemyCastleHealth.currentHealth,
-      maxHealth: _enemyCastleHealth.maxHealth,
-      x: _enemyCastlePosition.x,
-      y: _enemyCastlePosition.y,
-    };
-  })[0];
-
-  const towers: Tower[] = useEntityQuery([
-    Has(Tower),
-    HasValue(CurrentGame, { value: game?.id }),
-  ]).map(entity => {
-    const health = getComponentValueStrict(Health, entity);
-    const owner = getComponentValueStrict(Owner, entity).value;
-    const position = getComponentValueStrict(Position, entity);
-    const projectileTrajectoryUnformatted = getComponentValue(
-      ProjectileTrajectory,
-      entity,
-    );
-
-    const projectileTrajectory = [];
-    if (projectileTrajectoryUnformatted) {
-      for (let i = 0; i < projectileTrajectoryUnformatted.x.length; i++) {
-        projectileTrajectory.push({
-          x: projectileTrajectoryUnformatted.x[i],
-          y: projectileTrajectoryUnformatted.y[i],
-        });
-      }
-    }
-
-    return {
-      id: entity,
-      currentHealth: health.currentHealth,
-      maxHealth: health.maxHealth,
-      owner: owner as Address,
-      projectileLogicAddress: (getComponentValue(Projectile, entity)
-        ?.logicAddress ?? zeroAddress) as Address,
-      projectileTrajectory,
-      x: position.x,
-      y: position.y,
-    };
-  });
-
-  const onInstallTower = useCallback(
-    async (e: React.DragEvent, row: number, col: number) => {
-      e.preventDefault();
-      try {
-        setIsInstallingTower(true);
-        setInstallingPosition({ x: col, y: row });
-
-        if (activeTowerId !== zeroHash) {
-          throw new Error('Active tower selected. Please move it instead.');
-        }
-
-        if (!game) {
-          throw new Error('Game not found.');
-        }
-
-        const hasProjectile = activePiece === 'offense';
-
-        const { error, success } = await installTower(
-          game.id,
-          hasProjectile,
-          col * 10,
-          row * 10,
-        );
-
-        if (error && !success) {
-          throw new Error(error);
-        }
-
-        toaster.create({
-          title: 'Tower Installed!',
-          type: 'success',
-        });
-
-        refreshGame();
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(`Smart contract error: ${(error as Error).message}`);
-
-        toaster.create({
-          description: (error as Error).message,
-          title: 'Error Installing Tower',
-          type: 'error',
-        });
-      } finally {
-        setIsInstallingTower(false);
-        setInstallingPosition(null);
-      }
-    },
-    [activePiece, activeTowerId, game, installTower, refreshGame],
-  );
-
-  const onMoveTower = useCallback(
-    async (e: React.DragEvent, row: number, col: number) => {
-      e.preventDefault();
-      try {
-        setIsInstallingTower(true);
-        setInstallingPosition({ x: col, y: row });
-
-        if (activeTowerId === zeroHash) {
-          throw new Error('No active tower selected.');
-        }
-
-        if (!game) {
-          throw new Error('Game not found.');
-        }
-
-        const { error, success } = await moveTower(
-          game.id,
-          activeTowerId,
-          col * 10,
-          row * 10,
-        );
-
-        if (error && !success) {
-          throw new Error(error);
-        }
-
-        toaster.create({
-          title: 'Tower Moved!',
-          type: 'success',
-        });
-
-        refreshGame();
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(`Smart contract error: ${(error as Error).message}`);
-
-        toaster.create({
-          description: (error as Error).message,
-          title: 'Error Moving Tower',
-          type: 'error',
-        });
-      } finally {
-        setIsInstallingTower(false);
-        setInstallingPosition(null);
-      }
-    },
-    [activeTowerId, game, moveTower, refreshGame],
-  );
 
   const onViewTower = useCallback(
     (tower: Tower) => {
@@ -239,36 +53,6 @@ export const InnerGamePage = (): JSX.Element => {
     },
     [setSelectedTower],
   );
-
-  const allowDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDragStart = (
-    e: React.DragEvent,
-    towerId: string,
-    type: 'offense' | 'defense',
-  ) => {
-    setActiveTowerId(towerId);
-    setActivePiece(type);
-    e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
-  };
-
-  useEffect(() => {
-    if (!game) return () => {};
-    if (game.turn !== game.player1Address) return () => {};
-    if (!triggerAnimation) return () => {};
-
-    const interval = setInterval(() => {
-      if (tickCount >= MAX_TICKS - 1) {
-        setTriggerAnimation(false);
-        setTickCount(0);
-        return;
-      }
-      setTickCount(prev => (prev + 1) % MAX_TICKS);
-    }, 1);
-    return () => clearInterval(interval);
-  }, [game, tickCount, triggerAnimation]);
 
   useEffect(() => {
     if (!game) return;

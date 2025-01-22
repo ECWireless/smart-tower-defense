@@ -1,7 +1,16 @@
+import { Entity } from '@latticexyz/recs';
 import { Address } from 'viem';
 
+export type Castle = {
+  id: Entity;
+  currentHealth: number;
+  maxHealth: number;
+  x: number;
+  y: number;
+};
+
 export type Game = {
-  id: string;
+  id: Entity;
   actionCount: number;
   endTimestamp: bigint;
   player1Address: Address;
@@ -15,7 +24,7 @@ export type Game = {
 };
 
 export type Tower = {
-  id: string;
+  id: Entity;
   currentHealth: number;
   maxHealth: number;
   owner: Address;
