@@ -21,7 +21,7 @@ contract TowerSystem is System {
   function installTower(bytes32 potentialGameId, bool projectile, int16 x, int16 y) external returns (bytes32) {
     address playerAddress = _msgSender();
 
-    (int16 actualX, int16 actualY) = _getActualCoordinates(x, y);
+    (int16 actualX, int16 actualY) = ProjectileHelpers.getActualCoordinates(x, y);
     _validateInstallTower(potentialGameId, playerAddress, actualX, actualY);
 
     uint256 timestamp = block.timestamp;
@@ -38,7 +38,7 @@ contract TowerSystem is System {
 
     (int16 oldX, int16 oldY) = Position.get(towerId);
 
-    (int16 actualX, int16 actualY) = _getActualCoordinates(x, y);
+    (int16 actualX, int16 actualY) = ProjectileHelpers.getActualCoordinates(x, y);
     EntityAtPosition.set(positionToEntityKey(potentialGameId, oldX, oldY), 0);
 
     Position.set(towerId, actualX, actualY);
@@ -91,22 +91,6 @@ contract TowerSystem is System {
       size := extcodesize(newSystem)
     }
     return size;
-  }
-
-  function _getActualCoordinates(int16 x, int16 y) internal pure returns (int16 actualX, int16 actualY) {
-    if (x == 0) {
-      actualX = 5;
-    } else {
-      actualX = (x / 10) * 10 + 5;
-    }
-
-    if (y == 0) {
-      actualY = 5;
-    } else {
-      actualY = (y / 10) * 10 + 5;
-    }
-
-    return (actualX, actualY);
   }
 
   function _validateInstallTower(bytes32 potentialGameId, address playerAddress, int16 x, int16 y) internal view {

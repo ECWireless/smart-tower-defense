@@ -19,17 +19,11 @@ import {
 } from './ui/dialog';
 import { toaster } from './ui/toaster';
 
-type TurnSidebarProps = {
-  setTriggerAnimation: (value: boolean) => void;
-};
-
-export const TurnSidebar: React.FC<TurnSidebarProps> = ({
-  setTriggerAnimation,
-}) => {
+export const TurnSidebar: React.FC = () => {
   const {
     systemCalls: { nextTurn },
   } = useMUD();
-  const { game, refreshGame } = useGame();
+  const { game, refreshGame, setTriggerAnimation } = useGame();
 
   const [isChangingTurn, setIsChangingTurn] = useState(false);
 
@@ -52,9 +46,10 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
         type: 'success',
       });
 
-      refreshGame();
       if (game.turn === game.player2Address) {
         setTriggerAnimation(true);
+      } else {
+        refreshGame();
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -68,7 +63,7 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
     } finally {
       setIsChangingTurn(false);
     }
-  }, [refreshGame, game, nextTurn, setTriggerAnimation]);
+  }, [game, nextTurn, refreshGame, setTriggerAnimation]);
 
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
