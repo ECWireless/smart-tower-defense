@@ -381,6 +381,23 @@ contract GameSystem is System {
         _removeDestroyedTower(positionEntity);
       }
     }
+
+    (int16[] memory prevX, int16[] memory prevY) = ProjectileTrajectory.get(towers[i].id);
+
+    int16[] memory newX = new int16[](prevX.length + 20);
+    int16[] memory newY = new int16[](prevY.length + 20);
+
+    for (uint256 j = 0; j < prevX.length; j++) {
+      newX[j] = prevX[j];
+      newY[j] = prevY[j];
+    }
+
+    for (uint256 j = prevX.length; j < newX.length; j++) {
+      newX[j] = prevX[prevX.length - 1];
+      newY[j] = prevY[prevY.length - 1];
+    }
+
+    ProjectileTrajectory.set(towers[i].id, newX, newY);
   }
 
   function _removeDestroyedTower(bytes32 positionEntity) internal {
