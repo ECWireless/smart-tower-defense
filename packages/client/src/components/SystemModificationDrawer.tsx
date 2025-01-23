@@ -197,8 +197,9 @@ export const SystemModificationDrawer: React.FC<
               projectile will be deployed as a smart contract.
             </Text>
             <Text>
-              - Projectiles move at a speed of 1 tile per tick, and this speed
-              cannot be exceeded. There are 12 ticks when the round results run.
+              - Projectiles move at a speed of 1 tile (each tile has a
+              resolution of 10x10) per tick, and this speed cannot be exceeded.
+              There are 12 ticks when the round results run.
             </Text>
             <Text>
               - The size limit of the projectile logic code is{' '}

@@ -6,14 +6,6 @@ export default defineWorld({
     ActionType: ["Install", "Move", "Modify"],
   },
   tables: {
-    AddressBook: {
-      schema: {
-        game: "address",
-        tower: "address",
-        world: "address",
-      },
-      key: [],
-    },
     Action: {
       schema: {
         id: "bytes32",
@@ -25,6 +17,14 @@ export default defineWorld({
         projectile: "bool",
       },
       key: ["id"],
+    },
+    AddressBook: {
+      schema: {
+        game: "address",
+        tower: "address",
+        world: "address",
+      },
+      key: [],
     },
     Castle: "bool",
     Counter: {
@@ -68,6 +68,13 @@ export default defineWorld({
         winner: "address",
       },
       key: ["id"],
+    },
+    GamesByLevel: {
+      key: ["level"],
+      schema: {
+        level: "uint256",
+        gameIds: "bytes32[]",
+      },
     },
     SavedGame: "bytes32[]",
     Health: {
@@ -139,5 +146,6 @@ export default defineWorld({
       },
       key: ["usernameBytes"],
     },
+    WinStreak: "uint256",
   },
 });

@@ -2,7 +2,8 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, Tower } from "../codegen/index.sol";
+import { Action, ActionData, AddressBook, CurrentGame, DefaultLogicA, DefaultLogicB, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, Tower } from "../codegen/index.sol";
+import { ActionType } from "../codegen/common.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
@@ -28,6 +29,7 @@ contract TowerSystem is System {
     address actualPlayerAddress = Game.get(potentialGameId).turn;
     bytes32 towerId = keccak256(abi.encodePacked(potentialGameId, actualPlayerAddress, timestamp));
     _initializeTower(towerId, potentialGameId, actualPlayerAddress, actualX, actualY, projectile);
+    _storeInstallTowerAction(playerAddress, actualX, actualY, projectile);
 
     return towerId;
   }
@@ -45,6 +47,7 @@ contract TowerSystem is System {
     EntityAtPosition.set(positionToEntityKey(potentialGameId, actualX, actualY), towerId);
 
     _decrementActionCount(potentialGameId);
+    _storeMoveTowerAction(playerAddress, towerId, oldX, oldY, actualX, actualY);
 
     return towerId;
   }
@@ -54,11 +57,11 @@ contract TowerSystem is System {
     bytes memory bytecode,
     string memory sourceCode
   ) external returns (address projectileLogicAddress) {
-    address player = _msgSender();
-    bytes32 playerGameId = CurrentGame.get(addressToEntityKey(player));
+    address playerAddress = _msgSender();
+    bytes32 playerGameId = CurrentGame.get(addressToEntityKey(playerAddress));
     GameData memory currentGame = Game.get(playerGameId);
 
-    _validModifySystem(towerId, player);
+    _validModifySystem(towerId, playerAddress);
 
     address newSystem;
     assembly {
@@ -78,6 +81,9 @@ contract TowerSystem is System {
 
     Game.setActionCount(playerGameId, currentGame.actionCount - 1);
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, sourceCode);
+
+    _storeModifyTowerAction(playerAddress, towerId, newSystem, sourceCode);
+
     return address(newSystem);
   }
 
@@ -208,7 +214,7 @@ contract TowerSystem is System {
       Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
       Projectile.setSourceCode(
         towerId,
-        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 1, y); }}"
+        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 5, y); }}"
       );
     }
 
@@ -217,7 +223,7 @@ contract TowerSystem is System {
       Projectile.setLogicAddress(towerId, defaultProjectileLogicRightAddress);
       Projectile.setSourceCode(
         towerId,
-        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x - 1, y); }}"
+        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x - 5, y); }}"
       );
     }
 
@@ -274,5 +280,152 @@ contract TowerSystem is System {
       uint256(int256(newY))
     );
     require(distance <= 1, "TowerSystem: projectile speed exceeds rules");
+  }
+
+  function _storeInstallTowerAction(address playerAddress, int16 newX, int16 newY, bool hasProjectile) internal {
+    address gameSystemAddress = AddressBook.getGame();
+    if (playerAddress != gameSystemAddress) {
+      bytes32 player = addressToEntityKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), player));
+
+      ActionData[] memory actions = new ActionData[](1);
+      actions[0] = ActionData({
+        actionType: ActionType.Install,
+        newX: newX,
+        newY: newY,
+        oldX: 0,
+        oldY: 0,
+        projectile: hasProjectile
+      });
+
+      bytes32[] memory savedGameActionIds = SavedGame.get(savedGameId);
+      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+
+      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
+        newSavedGameActionIds[i] = savedGameActionIds[i];
+      }
+
+      for (uint256 i = 0; i < actions.length; i++) {
+        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+          abi.encodePacked(
+            actions[i].actionType,
+            actions[i].newX,
+            actions[i].newY,
+            actions[i].oldX,
+            actions[i].oldY,
+            actions[i].projectile
+          )
+        );
+        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+      }
+
+      SavedGame.set(savedGameId, newSavedGameActionIds);
+    }
+  }
+
+  function _storeMoveTowerAction(
+    address playerAddress,
+    bytes32 towerId,
+    int16 oldX,
+    int16 oldY,
+    int16 newX,
+    int16 newY
+  ) internal {
+    address gameSystemAddress = AddressBook.getGame();
+    if (playerAddress != gameSystemAddress) {
+      bytes32 player = addressToEntityKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), player));
+
+      bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);
+
+      ActionData[] memory actions = new ActionData[](1);
+      actions[0] = ActionData({
+        actionType: ActionType.Move,
+        newX: newX,
+        newY: newY,
+        oldX: oldX,
+        oldY: oldY,
+        projectile: hasProjectile
+      });
+
+      bytes32[] memory savedGameActionIds = SavedGame.get(savedGameId);
+      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+
+      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
+        newSavedGameActionIds[i] = savedGameActionIds[i];
+      }
+
+      for (uint256 i = 0; i < actions.length; i++) {
+        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+          abi.encodePacked(
+            actions[i].actionType,
+            actions[i].newX,
+            actions[i].newY,
+            actions[i].oldX,
+            actions[i].oldY,
+            actions[i].projectile
+          )
+        );
+        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+      }
+
+      SavedGame.set(savedGameId, newSavedGameActionIds);
+    }
+  }
+
+  function _storeModifyTowerAction(
+    address playerAddress,
+    bytes32 towerId,
+    address systemAddress,
+    string memory sourceCode
+  ) internal {
+    address gameSystemAddress = AddressBook.getGame();
+    if (playerAddress != gameSystemAddress) {
+      bytes32 player = addressToEntityKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), player));
+
+      (int16 oldX, int16 oldY) = Position.get(towerId);
+      bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);
+
+      ActionData[] memory actions = new ActionData[](1);
+      actions[0] = ActionData({
+        actionType: ActionType.Modify,
+        newX: oldX,
+        newY: oldY,
+        oldX: oldX,
+        oldY: oldY,
+        projectile: hasProjectile
+      });
+
+      bytes32[] memory savedGameActionIds = SavedGame.get(savedGameId);
+      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+
+      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
+        newSavedGameActionIds[i] = savedGameActionIds[i];
+      }
+
+      for (uint256 i = 0; i < actions.length; i++) {
+        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+          abi.encodePacked(
+            actions[i].actionType,
+            actions[i].newX,
+            actions[i].newY,
+            actions[i].oldX,
+            actions[i].oldY,
+            actions[i].projectile
+          )
+        );
+        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+
+        Projectile.set(
+          newSavedGameActionIds[savedGameActionIds.length + i],
+          systemAddress,
+          DEFAULT_LOGIC_SIZE_LIMIT,
+          sourceCode
+        );
+      }
+
+      SavedGame.set(savedGameId, newSavedGameActionIds);
+    }
   }
 }

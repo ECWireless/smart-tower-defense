@@ -22,7 +22,7 @@ import { toaster } from '../components/ui/toaster';
 import { useMUD } from '../MUDContext';
 import type { Castle, Game, Tower } from '../utils/types';
 
-const MAX_TICKS = 140;
+const MAX_TICKS = 28;
 
 type GameContextType = {
   activeTowerId: string;
@@ -410,7 +410,7 @@ export const GameProvider = ({
       }
       _tickCount += 1;
       setTickCount(prev => (prev + 1) % MAX_TICKS);
-    }, 10);
+    }, 50);
     return () => clearInterval(interval);
   }, [
     CurrentGame,

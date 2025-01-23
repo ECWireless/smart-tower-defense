@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower, Username, UsernameTaken } from "../codegen/index.sol";
+import { AddressBook, Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, Tower, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { addressToEntityKey } from "../addressToEntityKey.sol";
 import { positionToEntityKey } from "../positionToEntityKey.sol";
@@ -119,7 +119,9 @@ contract GameSystem is System {
   function _executePlayer2Actions(bytes32 gameId, address player1Address, address player2Address) internal {
     bytes32 player1 = addressToEntityKey(player1Address);
     bytes32 player2 = addressToEntityKey(player2Address);
-    bytes32[] memory actionIds = SavedGame.get(player2);
+
+    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), player2));
+    bytes32[] memory actionIds = SavedGame.get(savedGameId);
 
     uint256 turnCount = Game.getRoundCount(gameId) - 1;
 
@@ -276,7 +278,7 @@ contract GameSystem is System {
       uint256(int256(newX)),
       uint256(int256(tower.projectileY))
     );
-    if (distance > 1) {
+    if (distance > 10) {
       return false;
     }
 
@@ -370,8 +372,7 @@ contract GameSystem is System {
         if (gameId == 0) {
           gameId = CurrentGame.get(positionEntity);
         }
-        Game.setEndTimestamp(gameId, block.timestamp);
-        Game.setWinner(gameId, Owner.get(towers[i].id));
+        _endGame(gameId, Owner.get(towers[i].id));
       }
     } else {
       Health.setCurrentHealth(positionEntity, newHealth);
@@ -384,8 +385,8 @@ contract GameSystem is System {
 
     (int16[] memory prevX, int16[] memory prevY) = ProjectileTrajectory.get(towers[i].id);
 
-    int16[] memory newX = new int16[](prevX.length + 20);
-    int16[] memory newY = new int16[](prevY.length + 20);
+    int16[] memory newX = new int16[](prevX.length + 4);
+    int16[] memory newY = new int16[](prevY.length + 4);
 
     for (uint256 j = 0; j < prevX.length; j++) {
       newX[j] = prevX[j];
@@ -398,6 +399,34 @@ contract GameSystem is System {
     }
 
     ProjectileTrajectory.set(towers[i].id, newX, newY);
+  }
+
+  function _endGame(bytes32 gameId, address winner) internal {
+    Game.setEndTimestamp(gameId, block.timestamp);
+    Game.setWinner(gameId, winner);
+
+    bytes32 winnerId = addressToEntityKey(winner);
+    uint256 winStreak = WinStreak.get(winnerId) + 1;
+    WinStreak.set(winnerId, winStreak);
+
+    GameData memory game = Game.get(gameId);
+    address loserAddress = game.player1Address == winner ? game.player2Address : game.player1Address;
+    bytes32 loserId = addressToEntityKey(loserAddress);
+    WinStreak.set(loserId, 0);
+
+    bytes32 savedGameId = keccak256(abi.encodePacked(gameId, winner));
+    bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
+
+    bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
+    for (uint256 i = 0; i < gamesByLevel.length; i++) {
+      updatedGamesByLevel[i] = gamesByLevel[i];
+
+      if (gamesByLevel[i] == savedGameId) {
+        return;
+      }
+    }
+    updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
+    GamesByLevel.set(winStreak, updatedGamesByLevel);
   }
 
   function _removeDestroyedTower(bytes32 positionEntity) internal {

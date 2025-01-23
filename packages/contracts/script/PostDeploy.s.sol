@@ -62,7 +62,10 @@ contract PostDeploy is Script {
     }
 
     bytes32 playerId = addressToEntityKey(address(0));
-    SavedGame.set(playerId, defaultActionIds);
+
+    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), playerId));
+    SavedGame.set(savedGameId, defaultActionIds);
+
     Username.set(playerId, "ROB");
     bytes32 usernameKey = keccak256(abi.encodePacked("ROB"));
     UsernameTaken.set(usernameKey, true);
