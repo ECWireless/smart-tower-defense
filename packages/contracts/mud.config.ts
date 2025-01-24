@@ -34,20 +34,9 @@ export default defineWorld({
       key: [],
     },
     CurrentGame: "bytes32", // Game.id || towerId
-    DefaultLogicA: {
-      // DefaultProjectileLogicLeft address
+    DefaultLogic: {
       schema: {
         value: "address",
-      },
-      key: [],
-      codegen: {
-        dataStruct: false,
-      },
-    },
-    DefaultLogicB: {
-      // DefaultProjectileLogicRight address
-      schema: {
-        vlue: "address",
       },
       key: [],
       codegen: {
@@ -76,7 +65,15 @@ export default defineWorld({
         gameIds: "bytes32[]",
       },
     },
-    SavedGame: "bytes32[]",
+    SavedGame: {
+      schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(gameId, playerId)) when the template is saved; gameId when the template is loaded for a game
+        gameId: "bytes32",
+        winner: "address",
+        actions: "bytes32[]",
+      },
+      key: ["id"],
+    },
     Health: {
       schema: {
         id: "bytes32",
@@ -122,6 +119,7 @@ export default defineWorld({
         id: "bytes32", // ID is the tower ID,
         logicAddress: "address",
         sizeLimit: "uint256",
+        bytecode: "bytes",
         sourceCode: "string",
       },
       key: ["id"],

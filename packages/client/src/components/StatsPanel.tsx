@@ -17,6 +17,7 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({
     player2Username,
     turn,
   } = game;
+
   return (
     <HStack
       alignItems="stretch"

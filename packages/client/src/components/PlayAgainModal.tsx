@@ -1,4 +1,5 @@
 import { Text } from '@chakra-ui/react';
+import { useComponentValue } from '@latticexyz/react';
 import { getComponentValue } from '@latticexyz/recs';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -31,13 +32,16 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const {
-    components: { CurrentGame },
+    components: { CurrentGame, WinStreak },
     network: { playerEntity },
-    systemCalls: { createGame },
+    systemCalls: { createGame, nextLevel },
   } = useMUD();
   const { game } = useGame();
 
   const [isCreatingGame, setIsCreatingGame] = useState(false);
+
+  const winStreak =
+    useComponentValue(WinStreak, playerEntity)?.value ?? BigInt(0);
 
   const onCreateGame = useCallback(async () => {
     try {
@@ -47,13 +51,21 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
         throw new Error('Game not found.');
       }
 
-      const { error, success } = await createGame(
-        zeroAddress,
-        game.player1Username,
-      );
+      if (game.winner === game.player1Address) {
+        const { error, success } = await nextLevel();
 
-      if (error && !success) {
-        throw new Error(error);
+        if (error && !success) {
+          throw new Error(error);
+        }
+      } else {
+        const { error, success } = await createGame(
+          zeroAddress,
+          game.player1Username,
+        );
+
+        if (error && !success) {
+          throw new Error(error);
+        }
       }
 
       toaster.create({
@@ -85,6 +97,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
     CurrentGame,
     game,
     navigate,
+    nextLevel,
     playerEntity,
     setIsGameOverModalOpen,
   ]);
@@ -119,11 +132,15 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
       <DialogContent bgColor="white" color="black">
         <DialogCloseTrigger bgColor="black" />
         <DialogHeader>
-          <DialogTitle textTransform="uppercase">Game Over</DialogTitle>
+          <DialogTitle textTransform="uppercase">
+            Game {game.winner === game.player1Address ? 'Won' : 'Over'}
+          </DialogTitle>
         </DialogHeader>
         <DialogBody>
           <Text>
-            {game.winner === game.player1Address ? 'You won!' : 'You lost!'}
+            {game.winner === game.player1Address
+              ? `You beat level ${winStreak.toString()}! You can now continue to level ${(winStreak + 1n).toString()}.`
+              : 'You lost!'}
           </Text>
           <Button
             loading={isCreatingGame}
@@ -131,7 +148,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
             onClick={onCreateGame}
             variant="surface"
           >
-            Play Again
+            {game.winner === game.player1Address ? 'Next Level' : 'Play Again'}
           </Button>
         </DialogBody>
         <DialogFooter />

@@ -1,4 +1,4 @@
-import { BaseError, ContractFunctionRevertedError } from 'viem';
+import { BaseError, ContractFunctionRevertedError, zeroHash } from 'viem';
 
 /*
  * Create the system calls that the client can use to ask
@@ -45,6 +45,7 @@ export function createSystemCalls(
   const createGame = async (player2: string, username: string) => {
     try {
       const tx = await worldContract.write.app__createGame([
+        zeroHash,
         player2 as `0x${string}`,
         username,
       ]);
@@ -169,6 +170,26 @@ export function createSystemCalls(
     }
   };
 
+  const nextLevel = async () => {
+    try {
+      const tx = await worldContract.write.app__nextLevel();
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to start next level game.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const nextTurn = async (gameId: string) => {
     try {
       const tx = await worldContract.write.app__nextTurn([
@@ -197,6 +218,7 @@ export function createSystemCalls(
     installTower,
     modifyTowerSystem,
     moveTower,
+    nextLevel,
     nextTurn,
   };
 }

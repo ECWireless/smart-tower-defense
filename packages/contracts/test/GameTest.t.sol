@@ -8,12 +8,15 @@ import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswith
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { Counter } from "../src/codegen/index.sol";
 import { CurrentGame, Game, GameData, Username, UsernameTaken } from "../src/codegen/index.sol";
-import { addressToEntityKey } from "../src/addressToEntityKey.sol";
+import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 
 contract GameTest is MudTest {
   address alice = vm.addr(1);
   address bob = vm.addr(2);
   address rob = address(0);
+
+  bytes32 robId = EntityHelpers.addressToEntityKey(rob);
+  bytes32 defaultSavedGameId = keccak256(abi.encodePacked(bytes32(0), robId));
 
   function endGame(address player, bytes32 gameId) public {
     vm.startPrank(player);
@@ -32,10 +35,10 @@ contract GameTest is MudTest {
 
   function testCreateGame() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
 
-    bytes32 aliceCurrentGame = CurrentGame.get(addressToEntityKey(alice));
-    bytes32 robCurrentGame = CurrentGame.get(addressToEntityKey(rob));
+    bytes32 aliceCurrentGame = CurrentGame.get(EntityHelpers.addressToEntityKey(alice));
+    bytes32 robCurrentGame = CurrentGame.get(EntityHelpers.addressToEntityKey(rob));
 
     assertEq(aliceCurrentGame, gameId);
     assertEq(robCurrentGame, 0);
@@ -43,9 +46,9 @@ contract GameTest is MudTest {
 
   function testUsernameNotTaken() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Alice");
+    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
 
-    string memory username = Username.get(addressToEntityKey(alice));
+    string memory username = Username.get(EntityHelpers.addressToEntityKey(alice));
     assertEq(username, "Alice");
 
     bytes32 usernameBytes = keccak256(abi.encodePacked(username));
@@ -55,37 +58,37 @@ contract GameTest is MudTest {
 
   function testUsernameCannotChange() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
     endGame(alice, gameId);
 
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Bob");
+    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Bob");
 
-    string memory username = Username.get(addressToEntityKey(alice));
+    string memory username = Username.get(EntityHelpers.addressToEntityKey(alice));
     assertEq(username, "Alice");
   }
 
   function testRevertUsernameTaken() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Alice");
+    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
 
     vm.expectRevert(bytes("GameSystem: username is taken"));
     vm.prank(bob);
-    IWorld(worldAddress).app__createGame(rob, "Alice");
+    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
   }
 
   function testRevertGameOngoing() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Alice");
+    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
 
     vm.expectRevert(bytes("GameSystem: player1 has an ongoing game"));
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(alice, "Alice");
+    IWorld(worldAddress).app__createGame(defaultSavedGameId, alice, "Alice");
   }
 
   function testNextTurn() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
 
     IWorld(worldAddress).app__nextTurn(gameId);
     vm.stopPrank();
@@ -98,7 +101,7 @@ contract GameTest is MudTest {
 
   function testNextRound() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
 
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);

@@ -16,9 +16,9 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-library DefaultLogicB {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "DefaultLogicB", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000044656661756c744c6f67696342000000);
+library DefaultLogic {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "DefaultLogic", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000044656661756c744c6f67696300000000);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x0014010014000000000000000000000000000000000000000000000000000000);
@@ -42,7 +42,7 @@ library DefaultLogicB {
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](1);
-    fieldNames[0] = "vlue";
+    fieldNames[0] = "value";
   }
 
   /**
@@ -60,9 +60,9 @@ library DefaultLogicB {
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get value.
    */
-  function getVlue() internal view returns (address vlue) {
+  function getValue() internal view returns (address value) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
@@ -70,9 +70,9 @@ library DefaultLogicB {
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get value.
    */
-  function _getVlue() internal view returns (address vlue) {
+  function _getValue() internal view returns (address value) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
@@ -80,9 +80,9 @@ library DefaultLogicB {
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get value.
    */
-  function get() internal view returns (address vlue) {
+  function get() internal view returns (address value) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
@@ -90,9 +90,9 @@ library DefaultLogicB {
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get value.
    */
-  function _get() internal view returns (address vlue) {
+  function _get() internal view returns (address value) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
@@ -100,39 +100,39 @@ library DefaultLogicB {
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set value.
    */
-  function setVlue(address vlue) internal {
+  function setValue(address value) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set value.
    */
-  function _setVlue(address vlue) internal {
+  function _setValue(address value) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set value.
    */
-  function set(address vlue) internal {
+  function set(address value) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set value.
    */
-  function _set(address vlue) internal {
+  function _set(address value) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
 
   /**
@@ -157,8 +157,8 @@ library DefaultLogicB {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(address vlue) internal pure returns (bytes memory) {
-    return abi.encodePacked(vlue);
+  function encodeStatic(address value) internal pure returns (bytes memory) {
+    return abi.encodePacked(value);
   }
 
   /**
@@ -167,8 +167,8 @@ library DefaultLogicB {
    * @return The lengths of the dynamic fields (packed into a single bytes32 value).
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
-  function encode(address vlue) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(vlue);
+  function encode(address value) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
+    bytes memory _staticData = encodeStatic(value);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

@@ -1,74 +1,13 @@
 [
   {
     "type": "function",
-    "name": "app___checkProjectileCollision",
-    "inputs": [
-      {
-        "name": "towers",
-        "type": "tuple[]",
-        "internalType": "struct TowerDetails[]",
-        "components": [
-          {
-            "name": "id",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "health",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "projectileAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "projectileX",
-            "type": "int16",
-            "internalType": "int16"
-          },
-          {
-            "name": "projectileY",
-            "type": "int16",
-            "internalType": "int16"
-          },
-          {
-            "name": "x",
-            "type": "int16",
-            "internalType": "int16"
-          },
-          {
-            "name": "y",
-            "type": "int16",
-            "internalType": "int16"
-          }
-        ]
-      },
-      {
-        "name": "i",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "j",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "pure"
-  },
-  {
-    "type": "function",
     "name": "app__createGame",
     "inputs": [
+      {
+        "name": "savedGameId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
       {
         "name": "player2Address",
         "type": "address",
@@ -222,6 +161,19 @@
         "internalType": "int16"
       }
     ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__nextLevel",
+    "inputs": [],
     "outputs": [
       {
         "name": "",
