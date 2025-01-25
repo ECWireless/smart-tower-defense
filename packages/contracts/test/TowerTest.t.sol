@@ -22,7 +22,7 @@ contract TowerTest is MudTest {
 
   function testInstallTower() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
 
     vm.prank(alice);
     bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
@@ -44,7 +44,7 @@ contract TowerTest is MudTest {
 
   function testInstallWallTower() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
 
     vm.prank(alice);
     bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, false, 35, 35);
@@ -61,7 +61,7 @@ contract TowerTest is MudTest {
 
   function testRevertInstallPositionIsOccupied() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
@@ -73,21 +73,21 @@ contract TowerTest is MudTest {
 
   function testRevertInstallNotPlayerGame() public {
     vm.startPrank(alice);
-    bytes32 aliceGameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 aliceGameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     IWorld(worldAddress).app__installTower(aliceGameId, true, 35, 35);
     IWorld(worldAddress).app__nextTurn(aliceGameId);
     IWorld(worldAddress).app__nextTurn(aliceGameId);
     vm.stopPrank();
 
     vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Bob");
+    IWorld(worldAddress).app__createGame(rob, "Bob", false);
     vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
     IWorld(worldAddress).app__installTower(aliceGameId, true, 35, 35);
   }
 
   function testMoveTower() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
@@ -105,7 +105,7 @@ contract TowerTest is MudTest {
 
   function testRevertMoveNoTower() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
@@ -124,7 +124,7 @@ contract TowerTest is MudTest {
 
   function testRevertMovePositionIsOccupied() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
@@ -139,21 +139,21 @@ contract TowerTest is MudTest {
 
   function testRevertMoveNotPlayerGame() public {
     vm.startPrank(alice);
-    bytes32 aliceGameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 aliceGameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     bytes32 towerId = IWorld(worldAddress).app__installTower(aliceGameId, true, 35, 35);
     IWorld(worldAddress).app__nextTurn(aliceGameId);
     IWorld(worldAddress).app__nextTurn(aliceGameId);
     vm.stopPrank();
 
     vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Bob");
+    IWorld(worldAddress).app__createGame(rob, "Bob", false);
     vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
     IWorld(worldAddress).app__moveTower(aliceGameId, towerId, 45, 45);
   }
 
   function testModifyTowerSystem() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 65, 65);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
@@ -171,7 +171,7 @@ contract TowerTest is MudTest {
 
   function testRevertModifyNoTower() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
 
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
@@ -192,14 +192,14 @@ contract TowerTest is MudTest {
 
   function testRevertModifyNotPlayerGame() public {
     vm.startPrank(alice);
-    bytes32 aliceGameId = IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Alice");
+    bytes32 aliceGameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
     bytes32 towerId = IWorld(worldAddress).app__installTower(aliceGameId, true, 65, 65);
     IWorld(worldAddress).app__nextTurn(aliceGameId);
     IWorld(worldAddress).app__nextTurn(aliceGameId);
     vm.stopPrank();
 
     vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame(defaultSavedGameId, rob, "Bob");
+    IWorld(worldAddress).app__createGame(rob, "Bob", false);
     vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
     IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE, "");
   }

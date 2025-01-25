@@ -1,6 +1,7 @@
 import { Text } from '@chakra-ui/react';
 import { useComponentValue } from '@latticexyz/react';
 import { getComponentValue } from '@latticexyz/recs';
+import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zeroAddress } from 'viem';
@@ -32,9 +33,9 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const {
-    components: { CurrentGame, WinStreak },
+    components: { CurrentGame, GamesByLevel, TopLevel, WinStreak },
     network: { playerEntity },
-    systemCalls: { createGame, nextLevel },
+    systemCalls: { createGame },
   } = useMUD();
   const { game } = useGame();
 
@@ -42,6 +43,12 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
 
   const winStreak =
     useComponentValue(WinStreak, playerEntity)?.value ?? BigInt(0);
+  const topLevel = useComponentValue(TopLevel, singletonEntity)?.level;
+  const levelAsEntity = encodeEntity(
+    { level: 'uint256' },
+    { level: topLevel ?? 0n },
+  );
+  const topLevelGames = useComponentValue(GamesByLevel, levelAsEntity)?.gameIds;
 
   const onCreateGame = useCallback(async () => {
     try {
@@ -51,21 +58,18 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
         throw new Error('Game not found.');
       }
 
-      if (game.winner === game.player1Address) {
-        const { error, success } = await nextLevel();
+      const resetLevel =
+        game.winner !== game.player1Address ||
+        (topLevel === winStreak && topLevelGames?.length === 1);
 
-        if (error && !success) {
-          throw new Error(error);
-        }
-      } else {
-        const { error, success } = await createGame(
-          zeroAddress,
-          game.player1Username,
-        );
+      const { error, success } = await createGame(
+        zeroAddress,
+        game.player1Username,
+        resetLevel,
+      );
 
-        if (error && !success) {
-          throw new Error(error);
-        }
+      if (error && !success) {
+        throw new Error(error);
       }
 
       toaster.create({
@@ -97,9 +101,11 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
     CurrentGame,
     game,
     navigate,
-    nextLevel,
     playerEntity,
     setIsGameOverModalOpen,
+    topLevel,
+    topLevelGames,
+    winStreak,
   ]);
 
   if (!game) {
@@ -116,6 +122,41 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
           </DialogHeader>
           <DialogBody>
             <Text>An error occurred.</Text>
+          </DialogBody>
+          <DialogFooter />
+        </DialogContent>
+      </DialogRoot>
+    );
+  }
+
+  if (topLevel === winStreak && topLevelGames?.length === 1) {
+    return (
+      <DialogRoot
+        open={isGameOverModalOpen}
+        onOpenChange={e => setIsGameOverModalOpen(e.open)}
+      >
+        <DialogBackdrop />
+        <DialogContent bgColor="white" color="black">
+          <DialogCloseTrigger bgColor="black" />
+          <DialogHeader>
+            <DialogTitle textTransform="uppercase">Game Won</DialogTitle>
+          </DialogHeader>
+          <DialogBody spaceY={4}>
+            <Text fontSize="lg">
+              Congratulations! You are now the <strong>top player</strong>!
+            </Text>
+            <Text>
+              Your game has been saved, and other players can try to beat it.
+              Playing again does not affect your top position.
+            </Text>
+            <Button
+              loading={isCreatingGame}
+              mt={4}
+              onClick={onCreateGame}
+              variant="surface"
+            >
+              Play Again
+            </Button>
           </DialogBody>
           <DialogFooter />
         </DialogContent>

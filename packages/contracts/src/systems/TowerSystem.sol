@@ -22,14 +22,14 @@ contract TowerSystem is System {
   function installTower(bytes32 potentialGameId, bool projectile, int16 x, int16 y) external returns (bytes32) {
     address playerAddress = _msgSender();
 
-    (int16 actualX, int16 actualY) = ProjectileHelpers.getActualCoordinates(x, y);
-    TowerHelpers.validateInstallTower(potentialGameId, playerAddress, actualX, actualY);
+    (x, y) = ProjectileHelpers.getActualCoordinates(x, y);
+    TowerHelpers.validateInstallTower(potentialGameId, playerAddress, x, y);
 
     uint256 timestamp = block.timestamp;
     address actualPlayerAddress = Game.get(potentialGameId).turn;
     bytes32 towerId = keccak256(abi.encodePacked(potentialGameId, actualPlayerAddress, timestamp));
-    TowerHelpers.initializeTower(towerId, potentialGameId, actualPlayerAddress, actualX, actualY, projectile);
-    TowerHelpers.storeInstallTowerAction(potentialGameId, playerAddress, actualX, actualY, projectile);
+    TowerHelpers.initializeTower(towerId, potentialGameId, actualPlayerAddress, x, y, projectile);
+    TowerHelpers.storeInstallTowerAction(potentialGameId, playerAddress, x, y, projectile);
 
     return towerId;
   }

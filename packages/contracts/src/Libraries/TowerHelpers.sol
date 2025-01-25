@@ -117,20 +117,20 @@ library TowerHelpers {
 
     if (projectile) {
       Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
+
+      address defaultProjectileLogicLeftAddress = DefaultLogic.get();
+      Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
+      Projectile.setSourceCode(
+        towerId,
+        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 5, y); }}"
+      );
+      Projectile.setSizeLimit(towerId, DEFAULT_LOGIC_SIZE_LIMIT);
     } else {
       Health.set(towerId, MAX_TOWER_HEALTH * 2, MAX_TOWER_HEALTH * 2);
     }
     Position.set(towerId, x, y);
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, x, y), towerId);
 
-    address defaultProjectileLogicLeftAddress = DefaultLogic.get();
-    Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
-    Projectile.setSourceCode(
-      towerId,
-      "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 5, y); }}"
-    );
-
-    Projectile.setSizeLimit(towerId, DEFAULT_LOGIC_SIZE_LIMIT);
     decrementActionCount(gameId);
   }
 

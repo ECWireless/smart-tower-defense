@@ -11,13 +11,7 @@ pragma solidity >=0.8.24;
 interface IGameSystem {
   function app__getGameSystemAddress() external view returns (address);
 
-  function app__createGame(
-    bytes32 savedGameId,
-    address player2Address,
-    string memory username
-  ) external returns (bytes32);
-
-  function app__nextLevel() external returns (bytes32);
+  function app__createGame(address player2Address, string memory username, bool resetLevel) external returns (bytes32);
 
   function app__nextTurn(bytes32 gameId) external;
 }

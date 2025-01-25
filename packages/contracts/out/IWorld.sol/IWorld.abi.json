@@ -4,11 +4,6 @@
     "name": "app__createGame",
     "inputs": [
       {
-        "name": "savedGameId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
         "name": "player2Address",
         "type": "address",
         "internalType": "address"
@@ -17,6 +12,11 @@
         "name": "username",
         "type": "string",
         "internalType": "string"
+      },
+      {
+        "name": "resetLevel",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "outputs": [
@@ -161,19 +161,6 @@
         "internalType": "int16"
       }
     ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__nextLevel",
-    "inputs": [],
     "outputs": [
       {
         "name": "",

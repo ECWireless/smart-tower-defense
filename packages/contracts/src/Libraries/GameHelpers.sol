@@ -1,4 +1,4 @@
-import { Action, ActionData, AddressBook, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, MapConfig, Projectile, ProjectileData, SavedGame, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
+import { Action, ActionData, AddressBook, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, MapConfig, Projectile, ProjectileData, SavedGame, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 
@@ -10,6 +10,48 @@ pragma solidity >=0.8.24;
  * @notice This library contains helper functions for GameSystem
  */
 library GameHelpers {
+  function nextLevel(address player1Address) public view returns (bytes32) {
+    bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
+    uint256 winStreak = WinStreak.get(player1);
+    require(winStreak > 0, "GameSystem: player1 has no win streak");
+
+    uint256 randomNumber = block.prevrandao;
+    if (block.chainid == 31337) {
+      randomNumber = uint256(block.timestamp);
+    }
+
+    bytes32[] memory savedGameIds = GamesByLevel.get(winStreak);
+    bytes32 savedGameId = savedGameIds[randomNumber % savedGameIds.length];
+    address savedGameWinner = SavedGame.getWinner(savedGameId);
+
+    while (savedGameWinner == player1Address) {
+      if (savedGameIds.length == 1) {
+        break;
+      }
+      bytes32[] memory trimmedSavedGameIds = new bytes32[](savedGameIds.length - 1);
+      uint256 index = 0;
+      for (uint256 i = 0; i < savedGameIds.length; i++) {
+        if (savedGameIds[i] != savedGameId) {
+          trimmedSavedGameIds[index] = savedGameIds[i];
+          index++;
+        }
+      }
+      savedGameIds = trimmedSavedGameIds;
+      randomNumber = block.prevrandao;
+
+      if (block.chainid == 31337) {
+        randomNumber = uint256(block.timestamp);
+      }
+
+      savedGameId = savedGameIds[randomNumber % savedGameIds.length];
+      savedGameWinner = SavedGame.getWinner(savedGameId);
+    }
+
+    require(savedGameWinner != player1Address, "GameSystem: no valid saved game found");
+
+    return savedGameId;
+  }
+
   function validateCreateGame(bytes32 player1, string memory username) public {
     string memory player1Username = Username.get(player1);
     if (bytes(player1Username).length == 0) {
@@ -94,6 +136,10 @@ library GameHelpers {
 
     bytes32 savedGameId = keccak256(abi.encodePacked(gameId, winnerId));
     bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
+
+    if (gamesByLevel.length == 0) {
+      TopLevel.set(winStreak);
+    }
 
     bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
     for (uint256 i = 0; i < gamesByLevel.length; i++) {

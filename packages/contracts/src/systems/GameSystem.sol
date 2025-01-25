@@ -16,16 +16,20 @@ contract GameSystem is System {
     return address(this);
   }
 
-  function createGame(bytes32 savedGameId, address player2Address, string memory username) public returns (bytes32) {
-    if (savedGameId == 0) {
-      bytes32 robId = EntityHelpers.addressToEntityKey(address(0));
-      savedGameId = keccak256(abi.encodePacked(bytes32(0), robId));
-    }
+  function createGame(address player2Address, string memory username, bool resetLevel) public returns (bytes32) {
     address player1Address = _msgSender();
     bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
     bytes32 player2 = EntityHelpers.addressToEntityKey(player2Address);
 
     GameHelpers.validateCreateGame(player1, username);
+
+    bytes32 robId = EntityHelpers.addressToEntityKey(address(0));
+    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), robId));
+    if (resetLevel) {
+      WinStreak.set(player1, 0);
+    } else {
+      savedGameId = GameHelpers.nextLevel(player1Address);
+    }
 
     uint256 timestamp = block.timestamp;
     bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
@@ -78,52 +82,6 @@ contract GameSystem is System {
     SavedGame.set(gameId, loadedSavedGame);
 
     return gameId;
-  }
-
-  function nextLevel() external returns (bytes32) {
-    address player1Address = _msgSender();
-    bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
-    uint256 winStreak = WinStreak.get(player1);
-    require(winStreak > 0, "GameSystem: player1 has no win streak");
-
-    uint256 randomNumber = block.prevrandao;
-    if (block.chainid == 31337) {
-      randomNumber = uint256(block.timestamp);
-    }
-
-    bytes32[] memory savedGameIds = GamesByLevel.get(winStreak);
-    bytes32 savedGameId = savedGameIds[randomNumber % savedGameIds.length];
-    address savedGameWinner = SavedGame.getWinner(savedGameId);
-
-    while (savedGameWinner == player1Address) {
-      if (savedGameIds.length == 1) {
-        break;
-      }
-      bytes32[] memory trimmedSavedGameIds = new bytes32[](savedGameIds.length - 1);
-      uint256 index = 0;
-      for (uint256 i = 0; i < savedGameIds.length; i++) {
-        if (savedGameIds[i] != savedGameId) {
-          trimmedSavedGameIds[index] = savedGameIds[i];
-          index++;
-        }
-      }
-      savedGameIds = trimmedSavedGameIds;
-      randomNumber = block.prevrandao;
-
-      if (block.chainid == 31337) {
-        randomNumber = uint256(block.timestamp);
-      }
-
-      savedGameId = savedGameIds[randomNumber % savedGameIds.length];
-      savedGameWinner = SavedGame.getWinner(savedGameId);
-    }
-
-    require(savedGameWinner != player1Address, "GameSystem: no valid saved game found");
-
-    string memory username = Username.get(player1);
-    createGame(savedGameId, savedGameWinner, username);
-
-    return savedGameId;
   }
 
   function nextTurn(bytes32 gameId) external {

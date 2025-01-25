@@ -81,7 +81,11 @@ export const Home = (): JSX.Element => {
           }
         }
 
-        const { error, success } = await createGame(zeroAddress, username);
+        const { error, success } = await createGame(
+          zeroAddress,
+          username,
+          true,
+        );
 
         if (error && !success) {
           throw new Error(error);

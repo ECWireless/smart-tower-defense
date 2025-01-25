@@ -135,6 +135,15 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    TopLevel: {
+      schema: {
+        level: "uint256",
+      },
+      key: [],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     Tower: "bool",
     Username: "string",
     UsernameTaken: {
