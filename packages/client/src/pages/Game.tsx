@@ -81,7 +81,7 @@ export const InnerGamePage = (): JSX.Element => {
   return (
     <VStack h="100vh" justifyContent="center" p={6}>
       <Box>
-        <StatsPanel game={game} />
+        <StatsPanel />
         <Box>
           <HStack alignItems="stretch" gap={2} h="100%">
             <Box bgColor="white" display="flex" w={120}>

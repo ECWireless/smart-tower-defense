@@ -14,6 +14,7 @@ import { Game, GameData } from "./tables/Game.sol";
 import { GamesByLevel } from "./tables/GamesByLevel.sol";
 import { SavedGame, SavedGameData } from "./tables/SavedGame.sol";
 import { Health } from "./tables/Health.sol";
+import { Level } from "./tables/Level.sol";
 import { LogicSystemAddress } from "./tables/LogicSystemAddress.sol";
 import { MapConfig } from "./tables/MapConfig.sol";
 import { Owner } from "./tables/Owner.sol";

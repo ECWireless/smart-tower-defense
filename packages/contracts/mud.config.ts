@@ -85,6 +85,7 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    Level: "uint256",
     LogicSystemAddress: {
       schema: {
         value: "address",

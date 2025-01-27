@@ -1,20 +1,21 @@
-import { HStack, Text, VStack } from '@chakra-ui/react';
+import { Box, HStack, Text, VStack } from '@chakra-ui/react';
 
-import { type Game } from '../utils/types';
+import { useGame } from '../contexts/GameContext';
 
-type StatsPanelProps = {
-  game: Game;
-};
+export const StatsPanel = (): JSX.Element => {
+  const { game } = useGame();
 
-export const StatsPanel: React.FC<StatsPanelProps> = ({
-  game,
-}): JSX.Element => {
+  if (!game) {
+    return <Box />;
+  }
+
   const {
     actionCount,
-    roundCount,
+    level,
     player1Address,
     player1Username,
     player2Username,
+    roundCount,
     turn,
   } = game;
 
@@ -30,15 +31,9 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({
       w="100%"
     >
       <VStack justifyContent="space-between">
-        <Text fontWeight={700}>ACTIONS</Text>
+        <Text fontWeight={700}>Level</Text>
         <Text fontSize="2xl" fontWeight={900}>
-          {actionCount}
-        </Text>
-      </VStack>
-      <VStack justifyContent="space-between">
-        <Text fontWeight={700}>TURN</Text>
-        <Text fontSize="sm" fontWeight={900} pb={1}>
-          {turn === player1Address ? player1Username : player2Username}
+          {level.toString()}
         </Text>
       </VStack>
       <VStack justifyContent="space-between">
@@ -48,9 +43,15 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({
         </Text>
       </VStack>
       <VStack justifyContent="space-between">
-        <Text fontWeight={700}>WINS</Text>
+        <Text fontWeight={700}>TURN</Text>
+        <Text fontSize="sm" fontWeight={900} pb={1}>
+          {turn === player1Address ? player1Username : player2Username}
+        </Text>
+      </VStack>
+      <VStack justifyContent="space-between">
+        <Text fontWeight={700}>ACTIONS</Text>
         <Text fontSize="2xl" fontWeight={900}>
-          0
+          {actionCount}
         </Text>
       </VStack>
     </HStack>

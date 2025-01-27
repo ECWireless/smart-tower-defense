@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, MapConfig, Owner, OwnerTowers, Position, SavedGame, SavedGameData, Username, WinStreak } from "../codegen/index.sol";
+import { Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, Level, MapConfig, Owner, OwnerTowers, Position, SavedGame, SavedGameData, Username, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH, MAX_TOWER_HEALTH, MAX_TICKS } from "../../constants.sol";
@@ -80,6 +80,7 @@ contract GameSystem is System {
       actions: savedGameActions
     });
     SavedGame.set(gameId, loadedSavedGame);
+    Level.set(gameId, WinStreak.get(player1));
 
     return gameId;
   }

@@ -13,6 +13,7 @@ export type Game = {
   id: Entity;
   actionCount: number;
   endTimestamp: bigint;
+  level: bigint;
   player1Address: Address;
   player1Username: string;
   player2Address: Address;

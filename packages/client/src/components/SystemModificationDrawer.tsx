@@ -4,7 +4,7 @@ import { Entity, getComponentValue } from '@latticexyz/recs';
 import Editor, { loader } from '@monaco-editor/react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
@@ -40,22 +40,6 @@ export const SystemModificationDrawer: React.FC<
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
-
-  useEffect(() => {
-    (async () => {
-      const projectile = getComponentValue(Projectile, tower.id as Entity);
-
-      if (projectile) {
-        const formattedSourceCode = await format(projectile.sourceCode, {
-          parser: 'solidity-parse',
-          plugins: [solidityPlugin],
-        });
-
-        setSizeLimit(projectile.sizeLimit);
-        setSourceCode(formattedSourceCode.trim());
-      }
-    })();
-  }, [isSystemDrawerOpen, Projectile, tower.id]);
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
@@ -211,6 +195,24 @@ export const SystemModificationDrawer: React.FC<
               defaultLanguage="solidity"
               height="100%"
               onChange={value => setSourceCode(value ?? '')}
+              onMount={() => {
+                const projectile = getComponentValue(
+                  Projectile,
+                  tower.id as Entity,
+                );
+
+                if (projectile) {
+                  format(projectile.sourceCode, {
+                    parser: 'solidity-parse',
+                    plugins: [solidityPlugin],
+                  }).then(formattedSourceCode => {
+                    setSizeLimit(projectile.sizeLimit);
+                    setSourceCode(formattedSourceCode.trim());
+                  });
+                } else {
+                  setSourceCode('');
+                }
+              }}
               options={{
                 fontSize: 14,
                 minimap: { enabled: false },
