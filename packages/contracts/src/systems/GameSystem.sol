@@ -64,13 +64,13 @@ contract GameSystem is System {
 
     (int16 mapHeight, int16 mapWidth) = MapConfig.get();
 
-    Position.set(castle1Id, 0, mapHeight / 2);
+    Position.set(castle1Id, 5, mapHeight / 2);
     Position.set(castle2Id, mapWidth - 5, mapHeight / 2);
 
     Health.set(castle1Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
     Health.set(castle2Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
 
-    EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, 0, mapHeight / 2), castle1Id);
+    EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2), castle1Id);
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2), castle2Id);
 
     bytes32[] memory savedGameActions = SavedGame.getActions(savedGameId);
