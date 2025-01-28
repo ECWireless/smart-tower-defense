@@ -1,6 +1,7 @@
 import { Action, ActionData, AddressBook, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, MapConfig, Projectile, ProjectileData, SavedGame, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
+import "forge-std/console.sol";
 
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
@@ -16,40 +17,35 @@ library GameHelpers {
     require(winStreak > 0, "GameSystem: player1 has no win streak");
 
     uint256 randomNumber = block.prevrandao;
-    if (block.chainid == 31337) {
-      randomNumber = uint256(block.timestamp);
-    }
 
     bytes32[] memory savedGameIds = GamesByLevel.get(winStreak);
-    bytes32 savedGameId = savedGameIds[randomNumber % savedGameIds.length];
-    address savedGameWinner = SavedGame.getWinner(savedGameId);
+    require(savedGameIds.length > 0, "GameSystem: no saved games available");
 
-    while (savedGameWinner == player1Address) {
-      if (savedGameIds.length == 1) {
-        break;
-      }
-      bytes32[] memory trimmedSavedGameIds = new bytes32[](savedGameIds.length - 1);
-      uint256 index = 0;
-      for (uint256 i = 0; i < savedGameIds.length; i++) {
-        if (savedGameIds[i] != savedGameId) {
-          trimmedSavedGameIds[index] = savedGameIds[i];
-          index++;
-        }
-      }
-      savedGameIds = trimmedSavedGameIds;
-      randomNumber = block.prevrandao;
+    bytes32 savedGameId;
+    address savedGameWinner;
 
-      if (block.chainid == 31337) {
-        randomNumber = uint256(block.timestamp);
-      }
-
-      savedGameId = savedGameIds[randomNumber % savedGameIds.length];
+    for (uint256 i = 0; i < savedGameIds.length; i++) {
+      // Pick a random saved game
+      uint256 index = randomNumber % savedGameIds.length;
+      savedGameId = savedGameIds[index];
       savedGameWinner = SavedGame.getWinner(savedGameId);
+
+      // If the winner is not the player, return the game ID
+      if (savedGameWinner != player1Address) {
+        return savedGameId;
+      }
+
+      // Remove the checked game ID from the array
+      savedGameIds[index] = savedGameIds[savedGameIds.length - 1];
+      assembly {
+        mstore(savedGameIds, sub(mload(savedGameIds), 1))
+      }
+
+      // Update random number for the next iteration
+      randomNumber = uint256(keccak256(abi.encode(randomNumber, index)));
     }
 
-    require(savedGameWinner != player1Address, "GameSystem: no valid saved game found");
-
-    return savedGameId;
+    revert("GameSystem: no valid saved game found");
   }
 
   function validateCreateGame(bytes32 player1, string memory username) public {

@@ -21,8 +21,6 @@ contract GameSystem is System {
     bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
     bytes32 player2 = EntityHelpers.addressToEntityKey(player2Address);
 
-    GameHelpers.validateCreateGame(player1, username);
-
     bytes32 robId = EntityHelpers.addressToEntityKey(address(0));
     bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), robId));
     if (resetLevel) {
@@ -30,6 +28,8 @@ contract GameSystem is System {
     } else {
       savedGameId = GameHelpers.nextLevel(player1Address);
     }
+
+    GameHelpers.validateCreateGame(player1, username);
 
     uint256 timestamp = block.timestamp;
     bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));

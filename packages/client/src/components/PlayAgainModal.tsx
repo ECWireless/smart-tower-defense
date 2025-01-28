@@ -180,7 +180,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
         <DialogBody>
           <Text>
             {game.winner === game.player1Address
-              ? `You beat level ${winStreak.toString()}! You can now continue to level ${(winStreak + 1n).toString()}.`
+              ? `You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`
               : 'You lost!'}
           </Text>
           <Button
