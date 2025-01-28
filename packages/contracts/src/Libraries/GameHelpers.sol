@@ -1,6 +1,7 @@
-import { Action, ActionData, AddressBook, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, MapConfig, Projectile, ProjectileData, SavedGame, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
+import { Action, ActionData, AddressBook, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Level, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedGame, SavedGameData, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
+import { MAX_ACTIONS, MAX_CASTLE_HEALTH } from "../../constants.sol";
 import "forge-std/console.sol";
 
 // SPDX-License-Identifier: MIT
@@ -11,6 +12,70 @@ pragma solidity >=0.8.24;
  * @notice This library contains helper functions for GameSystem
  */
 library GameHelpers {
+  function initializeGame(
+    address player1Address,
+    address player2Address,
+    bytes32 savedGameId,
+    bytes32 globalPlayer1
+  ) public returns (bytes32) {
+    uint256 timestamp = block.timestamp;
+    bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
+
+    GameData memory newGame = GameData({
+      actionCount: MAX_ACTIONS,
+      endTimestamp: 0,
+      player1Address: player1Address,
+      player2Address: player2Address,
+      roundCount: 1,
+      startTimestamp: timestamp,
+      turn: player1Address,
+      winner: address(0)
+    });
+    Game.set(gameId, newGame);
+    CurrentGame.set(globalPlayer1, gameId);
+
+    (int16 mapHeight, int16 mapWidth) = MapConfig.get();
+
+    bytes32 castle1Id = EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2);
+    bytes32 castle2Id = EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2);
+
+    CurrentGame.set(castle1Id, gameId);
+    CurrentGame.set(castle2Id, gameId);
+
+    Owner.set(castle1Id, player1Address);
+    Owner.set(castle2Id, player2Address);
+
+    bytes32 localPlayer1 = EntityHelpers.localAddressToKey(gameId, player1Address);
+    bytes32 localPlayer2 = EntityHelpers.localAddressToKey(gameId, player2Address);
+    OwnerTowers.set(localPlayer1, new bytes32[](0));
+    OwnerTowers.set(localPlayer2, new bytes32[](0));
+
+    Castle.set(castle1Id, true);
+    Castle.set(castle2Id, true);
+
+
+    Position.set(castle1Id, 5, mapHeight / 2);
+    Position.set(castle2Id, mapWidth - 5, mapHeight / 2);
+
+    Health.set(castle1Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
+    Health.set(castle2Id, MAX_CASTLE_HEALTH, MAX_CASTLE_HEALTH);
+
+    EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2), castle1Id);
+    EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2), castle2Id);
+
+    bytes32[] memory savedGameActions = SavedGame.getActions(savedGameId);
+    SavedGameData memory loadedSavedGame = SavedGameData({
+      gameId: gameId,
+      winner: address(0),
+      actions: savedGameActions
+    });
+    SavedGame.set(gameId, loadedSavedGame);
+
+    Level.set(gameId, WinStreak.get(globalPlayer1));
+
+    return gameId;
+  }
+
   function nextLevel(address player1Address) public view returns (bytes32) {
     bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
     uint256 winStreak = WinStreak.get(globalPlayer1);

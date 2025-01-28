@@ -65,15 +65,6 @@ export default defineWorld({
         gameIds: "bytes32[]",
       },
     },
-    SavedGame: {
-      schema: {
-        id: "bytes32", // keccak256(abi.encodePacked(gameId, playerId)) when the template is saved; gameId when the template is loaded for a game
-        gameId: "bytes32",
-        winner: "address",
-        actions: "bytes32[]",
-      },
-      key: ["id"],
-    },
     Health: {
       schema: {
         id: "bytes32",
@@ -135,6 +126,15 @@ export default defineWorld({
       codegen: {
         dataStruct: false,
       },
+    },
+    SavedGame: {
+      schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(gameId, playerId)) when the template is saved; gameId when the template is loaded for a game
+        gameId: "bytes32",
+        winner: "address",
+        actions: "bytes32[]",
+      },
+      key: ["id"],
     },
     TopLevel: {
       schema: {
