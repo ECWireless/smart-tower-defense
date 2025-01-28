@@ -9,6 +9,7 @@ import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { Counter } from "../src/codegen/index.sol";
 import { CurrentGame, Game, GameData, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
+import "forge-std/console.sol";
 
 contract GameTest is MudTest {
   address alice = vm.addr(1);
@@ -23,16 +24,12 @@ contract GameTest is MudTest {
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
     vm.stopPrank();
   }
 
   function testCreateGame() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
 
     bytes32 aliceCurrentGame = CurrentGame.get(EntityHelpers.globalAddressToKey(alice));
     bytes32 robCurrentGame = CurrentGame.get(EntityHelpers.globalAddressToKey(rob));
@@ -43,7 +40,7 @@ contract GameTest is MudTest {
 
   function testUsernameNotTaken() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame("Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", true);
 
     string memory username = Username.get(EntityHelpers.globalAddressToKey(alice));
     assertEq(username, "Alice");
@@ -55,11 +52,11 @@ contract GameTest is MudTest {
 
   function testUsernameCannotChange() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
     endGame(alice, gameId);
 
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame("Bob", false);
+    IWorld(worldAddress).app__createGame("Bob", true);
 
     string memory username = Username.get(EntityHelpers.globalAddressToKey(alice));
     assertEq(username, "Alice");
@@ -67,38 +64,38 @@ contract GameTest is MudTest {
 
   function testRevertUsernameTaken() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame("Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", true);
 
     vm.expectRevert(bytes("GameSystem: username is taken"));
     vm.prank(bob);
-    IWorld(worldAddress).app__createGame("Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", true);
   }
 
   function testRevertGameOngoing() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame("Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", true);
 
     vm.expectRevert(bytes("GameSystem: player1 has an ongoing game"));
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame("Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", true);
   }
 
   function testNextTurn() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
 
     IWorld(worldAddress).app__nextTurn(gameId);
     vm.stopPrank();
 
     GameData memory game = Game.get(gameId);
-    assertEq(game.actionCount, 0);
+    assertEq(game.actionCount, 1);
     assertEq(game.turn, rob);
     assertEq(game.roundCount, 1);
   }
 
   function testNextRound() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
 
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
