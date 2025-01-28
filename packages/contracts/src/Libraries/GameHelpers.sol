@@ -12,11 +12,11 @@ pragma solidity >=0.8.24;
  */
 library GameHelpers {
   function nextLevel(address player1Address) public view returns (bytes32) {
-    bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
-    uint256 winStreak = WinStreak.get(player1);
+    bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
+    uint256 winStreak = WinStreak.get(globalPlayer1);
     require(winStreak > 0, "GameSystem: player1 has no win streak");
 
-    uint256 randomNumber = block.prevrandao;
+    uint256 randomNumber = block.chainid == 31337 ? block.timestamp : block.prevrandao;
 
     bytes32[] memory savedGameIds = GamesByLevel.get(winStreak);
     require(savedGameIds.length > 0, "GameSystem: no saved games available");
@@ -24,7 +24,9 @@ library GameHelpers {
     bytes32 savedGameId;
     address savedGameWinner;
 
-    for (uint256 i = 0; i < savedGameIds.length; i++) {
+    uint256 savedGameOriginalLength = savedGameIds.length;
+
+    for (uint256 i = 0; i < savedGameOriginalLength; i++) {
       // Pick a random saved game
       uint256 index = randomNumber % savedGameIds.length;
       savedGameId = savedGameIds[index];
@@ -48,16 +50,16 @@ library GameHelpers {
     revert("GameSystem: no valid saved game found");
   }
 
-  function validateCreateGame(bytes32 player1, string memory username) public {
-    string memory player1Username = Username.get(player1);
+  function validateCreateGame(bytes32 globalPlayer1, string memory username) public {
+    string memory player1Username = Username.get(globalPlayer1);
     if (bytes(player1Username).length == 0) {
       bytes32 usernameBytes = keccak256(abi.encodePacked(username));
       require(!UsernameTaken.get(usernameBytes), "GameSystem: username is taken");
-      Username.set(player1, username);
+      Username.set(globalPlayer1, username);
       UsernameTaken.set(usernameBytes, true);
     }
 
-    bytes32 currentGameId = CurrentGame.get(player1);
+    bytes32 currentGameId = CurrentGame.get(globalPlayer1);
     if (currentGameId != 0) {
       GameData memory currentGame = Game.get(currentGameId);
       require(currentGame.endTimestamp != 0, "GameSystem: player1 has an ongoing game");
@@ -65,7 +67,7 @@ library GameHelpers {
   }
 
   function executePlayer2Actions(bytes32 gameId, address player1Address) public {
-    bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
+    bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
     uint256 turnCount = Game.getRoundCount(gameId) - 1;
 
     bytes32[] memory actionIds = SavedGame.getActions(gameId);
@@ -79,7 +81,7 @@ library GameHelpers {
       if (action.actionType == ActionType.Install) {
         bytes memory data = abi.encodeWithSignature(
           "app__installTower(bytes32,bool,int16,int16)",
-          CurrentGame.get(player1),
+          CurrentGame.get(globalPlayer1),
           action.projectile,
           action.newX,
           action.newY
@@ -90,7 +92,7 @@ library GameHelpers {
       } else if (action.actionType == ActionType.Move) {
         bytes memory data = abi.encodeWithSignature(
           "app__moveTower(bytes32,bytes32,int16,int16)",
-          CurrentGame.get(player1),
+          CurrentGame.get(globalPlayer1),
           EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY)),
           action.newX,
           action.newY
@@ -118,19 +120,20 @@ library GameHelpers {
     Game.setEndTimestamp(gameId, block.timestamp);
     Game.setWinner(gameId, winner);
 
-    bytes32 winnerId = EntityHelpers.addressToEntityKey(winner);
-    uint256 winStreak = WinStreak.get(winnerId) + 1;
-    WinStreak.set(winnerId, winStreak);
-
     GameData memory game = Game.get(gameId);
+    bytes32 globalWinnerId = EntityHelpers.globalAddressToKey(winner);
+
+    uint256 winStreak = WinStreak.get(globalWinnerId) + 1;
+    WinStreak.set(globalWinnerId, winStreak);
+
     address loserAddress = game.player1Address == winner ? game.player2Address : game.player1Address;
 
     if (loserAddress == game.player1Address) {
-      bytes32 loserId = EntityHelpers.addressToEntityKey(loserAddress);
-      WinStreak.set(loserId, 0);
+      bytes32 globalLoserId = EntityHelpers.globalAddressToKey(loserAddress);
+      WinStreak.set(globalLoserId, 0);
     }
 
-    bytes32 savedGameId = keccak256(abi.encodePacked(gameId, winnerId));
+    bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalWinnerId));
     bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
 
     if (gamesByLevel.length == 0) {

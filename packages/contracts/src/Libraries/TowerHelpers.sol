@@ -16,8 +16,8 @@ import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol"
 library TowerHelpers {
   function validateInstallTower(bytes32 potentialGameId, address playerAddress, int16 x, int16 y) public view {
     address gameSystemAddress = AddressBook.getGame();
-    bytes32 player = EntityHelpers.addressToEntityKey(playerAddress);
-    bytes32 currentGameId = CurrentGame.get(player);
+    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    bytes32 currentGameId = CurrentGame.get(globalPlayerId);
 
     if (playerAddress == gameSystemAddress) {
       currentGameId = potentialGameId;
@@ -58,8 +58,8 @@ library TowerHelpers {
     int16 y
   ) internal view {
     address gameSystemAddress = AddressBook.getGame();
-    bytes32 player = EntityHelpers.addressToEntityKey(playerAddress);
-    bytes32 currentGameId = CurrentGame.get(player);
+    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    bytes32 currentGameId = CurrentGame.get(globalPlayerId);
 
     if (playerAddress == gameSystemAddress) {
       currentGameId = potentialGameId;
@@ -112,8 +112,7 @@ library TowerHelpers {
     CurrentGame.set(towerId, gameId);
     Owner.set(towerId, playerAddress);
 
-    bytes32 player = EntityHelpers.addressToEntityKey(playerAddress);
-    _addTowerToPlayer(player, towerId);
+    _addTowerToPlayer(gameId, playerAddress, towerId);
 
     if (projectile) {
       Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
@@ -134,8 +133,10 @@ library TowerHelpers {
     decrementActionCount(gameId);
   }
 
-  function _addTowerToPlayer(bytes32 player, bytes32 towerId) internal {
-    bytes32[] memory playerTowers = OwnerTowers.get(player);
+  function _addTowerToPlayer(bytes32 gameId, address playerAddress, bytes32 towerId) internal {
+    bytes32 localPlayerId = EntityHelpers.localAddressToKey(gameId, playerAddress);
+
+    bytes32[] memory playerTowers = OwnerTowers.get(localPlayerId);
     bytes32[] memory updatedTowers = new bytes32[](playerTowers.length + 1);
 
     for (uint256 i = 0; i < playerTowers.length; i++) {
@@ -143,7 +144,7 @@ library TowerHelpers {
     }
 
     updatedTowers[playerTowers.length] = towerId;
-    OwnerTowers.set(player, updatedTowers);
+    OwnerTowers.set(localPlayerId, updatedTowers);
   }
 
   function decrementActionCount(bytes32 gameId) public {
@@ -204,8 +205,8 @@ library TowerHelpers {
   ) public {
     address gameSystemAddress = AddressBook.getGame();
     if (playerAddress != gameSystemAddress) {
-      bytes32 player = EntityHelpers.addressToEntityKey(playerAddress);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, player));
+      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
       ActionData[] memory actions = new ActionData[](1);
       actions[0] = ActionData({
@@ -259,13 +260,10 @@ library TowerHelpers {
   ) public {
     address gameSystemAddress = AddressBook.getGame();
     if (playerAddress != gameSystemAddress) {
-      bytes32 player = EntityHelpers.addressToEntityKey(playerAddress);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, player));
+      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
       bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);
-
-      (, int16 width) = MapConfig.get();
-      newX = width - newX - 1;
 
       ActionData[] memory actions = new ActionData[](1);
       actions[0] = ActionData({
@@ -312,8 +310,8 @@ library TowerHelpers {
   ) public {
     address gameSystemAddress = AddressBook.getGame();
     if (playerAddress != gameSystemAddress) {
-      bytes32 player = EntityHelpers.addressToEntityKey(playerAddress);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, player));
+      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
       (int16 oldX, int16 oldY) = Position.get(towerId);
       bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);

@@ -58,7 +58,7 @@ contract TowerSystem is System {
     string memory sourceCode
   ) external returns (address projectileLogicAddress) {
     address playerAddress = _msgSender();
-    bytes32 playerGameId = CurrentGame.get(EntityHelpers.addressToEntityKey(playerAddress));
+    bytes32 playerGameId = CurrentGame.get(EntityHelpers.globalAddressToKey(playerAddress));
     address gameSystemAddress = AddressBook.getGame();
     if (playerAddress == gameSystemAddress) {
       playerGameId = CurrentGame.get(towerId);

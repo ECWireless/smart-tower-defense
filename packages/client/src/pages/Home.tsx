@@ -10,7 +10,7 @@ import { encodeEntity } from '@latticexyz/store-sync/recs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaPlay } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { Address, zeroAddress } from 'viem';
+import { Address } from 'viem';
 
 import { Button } from '../components/ui/button';
 import { Field } from '../components/ui/field';
@@ -81,11 +81,7 @@ export const Home = (): JSX.Element => {
           }
         }
 
-        const { error, success } = await createGame(
-          zeroAddress,
-          username,
-          true,
-        );
+        const { error, success } = await createGame(username, true);
 
         if (error && !success) {
           throw new Error(error);

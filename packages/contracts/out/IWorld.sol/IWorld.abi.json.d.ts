@@ -4,11 +4,6 @@ declare const abi: [
     "name": "app__createGame",
     "inputs": [
       {
-        "name": "player2Address",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
         "name": "username",
         "type": "string",
         "internalType": "string"

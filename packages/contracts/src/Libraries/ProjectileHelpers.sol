@@ -16,10 +16,10 @@ library ProjectileHelpers {
     address player1Address = Game.getPlayer1Address(gameId);
     address player2Address = Game.getPlayer2Address(gameId);
 
-    bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
-    bytes32 player2 = EntityHelpers.addressToEntityKey(player2Address);
+    bytes32 localPlayer1Id = EntityHelpers.localAddressToKey(gameId, player1Address);
+    bytes32 localPlayer2Id = EntityHelpers.localAddressToKey(gameId, player2Address);
 
-    bytes32[] memory allTowers = getAllTowers(player1, player2);
+    bytes32[] memory allTowers = getAllTowers(localPlayer1Id, localPlayer2Id);
     TowerDetails[] memory towers = _getTowerDetails(allTowers);
 
     _simulateTicks(towers);
@@ -32,9 +32,9 @@ library ProjectileHelpers {
     }
   }
 
-  function getAllTowers(bytes32 player1, bytes32 player2) public view returns (bytes32[] memory) {
-    bytes32[] memory towers1 = OwnerTowers.get(player1);
-    bytes32[] memory towers2 = OwnerTowers.get(player2);
+  function getAllTowers(bytes32 localPlayer1Id, bytes32 localPlayer2Id) public view returns (bytes32[] memory) {
+    bytes32[] memory towers1 = OwnerTowers.get(localPlayer1Id);
+    bytes32[] memory towers2 = OwnerTowers.get(localPlayer2Id);
 
     bytes32[] memory allTowers = new bytes32[](towers1.length + towers2.length);
     uint256 index = 0;
@@ -283,9 +283,10 @@ library ProjectileHelpers {
 
   function _removeDestroyedTower(bytes32 positionEntity) internal {
     address ownerAddress = Owner.get(positionEntity);
-    bytes32 owner = EntityHelpers.addressToEntityKey(ownerAddress);
+    bytes32 gameId = CurrentGame.get(positionEntity);
+    bytes32 localOwnerId = EntityHelpers.localAddressToKey(gameId, ownerAddress);
 
-    bytes32[] memory ownerTowers = OwnerTowers.get(owner);
+    bytes32[] memory ownerTowers = OwnerTowers.get(localOwnerId);
     bytes32[] memory updatedTowers = new bytes32[](ownerTowers.length - 1);
     uint256 index = 0;
 
@@ -295,9 +296,7 @@ library ProjectileHelpers {
       }
     }
 
-    bytes32 gameId = CurrentGame.get(positionEntity);
-
-    OwnerTowers.set(owner, updatedTowers);
+    OwnerTowers.set(localOwnerId, updatedTowers);
     Owner.set(positionEntity, address(0));
     Health.set(positionEntity, 0, MAX_TOWER_HEALTH);
     EntityAtPosition.set(

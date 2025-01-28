@@ -16,21 +16,30 @@ contract GameSystem is System {
     return address(this);
   }
 
-  function createGame(address player2Address, string memory username, bool resetLevel) public returns (bytes32) {
+  function createGame(string memory username, bool resetLevel) public returns (bytes32) {
     address player1Address = _msgSender();
-    bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
-    bytes32 player2 = EntityHelpers.addressToEntityKey(player2Address);
+    bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
 
-    bytes32 robId = EntityHelpers.addressToEntityKey(address(0));
-    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), robId));
+    bytes32 savedGameId;
+
     if (resetLevel) {
-      WinStreak.set(player1, 0);
+      WinStreak.set(globalPlayer1, 0);
     } else {
       savedGameId = GameHelpers.nextLevel(player1Address);
     }
 
-    GameHelpers.validateCreateGame(player1, username);
+    GameHelpers.validateCreateGame(globalPlayer1, username);
 
+    SavedGameData memory savedGame = SavedGame.get(savedGameId);
+    return _initializeGame(player1Address, savedGame.winner, savedGameId, globalPlayer1);
+  }
+
+  function _initializeGame(
+    address player1Address,
+    address player2Address,
+    bytes32 savedGameId,
+    bytes32 globalPlayer1
+  ) internal returns (bytes32) {
     uint256 timestamp = block.timestamp;
     bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
 
@@ -45,7 +54,7 @@ contract GameSystem is System {
       winner: address(0)
     });
     Game.set(gameId, newGame);
-    CurrentGame.set(player1, gameId);
+    CurrentGame.set(globalPlayer1, gameId);
 
     bytes32 castle1Id = keccak256(abi.encodePacked(gameId, player1Address, timestamp));
     bytes32 castle2Id = keccak256(abi.encodePacked(gameId, player2Address, timestamp));
@@ -56,8 +65,10 @@ contract GameSystem is System {
     Owner.set(castle1Id, player1Address);
     Owner.set(castle2Id, player2Address);
 
-    OwnerTowers.set(player1, new bytes32[](0));
-    OwnerTowers.set(player2, new bytes32[](0));
+    bytes32 localPlayer1 = EntityHelpers.localAddressToKey(gameId, player1Address);
+    bytes32 localPlayer2 = EntityHelpers.localAddressToKey(gameId, player2Address);
+    OwnerTowers.set(localPlayer1, new bytes32[](0));
+    OwnerTowers.set(localPlayer2, new bytes32[](0));
 
     Castle.set(castle1Id, true);
     Castle.set(castle2Id, true);
@@ -80,7 +91,8 @@ contract GameSystem is System {
       actions: savedGameActions
     });
     SavedGame.set(gameId, loadedSavedGame);
-    Level.set(gameId, WinStreak.get(player1));
+
+    Level.set(gameId, WinStreak.get(globalPlayer1));
 
     return gameId;
   }
@@ -98,10 +110,10 @@ contract GameSystem is System {
       // TODO: Maybe bring back this restriction
       // require(newGame.actionCount == 0, "GameSystem: player has actions remaining");
 
-      bytes32 player1 = EntityHelpers.addressToEntityKey(player1Address);
-      bytes32 player2 = EntityHelpers.addressToEntityKey(player2Address);
+      bytes32 localPlayer1 = EntityHelpers.localAddressToKey(gameId, player1Address);
+      bytes32 localPlayer2 = EntityHelpers.localAddressToKey(gameId, player2Address);
 
-      bytes32[] memory allTowers = ProjectileHelpers.getAllTowers(player1, player2);
+      bytes32[] memory allTowers = ProjectileHelpers.getAllTowers(localPlayer1, localPlayer2);
       ProjectileHelpers.clearAllProjectiles(allTowers);
     } else {
       Game.setRoundCount(gameId, game.roundCount + 1);

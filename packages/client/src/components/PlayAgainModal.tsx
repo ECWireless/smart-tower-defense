@@ -4,7 +4,6 @@ import { getComponentValue } from '@latticexyz/recs';
 import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { zeroAddress } from 'viem';
 
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
@@ -63,7 +62,6 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
         (topLevel === winStreak && topLevelGames?.length === 1);
 
       const { error, success } = await createGame(
-        zeroAddress,
         game.player1Username,
         resetLevel,
       );

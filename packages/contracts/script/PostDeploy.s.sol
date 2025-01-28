@@ -58,8 +58,8 @@ contract PostDeploy is Script {
     //   Action.set(defaultActionIds[i], actions[i]);
     // }
 
-    bytes32 playerId = EntityHelpers.addressToEntityKey(address(0));
-    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), playerId));
+    bytes32 globalPlayerId;
+    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), globalPlayerId));
 
     SavedGameData memory savedGame = SavedGameData({
       gameId: bytes32(0),
@@ -68,7 +68,7 @@ contract PostDeploy is Script {
     });
     SavedGame.set(savedGameId, savedGame);
 
-    Username.set(playerId, "ROB");
+    Username.set(globalPlayerId, "ROB");
     bytes32 usernameKey = keccak256(abi.encodePacked("ROB"));
     UsernameTaken.set(usernameKey, true);
 

@@ -32,10 +32,10 @@ contract GameTest is MudTest {
 
   function testCreateGame() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
 
-    bytes32 aliceCurrentGame = CurrentGame.get(EntityHelpers.addressToEntityKey(alice));
-    bytes32 robCurrentGame = CurrentGame.get(EntityHelpers.addressToEntityKey(rob));
+    bytes32 aliceCurrentGame = CurrentGame.get(EntityHelpers.globalAddressToKey(alice));
+    bytes32 robCurrentGame = CurrentGame.get(EntityHelpers.globalAddressToKey(rob));
 
     assertEq(aliceCurrentGame, gameId);
     assertEq(robCurrentGame, 0);
@@ -43,9 +43,9 @@ contract GameTest is MudTest {
 
   function testUsernameNotTaken() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", false);
 
-    string memory username = Username.get(EntityHelpers.addressToEntityKey(alice));
+    string memory username = Username.get(EntityHelpers.globalAddressToKey(alice));
     assertEq(username, "Alice");
 
     bytes32 usernameBytes = keccak256(abi.encodePacked(username));
@@ -55,37 +55,37 @@ contract GameTest is MudTest {
 
   function testUsernameCannotChange() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
     endGame(alice, gameId);
 
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Bob", false);
+    IWorld(worldAddress).app__createGame("Bob", false);
 
-    string memory username = Username.get(EntityHelpers.addressToEntityKey(alice));
+    string memory username = Username.get(EntityHelpers.globalAddressToKey(alice));
     assertEq(username, "Alice");
   }
 
   function testRevertUsernameTaken() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", false);
 
     vm.expectRevert(bytes("GameSystem: username is taken"));
     vm.prank(bob);
-    IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", false);
   }
 
   function testRevertGameOngoing() public {
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", false);
 
     vm.expectRevert(bytes("GameSystem: player1 has an ongoing game"));
     vm.prank(alice);
-    IWorld(worldAddress).app__createGame(alice, "Alice", false);
+    IWorld(worldAddress).app__createGame("Alice", false);
   }
 
   function testNextTurn() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
 
     IWorld(worldAddress).app__nextTurn(gameId);
     vm.stopPrank();
@@ -98,7 +98,7 @@ contract GameTest is MudTest {
 
   function testNextRound() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame(rob, "Alice", false);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", false);
 
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
