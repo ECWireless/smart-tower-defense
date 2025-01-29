@@ -88,6 +88,22 @@ export const TurnSidebar: React.FC = () => {
     }
   }, [game, nextTurn, refreshGame, setTriggerAnimation]);
 
+  useEffect(() => {
+    if (!game) return () => {};
+    if (game.endTimestamp !== BigInt(0)) return () => {};
+
+    const listener = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        onNextTurn();
+      }
+    };
+
+    window.addEventListener('keydown', listener);
+    return () => {
+      window.removeEventListener('keydown', listener);
+    };
+  }, [game, onNextTurn]);
+
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
     if (game.turn === zeroAddress) return true;
