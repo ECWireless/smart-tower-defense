@@ -160,7 +160,7 @@ export const TurnSidebar: React.FC = () => {
                 player is the one whose game has never been beaten.
               </Text>
               <Heading fontSize="lg">Basic Gameplay</Heading>
-              <Box as="ol" listStyleType="decimal" listStylePosition="inside">
+              <Box as="ol" listStylePosition="inside" listStyleType="decimal">
                 <li>
                   You have 10 <strong>rounds</strong> to bring your
                   opponent&apos;s castle health to 0.
@@ -180,8 +180,8 @@ export const TurnSidebar: React.FC = () => {
                 </li>
               </Box>
 
-              <Heading fontSize="md">Notes</Heading>
-              <Box as="ul" listStyleType="circle" listStylePosition="inside">
+              <Heading fontSize="md">Notes:</Heading>
+              <Box as="ul" listStylePosition="inside" listStyleType="circle">
                 <li>
                   To modify a tower&apos;s system logic, click on the tower you
                   want to modify, change the <strong>Solidity</strong> code,
