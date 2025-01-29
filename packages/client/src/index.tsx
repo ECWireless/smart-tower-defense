@@ -14,7 +14,7 @@ const root = createRoot(rootElement);
 setup().then(async result => {
   root.render(
     <MUDProvider value={result}>
-      <Provider>
+      <Provider forcedTheme="dark">
         <App />
       </Provider>
     </MUDProvider>,
