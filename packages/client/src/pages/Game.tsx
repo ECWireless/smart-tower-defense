@@ -1,9 +1,9 @@
-import { Box, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
 import { Entity } from '@latticexyz/recs';
 import { useCallback, useEffect, useState } from 'react';
 import { BiSolidCastle } from 'react-icons/bi';
 import { GiCannon, GiDefensiveWall, GiMineExplosion } from 'react-icons/gi';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { zeroAddress, zeroHash } from 'viem';
 
 import { PlayAgainModal } from '../components/PlayAgainModal';
@@ -24,6 +24,7 @@ export const GamePage = (): JSX.Element => {
 };
 
 export const InnerGamePage = (): JSX.Element => {
+  const navigate = useNavigate();
   const {
     activeTowerId,
     allowDrop,
@@ -79,7 +80,18 @@ export const InnerGamePage = (): JSX.Element => {
   }
 
   return (
-    <VStack h="100vh" justifyContent="center" p={6}>
+    <VStack h="100vh" justifyContent="center" p={6} position="relative">
+      <Button
+        left="50%"
+        onClick={() => {
+          navigate('/');
+        }}
+        position="absolute"
+        top={4}
+        transform="translateX(-50%)"
+      >
+        Home
+      </Button>
       <Box>
         <StatsPanel />
         <Box>
