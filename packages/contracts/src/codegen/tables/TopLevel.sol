@@ -16,17 +16,17 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-library DefaultLogicB {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "DefaultLogicB", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000044656661756c744c6f67696342000000);
+library TopLevel {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "TopLevel", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000546f704c6576656c0000000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0014010014000000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0020010020000000000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of ()
   Schema constant _keySchema = Schema.wrap(0x0000000000000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address)
-  Schema constant _valueSchema = Schema.wrap(0x0014010061000000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint256)
+  Schema constant _valueSchema = Schema.wrap(0x002001001f000000000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -42,7 +42,7 @@ library DefaultLogicB {
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](1);
-    fieldNames[0] = "vlue";
+    fieldNames[0] = "level";
   }
 
   /**
@@ -60,79 +60,79 @@ library DefaultLogicB {
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get level.
    */
-  function getVlue() internal view returns (address vlue) {
+  function getLevel() internal view returns (uint256 level) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (uint256(bytes32(_blob)));
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get level.
    */
-  function _getVlue() internal view returns (address vlue) {
+  function _getLevel() internal view returns (uint256 level) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (uint256(bytes32(_blob)));
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get level.
    */
-  function get() internal view returns (address vlue) {
+  function get() internal view returns (uint256 level) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (uint256(bytes32(_blob)));
   }
 
   /**
-   * @notice Get vlue.
+   * @notice Get level.
    */
-  function _get() internal view returns (address vlue) {
+  function _get() internal view returns (uint256 level) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (uint256(bytes32(_blob)));
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set level.
    */
-  function setVlue(address vlue) internal {
+  function setLevel(uint256 level) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((level)), _fieldLayout);
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set level.
    */
-  function _setVlue(address vlue) internal {
+  function _setLevel(uint256 level) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((level)), _fieldLayout);
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set level.
    */
-  function set(address vlue) internal {
+  function set(uint256 level) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((level)), _fieldLayout);
   }
 
   /**
-   * @notice Set vlue.
+   * @notice Set level.
    */
-  function _set(address vlue) internal {
+  function _set(uint256 level) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((vlue)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((level)), _fieldLayout);
   }
 
   /**
@@ -157,8 +157,8 @@ library DefaultLogicB {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(address vlue) internal pure returns (bytes memory) {
-    return abi.encodePacked(vlue);
+  function encodeStatic(uint256 level) internal pure returns (bytes memory) {
+    return abi.encodePacked(level);
   }
 
   /**
@@ -167,8 +167,8 @@ library DefaultLogicB {
    * @return The lengths of the dynamic fields (packed into a single bytes32 value).
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
-  function encode(address vlue) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(vlue);
+  function encode(uint256 level) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
+    bytes memory _staticData = encodeStatic(level);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

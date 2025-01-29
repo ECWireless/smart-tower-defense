@@ -6,14 +6,6 @@ export default defineWorld({
     ActionType: ["Install", "Move", "Modify"],
   },
   tables: {
-    AddressBook: {
-      schema: {
-        game: "address",
-        tower: "address",
-        world: "address",
-      },
-      key: [],
-    },
     Action: {
       schema: {
         id: "bytes32",
@@ -26,6 +18,14 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    AddressBook: {
+      schema: {
+        game: "address",
+        tower: "address",
+        world: "address",
+      },
+      key: [],
+    },
     Castle: "bool",
     Counter: {
       schema: {
@@ -34,20 +34,9 @@ export default defineWorld({
       key: [],
     },
     CurrentGame: "bytes32", // Game.id || towerId
-    DefaultLogicA: {
-      // DefaultProjectileLogicLeft address
+    DefaultLogic: {
       schema: {
         value: "address",
-      },
-      key: [],
-      codegen: {
-        dataStruct: false,
-      },
-    },
-    DefaultLogicB: {
-      // DefaultProjectileLogicRight address
-      schema: {
-        vlue: "address",
       },
       key: [],
       codegen: {
@@ -69,7 +58,13 @@ export default defineWorld({
       },
       key: ["id"],
     },
-    SavedGame: "bytes32[]",
+    GamesByLevel: {
+      key: ["level"],
+      schema: {
+        level: "uint256",
+        gameIds: "bytes32[]",
+      },
+    },
     Health: {
       schema: {
         id: "bytes32",
@@ -81,6 +76,7 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    Level: "uint256",
     LogicSystemAddress: {
       schema: {
         value: "address",
@@ -115,6 +111,7 @@ export default defineWorld({
         id: "bytes32", // ID is the tower ID,
         logicAddress: "address",
         sizeLimit: "uint256",
+        bytecode: "bytes",
         sourceCode: "string",
       },
       key: ["id"],
@@ -130,7 +127,31 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    SavedGame: {
+      schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(gameId, playerId)) when the template is saved; gameId when the template is loaded for a game
+        gameId: "bytes32",
+        winner: "address",
+        actions: "bytes32[]",
+      },
+      key: ["id"],
+    },
+    TopLevel: {
+      schema: {
+        level: "uint256",
+      },
+      key: [],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     Tower: "bool",
+    TowerCounter: {
+      schema: {
+        value: "uint256",
+      },
+      key: [],
+    },
     Username: "string",
     UsernameTaken: {
       schema: {
@@ -139,5 +160,6 @@ export default defineWorld({
       },
       key: ["usernameBytes"],
     },
+    WinStreak: "uint256",
   },
 });

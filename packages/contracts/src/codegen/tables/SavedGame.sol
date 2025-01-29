@@ -16,17 +16,23 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
+struct SavedGameData {
+  bytes32 gameId;
+  address winner;
+  bytes32[] actions;
+}
+
 library SavedGame {
   // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedGame", typeId: RESOURCE_TABLE });`
   ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000536176656447616d6500000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0000000100000000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0034020120140000000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (bytes32[])
-  Schema constant _valueSchema = Schema.wrap(0x00000001c1000000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (bytes32, address, bytes32[])
+  Schema constant _valueSchema = Schema.wrap(0x003402015f61c100000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -42,8 +48,10 @@ library SavedGame {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](1);
-    fieldNames[0] = "value";
+    fieldNames = new string[](3);
+    fieldNames[0] = "gameId";
+    fieldNames[1] = "winner";
+    fieldNames[2] = "actions";
   }
 
   /**
@@ -61,9 +69,93 @@ library SavedGame {
   }
 
   /**
-   * @notice Get value.
+   * @notice Get gameId.
    */
-  function getValue(bytes32 id) internal view returns (bytes32[] memory value) {
+  function getGameId(bytes32 id) internal view returns (bytes32 gameId) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (bytes32(_blob));
+  }
+
+  /**
+   * @notice Get gameId.
+   */
+  function _getGameId(bytes32 id) internal view returns (bytes32 gameId) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (bytes32(_blob));
+  }
+
+  /**
+   * @notice Set gameId.
+   */
+  function setGameId(bytes32 id, bytes32 gameId) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((gameId)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set gameId.
+   */
+  function _setGameId(bytes32 id, bytes32 gameId) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((gameId)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get winner.
+   */
+  function getWinner(bytes32 id) internal view returns (address winner) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Get winner.
+   */
+  function _getWinner(bytes32 id) internal view returns (address winner) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Set winner.
+   */
+  function setWinner(bytes32 id, address winner) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((winner)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set winner.
+   */
+  function _setWinner(bytes32 id, address winner) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((winner)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get actions.
+   */
+  function getActions(bytes32 id) internal view returns (bytes32[] memory actions) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -72,9 +164,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Get value.
+   * @notice Get actions.
    */
-  function _getValue(bytes32 id) internal view returns (bytes32[] memory value) {
+  function _getActions(bytes32 id) internal view returns (bytes32[] memory actions) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -83,71 +175,29 @@ library SavedGame {
   }
 
   /**
-   * @notice Get value.
+   * @notice Set actions.
    */
-  function get(bytes32 id) internal view returns (bytes32[] memory value) {
+  function setActions(bytes32 id, bytes32[] memory actions) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes memory _blob = StoreSwitch.getDynamicField(_tableId, _keyTuple, 0);
-    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_bytes32());
+    StoreSwitch.setDynamicField(_tableId, _keyTuple, 0, EncodeArray.encode((actions)));
   }
 
   /**
-   * @notice Get value.
+   * @notice Set actions.
    */
-  function _get(bytes32 id) internal view returns (bytes32[] memory value) {
+  function _setActions(bytes32 id, bytes32[] memory actions) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes memory _blob = StoreCore.getDynamicField(_tableId, _keyTuple, 0);
-    return (SliceLib.getSubslice(_blob, 0, _blob.length).decodeArray_bytes32());
+    StoreCore.setDynamicField(_tableId, _keyTuple, 0, EncodeArray.encode((actions)));
   }
 
   /**
-   * @notice Set value.
+   * @notice Get the length of actions.
    */
-  function setValue(bytes32 id, bytes32[] memory value) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.setDynamicField(_tableId, _keyTuple, 0, EncodeArray.encode((value)));
-  }
-
-  /**
-   * @notice Set value.
-   */
-  function _setValue(bytes32 id, bytes32[] memory value) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.setDynamicField(_tableId, _keyTuple, 0, EncodeArray.encode((value)));
-  }
-
-  /**
-   * @notice Set value.
-   */
-  function set(bytes32 id, bytes32[] memory value) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.setDynamicField(_tableId, _keyTuple, 0, EncodeArray.encode((value)));
-  }
-
-  /**
-   * @notice Set value.
-   */
-  function _set(bytes32 id, bytes32[] memory value) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.setDynamicField(_tableId, _keyTuple, 0, EncodeArray.encode((value)));
-  }
-
-  /**
-   * @notice Get the length of value.
-   */
-  function lengthValue(bytes32 id) internal view returns (uint256) {
+  function lengthActions(bytes32 id) internal view returns (uint256) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -158,9 +208,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Get the length of value.
+   * @notice Get the length of actions.
    */
-  function _lengthValue(bytes32 id) internal view returns (uint256) {
+  function _lengthActions(bytes32 id) internal view returns (uint256) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -171,36 +221,10 @@ library SavedGame {
   }
 
   /**
-   * @notice Get the length of value.
-   */
-  function length(bytes32 id) internal view returns (uint256) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    uint256 _byteLength = StoreSwitch.getDynamicFieldLength(_tableId, _keyTuple, 0);
-    unchecked {
-      return _byteLength / 32;
-    }
-  }
-
-  /**
-   * @notice Get the length of value.
-   */
-  function _length(bytes32 id) internal view returns (uint256) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    uint256 _byteLength = StoreCore.getDynamicFieldLength(_tableId, _keyTuple, 0);
-    unchecked {
-      return _byteLength / 32;
-    }
-  }
-
-  /**
-   * @notice Get an item of value.
+   * @notice Get an item of actions.
    * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
    */
-  function getItemValue(bytes32 id, uint256 _index) internal view returns (bytes32) {
+  function getItemActions(bytes32 id, uint256 _index) internal view returns (bytes32) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -211,10 +235,10 @@ library SavedGame {
   }
 
   /**
-   * @notice Get an item of value.
+   * @notice Get an item of actions.
    * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
    */
-  function _getItemValue(bytes32 id, uint256 _index) internal view returns (bytes32) {
+  function _getItemActions(bytes32 id, uint256 _index) internal view returns (bytes32) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -225,37 +249,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Get an item of value.
-   * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
+   * @notice Push an element to actions.
    */
-  function getItem(bytes32 id, uint256 _index) internal view returns (bytes32) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    unchecked {
-      bytes memory _blob = StoreSwitch.getDynamicFieldSlice(_tableId, _keyTuple, 0, _index * 32, (_index + 1) * 32);
-      return (bytes32(_blob));
-    }
-  }
-
-  /**
-   * @notice Get an item of value.
-   * @dev Reverts with Store_IndexOutOfBounds if `_index` is out of bounds for the array.
-   */
-  function _getItem(bytes32 id, uint256 _index) internal view returns (bytes32) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    unchecked {
-      bytes memory _blob = StoreCore.getDynamicFieldSlice(_tableId, _keyTuple, 0, _index * 32, (_index + 1) * 32);
-      return (bytes32(_blob));
-    }
-  }
-
-  /**
-   * @notice Push an element to value.
-   */
-  function pushValue(bytes32 id, bytes32 _element) internal {
+  function pushActions(bytes32 id, bytes32 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -263,9 +259,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Push an element to value.
+   * @notice Push an element to actions.
    */
-  function _pushValue(bytes32 id, bytes32 _element) internal {
+  function _pushActions(bytes32 id, bytes32 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -273,29 +269,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Push an element to value.
+   * @notice Pop an element from actions.
    */
-  function push(bytes32 id, bytes32 _element) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.pushToDynamicField(_tableId, _keyTuple, 0, abi.encodePacked((_element)));
-  }
-
-  /**
-   * @notice Push an element to value.
-   */
-  function _push(bytes32 id, bytes32 _element) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.pushToDynamicField(_tableId, _keyTuple, 0, abi.encodePacked((_element)));
-  }
-
-  /**
-   * @notice Pop an element from value.
-   */
-  function popValue(bytes32 id) internal {
+  function popActions(bytes32 id) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -303,9 +279,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Pop an element from value.
+   * @notice Pop an element from actions.
    */
-  function _popValue(bytes32 id) internal {
+  function _popActions(bytes32 id) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -313,29 +289,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Pop an element from value.
+   * @notice Update an element of actions at `_index`.
    */
-  function pop(bytes32 id) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.popFromDynamicField(_tableId, _keyTuple, 0, 32);
-  }
-
-  /**
-   * @notice Pop an element from value.
-   */
-  function _pop(bytes32 id) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.popFromDynamicField(_tableId, _keyTuple, 0, 32);
-  }
-
-  /**
-   * @notice Update an element of value at `_index`.
-   */
-  function updateValue(bytes32 id, uint256 _index, bytes32 _element) internal {
+  function updateActions(bytes32 id, uint256 _index, bytes32 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -346,9 +302,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Update an element of value at `_index`.
+   * @notice Update an element of actions at `_index`.
    */
-  function _updateValue(bytes32 id, uint256 _index, bytes32 _element) internal {
+  function _updateActions(bytes32 id, uint256 _index, bytes32 _element) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -359,29 +315,133 @@ library SavedGame {
   }
 
   /**
-   * @notice Update an element of value at `_index`.
+   * @notice Get the full data.
    */
-  function update(bytes32 id, uint256 _index, bytes32 _element) internal {
+  function get(bytes32 id) internal view returns (SavedGameData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    unchecked {
-      bytes memory _encoded = abi.encodePacked((_element));
-      StoreSwitch.spliceDynamicData(_tableId, _keyTuple, 0, uint40(_index * 32), uint40(_encoded.length), _encoded);
-    }
+    (bytes memory _staticData, EncodedLengths _encodedLengths, bytes memory _dynamicData) = StoreSwitch.getRecord(
+      _tableId,
+      _keyTuple,
+      _fieldLayout
+    );
+    return decode(_staticData, _encodedLengths, _dynamicData);
   }
 
   /**
-   * @notice Update an element of value at `_index`.
+   * @notice Get the full data.
    */
-  function _update(bytes32 id, uint256 _index, bytes32 _element) internal {
+  function _get(bytes32 id) internal view returns (SavedGameData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
+    (bytes memory _staticData, EncodedLengths _encodedLengths, bytes memory _dynamicData) = StoreCore.getRecord(
+      _tableId,
+      _keyTuple,
+      _fieldLayout
+    );
+    return decode(_staticData, _encodedLengths, _dynamicData);
+  }
+
+  /**
+   * @notice Set the full data using individual values.
+   */
+  function set(bytes32 id, bytes32 gameId, address winner, bytes32[] memory actions) internal {
+    bytes memory _staticData = encodeStatic(gameId, winner);
+
+    EncodedLengths _encodedLengths = encodeLengths(actions);
+    bytes memory _dynamicData = encodeDynamic(actions);
+
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData);
+  }
+
+  /**
+   * @notice Set the full data using individual values.
+   */
+  function _set(bytes32 id, bytes32 gameId, address winner, bytes32[] memory actions) internal {
+    bytes memory _staticData = encodeStatic(gameId, winner);
+
+    EncodedLengths _encodedLengths = encodeLengths(actions);
+    bytes memory _dynamicData = encodeDynamic(actions);
+
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData, _fieldLayout);
+  }
+
+  /**
+   * @notice Set the full data using the data struct.
+   */
+  function set(bytes32 id, SavedGameData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.gameId, _table.winner);
+
+    EncodedLengths _encodedLengths = encodeLengths(_table.actions);
+    bytes memory _dynamicData = encodeDynamic(_table.actions);
+
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData);
+  }
+
+  /**
+   * @notice Set the full data using the data struct.
+   */
+  function _set(bytes32 id, SavedGameData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.gameId, _table.winner);
+
+    EncodedLengths _encodedLengths = encodeLengths(_table.actions);
+    bytes memory _dynamicData = encodeDynamic(_table.actions);
+
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData, _fieldLayout);
+  }
+
+  /**
+   * @notice Decode the tightly packed blob of static data using this table's field layout.
+   */
+  function decodeStatic(bytes memory _blob) internal pure returns (bytes32 gameId, address winner) {
+    gameId = (Bytes.getBytes32(_blob, 0));
+
+    winner = (address(Bytes.getBytes20(_blob, 32)));
+  }
+
+  /**
+   * @notice Decode the tightly packed blob of dynamic data using the encoded lengths.
+   */
+  function decodeDynamic(
+    EncodedLengths _encodedLengths,
+    bytes memory _blob
+  ) internal pure returns (bytes32[] memory actions) {
+    uint256 _start;
+    uint256 _end;
     unchecked {
-      bytes memory _encoded = abi.encodePacked((_element));
-      StoreCore.spliceDynamicData(_tableId, _keyTuple, 0, uint40(_index * 32), uint40(_encoded.length), _encoded);
+      _end = _encodedLengths.atIndex(0);
     }
+    actions = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_bytes32());
+  }
+
+  /**
+   * @notice Decode the tightly packed blobs using this table's field layout.
+   * @param _staticData Tightly packed static fields.
+   * @param _encodedLengths Encoded lengths of dynamic fields.
+   * @param _dynamicData Tightly packed dynamic fields.
+   */
+  function decode(
+    bytes memory _staticData,
+    EncodedLengths _encodedLengths,
+    bytes memory _dynamicData
+  ) internal pure returns (SavedGameData memory _table) {
+    (_table.gameId, _table.winner) = decodeStatic(_staticData);
+
+    (_table.actions) = decodeDynamic(_encodedLengths, _dynamicData);
   }
 
   /**
@@ -405,13 +465,21 @@ library SavedGame {
   }
 
   /**
+   * @notice Tightly pack static (fixed length) data using this table's schema.
+   * @return The static data, encoded into a sequence of bytes.
+   */
+  function encodeStatic(bytes32 gameId, address winner) internal pure returns (bytes memory) {
+    return abi.encodePacked(gameId, winner);
+  }
+
+  /**
    * @notice Tightly pack dynamic data lengths using this table's schema.
    * @return _encodedLengths The lengths of the dynamic fields (packed into a single bytes32 value).
    */
-  function encodeLengths(bytes32[] memory value) internal pure returns (EncodedLengths _encodedLengths) {
+  function encodeLengths(bytes32[] memory actions) internal pure returns (EncodedLengths _encodedLengths) {
     // Lengths are effectively checked during copy by 2**40 bytes exceeding gas limits
     unchecked {
-      _encodedLengths = EncodedLengthsLib.pack(value.length * 32);
+      _encodedLengths = EncodedLengthsLib.pack(actions.length * 32);
     }
   }
 
@@ -419,8 +487,8 @@ library SavedGame {
    * @notice Tightly pack dynamic (variable length) data using this table's schema.
    * @return The dynamic data, encoded into a sequence of bytes.
    */
-  function encodeDynamic(bytes32[] memory value) internal pure returns (bytes memory) {
-    return abi.encodePacked(EncodeArray.encode((value)));
+  function encodeDynamic(bytes32[] memory actions) internal pure returns (bytes memory) {
+    return abi.encodePacked(EncodeArray.encode((actions)));
   }
 
   /**
@@ -429,10 +497,15 @@ library SavedGame {
    * @return The lengths of the dynamic fields (packed into a single bytes32 value).
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
-  function encode(bytes32[] memory value) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData;
-    EncodedLengths _encodedLengths = encodeLengths(value);
-    bytes memory _dynamicData = encodeDynamic(value);
+  function encode(
+    bytes32 gameId,
+    address winner,
+    bytes32[] memory actions
+  ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
+    bytes memory _staticData = encodeStatic(gameId, winner);
+
+    EncodedLengths _encodedLengths = encodeLengths(actions);
+    bytes memory _dynamicData = encodeDynamic(actions);
 
     return (_staticData, _encodedLengths, _dynamicData);
   }

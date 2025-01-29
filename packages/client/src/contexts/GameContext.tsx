@@ -22,7 +22,7 @@ import { toaster } from '../components/ui/toaster';
 import { useMUD } from '../MUDContext';
 import type { Castle, Game, Tower } from '../utils/types';
 
-const MAX_TICKS = 140;
+const MAX_TICKS = 28;
 
 type GameContextType = {
   activeTowerId: string;
@@ -95,6 +95,7 @@ export const GameProvider = ({
       CurrentGame,
       Game: GameComponent,
       Health,
+      Level,
       Owner,
       Position,
       Projectile,
@@ -174,11 +175,14 @@ export const GameProvider = ({
         Username,
         player2Entity,
       ).value;
+      const _level =
+        getComponentValue(Level, gameId as Entity)?.value ?? BigInt(0);
 
       setGame({
         id: gameId,
         actionCount: _game.actionCount,
         endTimestamp: _game.endTimestamp,
+        level: _level,
         player1Address: _game.player1Address as Address,
         player1Username: _player1Username,
         player2Address: _game.player2Address as Address,
@@ -230,6 +234,7 @@ export const GameProvider = ({
     GameComponent,
     gameId,
     Health,
+    Level,
     Owner,
     Position,
     Projectile,
@@ -410,7 +415,7 @@ export const GameProvider = ({
       }
       _tickCount += 1;
       setTickCount(prev => (prev + 1) % MAX_TICKS);
-    }, 10);
+    }, 50);
     return () => clearInterval(interval);
   }, [
     CurrentGame,

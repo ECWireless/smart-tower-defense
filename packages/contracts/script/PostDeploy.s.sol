@@ -4,13 +4,12 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { Action, ActionData, AddressBook, DefaultLogicA, DefaultLogicB, LogicSystemAddress, MapConfig, SavedGame, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { AddressBook, DefaultLogic, MapConfig, SavedGame, SavedGameData, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { ActionType } from "../src/codegen/common.sol";
-import { addressToEntityKey } from "../src/addressToEntityKey.sol";
+import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 
-import "../src/defaultLogicContracts/DefaultProjectileLogicLeft.sol";
-import "../src/defaultLogicContracts/DefaultProjectileLogicRight.sol";
+import "../src/defaultLogicContracts/DefaultProjectileLogic.sol";
 
 contract PostDeploy is Script {
   function run(address worldAddress) external {
@@ -31,39 +30,45 @@ contract PostDeploy is Script {
     MapConfig.set(70, 140);
 
     // Set logic defaults
-    address defaultProjectileLogicLeftAddress = address(new DefaultProjectileLogicLeft());
-    DefaultLogicA.set(defaultProjectileLogicLeftAddress);
-    address defaultProjectileLogicRightAddress = address(new DefaultProjectileLogicRight());
-    DefaultLogicB.set(defaultProjectileLogicRightAddress);
+    address defaultProjectileLogicLeftAddress = address(new DefaultProjectileLogic());
+    DefaultLogic.set(defaultProjectileLogicLeftAddress);
 
-    ActionData[] memory actions = new ActionData[](1);
-    actions[0] = ActionData({
-      actionType: ActionType.Install,
-      newX: 115,
-      newY: 35,
-      oldX: 0,
-      oldY: 0,
-      projectile: true
+    // ActionData[] memory actions = new ActionData[](0);
+    // actions[0] = ActionData({
+    //   actionType: ActionType.Install,
+    //   newX: 115,
+    //   newY: 35,
+    //   oldX: 0,
+    //   oldY: 0,
+    //   projectile: true
+    // });
+
+    bytes32[] memory defaultActionIds = new bytes32[](0);
+    // for (uint256 i = 0; i < actions.length; i++) {
+    //   defaultActionIds[i] = keccak256(
+    //     abi.encodePacked(
+    //       actions[i].actionType,
+    //       actions[i].newX,
+    //       actions[i].newY,
+    //       actions[i].oldX,
+    //       actions[i].oldY,
+    //       actions[i].projectile
+    //     )
+    //   );
+    //   Action.set(defaultActionIds[i], actions[i]);
+    // }
+
+    bytes32 globalPlayerId;
+    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), globalPlayerId));
+
+    SavedGameData memory savedGame = SavedGameData({
+      gameId: bytes32(0),
+      winner: address(0),
+      actions: defaultActionIds
     });
+    SavedGame.set(savedGameId, savedGame);
 
-    bytes32[] memory defaultActionIds = new bytes32[](1);
-    for (uint256 i = 0; i < actions.length; i++) {
-      defaultActionIds[i] = keccak256(
-        abi.encodePacked(
-          actions[i].actionType,
-          actions[i].newX,
-          actions[i].newY,
-          actions[i].oldX,
-          actions[i].oldY,
-          actions[i].projectile
-        )
-      );
-      Action.set(defaultActionIds[i], actions[i]);
-    }
-
-    bytes32 playerId = addressToEntityKey(address(0));
-    SavedGame.set(playerId, defaultActionIds);
-    Username.set(playerId, "ROB");
+    Username.set(globalPlayerId, "ROB");
     bytes32 usernameKey = keccak256(abi.encodePacked("ROB"));
     UsernameTaken.set(usernameKey, true);
 
