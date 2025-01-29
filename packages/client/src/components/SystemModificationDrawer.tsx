@@ -177,17 +177,20 @@ export const SystemModificationDrawer: React.FC<
             <Heading fontSize="lg">Rules</Heading>
             <Box as="ul" listStylePosition="inside" listStyleType="circle">
               <li>
-                Modify the code to change the behavior of the projectile. The
-                projectile will be deployed as a smart contract.
+                Modify the <strong>Solidity</strong> code to change the behavior
+                of the projectile. The projectile will be deployed as a smart
+                contract.
               </li>
               <li>
-                Projectiles move at a speed of 1 tile (each tile has a
-                resolution of 10x10) per tick, and this speed cannot be
-                exceeded. There are 12 ticks when the round results run.
+                Projectiles move at a speed of x &quot;pixels&quot; per tick.
+                However, <strong>x can never exceed 10 per tick</strong> (each
+                tile has a resolution of 10x10 pixels).{' '}
+                <strong>There are 28 ticks</strong> when the round results run.
+                The recommended speed is 5 pixels per tick.
               </li>
               <li>
                 The size limit of the projectile logic code is{' '}
-                {sizeLimit.toString()}.
+                <strong>{sizeLimit.toString()} bytes</strong>.
               </li>
             </Box>
           </Box>
