@@ -1,4 +1,4 @@
-import { Box, Text } from '@chakra-ui/react';
+import { Box, Heading } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
@@ -15,7 +15,6 @@ import {
   DrawerBody,
   DrawerCloseTrigger,
   DrawerContent,
-  DrawerFooter,
   DrawerHeader,
   DrawerRoot,
   DrawerTitle,
@@ -175,25 +174,38 @@ export const SystemModificationDrawer: React.FC<
         </DrawerHeader>
         <DrawerBody color="black">
           <Box mb={4}>
-            <Text fontWeight={600}>Rules:</Text>
-            <Text>
-              - Modify the code to change the behavior of the projectile. The
-              projectile will be deployed as a smart contract.
-            </Text>
-            <Text>
-              - Projectiles move at a speed of 1 tile (each tile has a
-              resolution of 10x10) per tick, and this speed cannot be exceeded.
-              There are 12 ticks when the round results run.
-            </Text>
-            <Text>
-              - The size limit of the projectile logic code is{' '}
-              {sizeLimit.toString()}.
-            </Text>
+            <Heading fontSize="lg">Rules</Heading>
+            <Box as="ul" listStylePosition="inside" listStyleType="circle">
+              <li>
+                Modify the <strong>Solidity</strong> code to change the behavior
+                of the projectile. The projectile will be deployed as a smart
+                contract.
+              </li>
+              <li>
+                Projectiles move at a speed of x &quot;pixels&quot; per tick.
+                However, <strong>x can never exceed 10 per tick</strong> (each
+                tile has a resolution of 10x10 pixels).{' '}
+                <strong>There are 28 ticks</strong> when the round results run.
+                The recommended speed is 5 pixels per tick.
+              </li>
+              <li>
+                The size limit of the projectile logic code is{' '}
+                <strong>{sizeLimit.toString()} bytes</strong>.
+              </li>
+            </Box>
           </Box>
-          <Box border="1px solid black" h="400px" w="100%">
+          <Button
+            disabled={isDeploying}
+            mb={4}
+            onClick={onModifyTowerSystem}
+            variant="surface"
+          >
+            {isDeploying ? 'Deploying...' : 'Deploy'}
+          </Button>
+          <Box border="1px solid black" w="100%">
             <Editor
               defaultLanguage="solidity"
-              height="100%"
+              height="300px"
               onChange={value => setSourceCode(value ?? '')}
               onMount={() => {
                 const projectile = getComponentValue(
@@ -221,16 +233,7 @@ export const SystemModificationDrawer: React.FC<
               value={sourceCode}
             />
           </Box>
-          <Button
-            disabled={isDeploying}
-            mt={4}
-            onClick={onModifyTowerSystem}
-            variant="surface"
-          >
-            {isDeploying ? 'Deploying...' : 'Deploy'}
-          </Button>
         </DrawerBody>
-        <DrawerFooter />
       </DrawerContent>
     </DrawerRoot>
   );
