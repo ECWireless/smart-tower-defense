@@ -39,7 +39,6 @@ contract GameSystem is System {
     address player2Address = game.player2Address;
 
     address currentPlayerAddress = game.turn;
-
     if (game.turn == player1Address) {
       // TODO: Maybe bring back this restriction
       // require(newGame.actionCount == 0, "GameSystem: player has actions remaining");

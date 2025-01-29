@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Castle, CurrentGame, EntityAtPosition, Game, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory } from "../codegen/index.sol";
+import { Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory } from "../codegen/index.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { GameHelpers } from "./GameHelpers.sol";
-import { MAX_TICKS, MAX_TOWER_HEALTH } from "../../constants.sol";
+import { MAX_ROUNDS, MAX_TICKS, MAX_TOWER_HEALTH } from "../../constants.sol";
 
 /**
  * @title ProjectileHelpers
@@ -23,6 +23,11 @@ library ProjectileHelpers {
     TowerDetails[] memory towers = _getTowerDetails(allTowers);
 
     _simulateTicks(towers);
+
+    GameData memory game = Game.get(gameId);
+    if (game.roundCount > MAX_ROUNDS) {
+      GameHelpers.endGame(gameId, game.player2Address);
+    }
   }
 
   function clearAllProjectiles(bytes32[] memory allTowers) public {

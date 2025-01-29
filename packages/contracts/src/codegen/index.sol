@@ -24,6 +24,7 @@ import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";
 import { SavedGame, SavedGameData } from "./tables/SavedGame.sol";
 import { TopLevel } from "./tables/TopLevel.sol";
 import { Tower } from "./tables/Tower.sol";
+import { TowerCounter } from "./tables/TowerCounter.sol";
 import { Username } from "./tables/Username.sol";
 import { UsernameTaken } from "./tables/UsernameTaken.sol";
 import { WinStreak } from "./tables/WinStreak.sol";

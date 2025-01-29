@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile } from "../codegen/index.sol";
+import { AddressBook, CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
@@ -25,11 +25,12 @@ contract TowerSystem is System {
     (x, y) = ProjectileHelpers.getActualCoordinates(x, y);
     TowerHelpers.validateInstallTower(potentialGameId, playerAddress, x, y);
 
-    uint256 timestamp = block.timestamp;
+    uint256 towerCounter = TowerCounter.get();
     address actualPlayerAddress = Game.get(potentialGameId).turn;
-    bytes32 towerId = keccak256(abi.encodePacked(potentialGameId, actualPlayerAddress, timestamp));
+    bytes32 towerId = keccak256(abi.encodePacked(potentialGameId, actualPlayerAddress, towerCounter));
     TowerHelpers.initializeTower(towerId, potentialGameId, actualPlayerAddress, x, y, projectile);
     TowerHelpers.storeInstallTowerAction(potentialGameId, playerAddress, x, y, projectile);
+    TowerCounter.set(towerCounter + 1);
 
     return towerId;
   }

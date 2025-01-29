@@ -146,6 +146,12 @@ export default defineWorld({
       },
     },
     Tower: "bool",
+    TowerCounter: {
+      schema: {
+        value: "uint256",
+      },
+      key: [],
+    },
     Username: "string",
     UsernameTaken: {
       schema: {

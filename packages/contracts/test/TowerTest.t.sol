@@ -125,7 +125,7 @@ contract TowerTest is MudTest {
   function testRevertMovePositionIsOccupied() public {
     vm.startPrank(alice);
     bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
+    bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 35, 45);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
 
