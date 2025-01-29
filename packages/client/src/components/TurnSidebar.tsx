@@ -32,7 +32,8 @@ export const TurnSidebar: React.FC = () => {
   const {
     systemCalls: { nextTurn },
   } = useMUD();
-  const { game, refreshGame, setTriggerAnimation } = useGame();
+  const { game, refreshGame, setTriggerAnimation, triggerAnimation } =
+    useGame();
 
   const dialog = useDialog();
 
@@ -115,6 +116,7 @@ export const TurnSidebar: React.FC = () => {
       <HStack justifyContent="center">
         <Text fontSize="sm">NEXT</Text>
         <Button
+          disabled={triggerAnimation}
           loading={isChangingTurn}
           onClick={onNextTurn}
           p={0}
@@ -126,7 +128,15 @@ export const TurnSidebar: React.FC = () => {
             bgColor: 'gray.500',
           }}
         >
-          <FaPlay color={canChangeTurn ? 'green' : 'black'} />
+          <FaPlay
+            color={!triggerAnimation && canChangeTurn ? 'green' : 'black'}
+            style={{
+              animation:
+                !triggerAnimation && canChangeTurn
+                  ? 'pulse 1s infinite'
+                  : 'none',
+            }}
+          />
         </Button>
       </HStack>
       <HStack justifyContent="center">
