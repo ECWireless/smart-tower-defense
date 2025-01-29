@@ -1,5 +1,12 @@
-import { Box, Heading, HStack, Text, VStack } from '@chakra-ui/react';
-import { useCallback, useMemo, useState } from 'react';
+import {
+  Box,
+  Heading,
+  HStack,
+  Text,
+  useDialog,
+  VStack,
+} from '@chakra-ui/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
 import { zeroAddress } from 'viem';
 
@@ -19,13 +26,29 @@ import {
 } from './ui/dialog';
 import { toaster } from './ui/toaster';
 
+const HOW_TO_SEEN_KEY = 'how-to-seen';
+
 export const TurnSidebar: React.FC = () => {
   const {
     systemCalls: { nextTurn },
   } = useMUD();
   const { game, refreshGame, setTriggerAnimation } = useGame();
 
+  const dialog = useDialog();
+
   const [isChangingTurn, setIsChangingTurn] = useState(false);
+
+  // Open How To info modal if this is the first time the user is playing a game.
+  useEffect(() => {
+    const hasSeenHowToInfo = localStorage.getItem(HOW_TO_SEEN_KEY);
+    if (hasSeenHowToInfo) return;
+    dialog.setOpen(true);
+  }, [dialog]);
+
+  const onCloseDialog = useCallback(() => {
+    dialog.setOpen(false);
+    localStorage.setItem(HOW_TO_SEEN_KEY, 'true');
+  }, [dialog]);
 
   const onNextTurn = useCallback(async () => {
     try {
@@ -94,7 +117,11 @@ export const TurnSidebar: React.FC = () => {
         <Text fontSize="sm">TIMER</Text>
         <Text fontWeight={900}>5:00</Text>
       </HStack>
-      <DialogRoot>
+      <DialogRoot
+        onOpenChange={e => (e.open ? dialog.setOpen(true) : onCloseDialog())}
+        open={dialog.open}
+        scrollBehavior="inside"
+      >
         <DialogBackdrop />
         <DialogTrigger
           as={Button}
@@ -109,7 +136,7 @@ export const TurnSidebar: React.FC = () => {
           <DialogHeader>
             <DialogTitle textTransform="uppercase">How to Play</DialogTitle>
           </DialogHeader>
-          <DialogBody maxH="80vh" overflowY="auto">
+          <DialogBody>
             <VStack alignItems="start">
               <Heading fontSize="lg">Overview</Heading>
               <Text>
