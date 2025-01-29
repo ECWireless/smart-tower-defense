@@ -6,7 +6,7 @@ import {
   getComponentValueStrict,
   Has,
 } from '@latticexyz/recs';
-import { encodeEntity } from '@latticexyz/store-sync/recs';
+import { decodeEntity, encodeEntity } from '@latticexyz/store-sync/recs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaPlay } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -15,14 +15,16 @@ import { Address } from 'viem';
 import { Button } from '../components/ui/button';
 import { Field } from '../components/ui/field';
 import { toaster } from '../components/ui/toaster';
+import { Tooltip } from '../components/ui/tooltip';
 import { useMUD } from '../MUDContext';
 import { GAMES_PATH } from '../Routes';
+import { shortenAddress } from '../utils/helpers';
 import { type Game } from '../utils/types';
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const {
-    components: { CurrentGame, Game, Username },
+    components: { CurrentGame, Game, GamesByLevel, SavedGame, Username },
     network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
@@ -65,6 +67,62 @@ export const Home = (): JSX.Element => {
       winner: _game.winner as Address,
     };
   }) as Game[];
+
+  const gamesByLevel = useEntityQuery([Has(GamesByLevel)]).map(entity => {
+    const _gamesByLevel = getComponentValueStrict(GamesByLevel, entity);
+    const winners = _gamesByLevel.gameIds.map(gameId => {
+      const savedGame = getComponentValueStrict(SavedGame, gameId as Entity);
+      return savedGame.winner;
+    });
+
+    const decodedKey = decodeEntity({ level: 'uint256' }, entity);
+
+    return {
+      level: decodedKey.level,
+      winners,
+    };
+  });
+
+  const leaderboardList: {
+    address: string;
+    level: number;
+    username: string;
+  }[] = useMemo(() => {
+    const fullLeaderboardList = gamesByLevel.reduce(
+      (acc, game) => {
+        const { level, winners } = game;
+        const levelWinners = winners.map(winner => ({
+          address: winner,
+          level: Number(level),
+          username: getComponentValueStrict(
+            Username,
+            encodeEntity(
+              { playerAddress: 'address' },
+              { playerAddress: winner as `0x${string}` },
+            ),
+          ).value,
+        }));
+
+        return [...acc, ...levelWinners];
+      },
+      [] as { address: string; level: number; username: string }[],
+    );
+
+    const leaderboardNoDuplicates = fullLeaderboardList.reduce(
+      (acc, player) => {
+        const existingPlayer = acc.find(
+          p => p.address === player.address && p.level <= player.level,
+        );
+        if (existingPlayer) {
+          return acc.map(p => (p.address === player.address ? player : p));
+        }
+        return [...acc, player];
+      },
+      [] as { address: string; level: number; username: string }[],
+    );
+
+    return leaderboardNoDuplicates.sort((a, b) => b.level - a.level);
+  }, [gamesByLevel, Username]);
 
   const onCreateGame = useCallback(
     async (e: React.FormEvent<HTMLDivElement>) => {
@@ -167,48 +225,38 @@ export const Home = (): JSX.Element => {
           </Button>
         </VStack>
       </VStack>
-      <Tabs.Root defaultValue="active" mb={10}>
+      <Tabs.Root defaultValue="leaderboard" mb={10}>
         <Tabs.List>
-          <Tabs.Trigger value="active">Active Games</Tabs.Trigger>
+          <Tabs.Trigger value="leaderboard">Leaderboard</Tabs.Trigger>
           <Tabs.Trigger value="completed">Completed Games</Tabs.Trigger>
+          <Tabs.Trigger value="active">Active Games</Tabs.Trigger>
         </Tabs.List>
-        <Tabs.Content value="active">
+        <Tabs.Content value="leaderboard">
           <VStack>
-            {activeGames.length === 0 && (
+            {leaderboardList.length === 0 && (
               <Text fontSize="lg" textAlign="center">
-                No active games
+                Leaderboard is empty
               </Text>
             )}
-            {activeGames.map(game => (
-              <HStack
-                key={game.id}
-                as="button"
-                border="1px solid white"
-                onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
-                _hover={{
-                  bgColor: 'gray.900',
-                  cursor: 'pointer',
-                }}
-              >
+            {leaderboardList.map(player => (
+              <HStack key={player.address} border="1px solid white">
                 <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
-                  <Text fontWeight={700}>Start Time</Text>
-                  <Text>
-                    {new Date(
-                      Number(game.startTimestamp) * 1000,
-                    ).toLocaleString()}
-                  </Text>
+                  <Text fontWeight={700}>Level</Text>
+                  <Text>{player.level}</Text>
                 </VStack>
                 <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
-                  <Text fontWeight={700}>Player 1</Text>
-                  <Text>{game.player1Username}</Text>
+                  <Text fontWeight={700}>Username</Text>
+                  <Text>{player.username}</Text>
                 </VStack>
                 <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
-                  <Text fontWeight={700}>Player 2</Text>
-                  <Text>{game.player2Username}</Text>
-                </VStack>
-                <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
-                  <Text fontWeight={700}>End Time</Text>
-                  <Text>Game in progress</Text>
+                  <Text fontWeight={700}>Address</Text>
+                  <Tooltip
+                    closeDelay={200}
+                    content={player.address}
+                    openDelay={200}
+                  >
+                    <Text>{shortenAddress(player.address)}</Text>
+                  </Tooltip>
                 </VStack>
               </HStack>
             ))}
@@ -255,6 +303,48 @@ export const Home = (): JSX.Element => {
                       Number(game.endTimestamp) * 1000,
                     ).toLocaleString()}
                   </Text>
+                </VStack>
+              </HStack>
+            ))}
+          </VStack>
+        </Tabs.Content>
+        <Tabs.Content value="active">
+          <VStack>
+            {activeGames.length === 0 && (
+              <Text fontSize="lg" textAlign="center">
+                No active games
+              </Text>
+            )}
+            {activeGames.map(game => (
+              <HStack
+                key={game.id}
+                as="button"
+                border="1px solid white"
+                onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
+                _hover={{
+                  bgColor: 'gray.900',
+                  cursor: 'pointer',
+                }}
+              >
+                <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
+                  <Text fontWeight={700}>Start Time</Text>
+                  <Text>
+                    {new Date(
+                      Number(game.startTimestamp) * 1000,
+                    ).toLocaleString()}
+                  </Text>
+                </VStack>
+                <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
+                  <Text fontWeight={700}>Player 1</Text>
+                  <Text>{game.player1Username}</Text>
+                </VStack>
+                <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
+                  <Text fontWeight={700}>Player 2</Text>
+                  <Text>{game.player2Username}</Text>
+                </VStack>
+                <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
+                  <Text fontWeight={700}>End Time</Text>
+                  <Text>Game in progress</Text>
                 </VStack>
               </HStack>
             ))}
