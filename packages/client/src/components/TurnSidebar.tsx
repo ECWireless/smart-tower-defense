@@ -8,7 +8,6 @@ import {
 } from '@chakra-ui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
-import { zeroAddress } from 'viem';
 
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
@@ -28,7 +27,13 @@ import { toaster } from './ui/toaster';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
 
-export const TurnSidebar: React.FC = () => {
+type TurnSidebarProps = {
+  isSystemDrawerOpen: boolean;
+};
+
+export const TurnSidebar: React.FC<TurnSidebarProps> = ({
+  isSystemDrawerOpen,
+}) => {
   const {
     systemCalls: { nextTurn },
   } = useMUD();
@@ -89,9 +94,17 @@ export const TurnSidebar: React.FC = () => {
     }
   }, [game, nextTurn, refreshGame, setTriggerAnimation]);
 
+  const canChangeTurn = useMemo(() => {
+    if (!game) return false;
+    if (game.endTimestamp !== BigInt(0)) return false;
+    if (game.turn === game.player2Address) return true;
+    return game.turn === game.player1Address && game.actionCount === 0;
+  }, [game]);
+
   useEffect(() => {
-    if (!game) return () => {};
-    if (game.endTimestamp !== BigInt(0)) return () => {};
+    if (!canChangeTurn) return () => {};
+    if (triggerAnimation) return () => {};
+    if (isSystemDrawerOpen) return () => {};
 
     const listener = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -103,13 +116,7 @@ export const TurnSidebar: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', listener);
     };
-  }, [game, onNextTurn]);
-
-  const canChangeTurn = useMemo(() => {
-    if (!game) return false;
-    if (game.turn === zeroAddress) return true;
-    return game.turn === game.player1Address && game.actionCount === 0;
-  }, [game]);
+  }, [canChangeTurn, isSystemDrawerOpen, onNextTurn, triggerAnimation]);
 
   return (
     <VStack bgColor="white" color="black" p={2} w={120}>
@@ -167,8 +174,8 @@ export const TurnSidebar: React.FC = () => {
               <Heading fontSize="lg">Overview</Heading>
               <Text>
                 Smart Tower Defense builds off of concepts of{' '}
-                <strong>Autonomous Worlds</strong>
-                and <strong>Digital Physics</strong>.
+                <strong>Autonomous Worlds</strong> and{' '}
+                <strong>Digital Physics</strong>.
               </Text>
               <Text>
                 The primary way of playing the game is by{' '}

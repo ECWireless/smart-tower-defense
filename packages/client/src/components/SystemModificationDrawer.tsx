@@ -1,10 +1,11 @@
 import { Box, Heading } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
+import { decodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
@@ -32,6 +33,7 @@ export const SystemModificationDrawer: React.FC<
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
     components: { Projectile },
+    network: { playerEntity },
     systemCalls: { getContractSize, modifyTowerSystem },
   } = useMUD();
   const { refreshGame } = useGame();
@@ -132,6 +134,19 @@ export const SystemModificationDrawer: React.FC<
     tower,
   ]);
 
+  const isMyTower = useMemo(() => {
+    if (!(playerEntity && tower.owner)) return false;
+
+    const playerAddress = decodeEntity(
+      {
+        address: 'address',
+      },
+      playerEntity,
+    );
+
+    return playerAddress.address === tower.owner;
+  }, [playerEntity, tower]);
+
   // Configure Solidity language
   loader.init().then(monacoInstance => {
     monacoInstance.languages.register({ id: 'solidity' });
@@ -194,15 +209,26 @@ export const SystemModificationDrawer: React.FC<
               </li>
             </Box>
           </Box>
-          <Button
-            disabled={isDeploying}
-            mb={4}
-            onClick={onModifyTowerSystem}
-            variant="surface"
-          >
-            {isDeploying ? 'Deploying...' : 'Deploy'}
-          </Button>
-          <Box border="1px solid black" w="100%">
+          {isMyTower && (
+            <Button
+              disabled={isDeploying}
+              mb={4}
+              onClick={onModifyTowerSystem}
+              variant="surface"
+            >
+              {isDeploying ? 'Deploying...' : 'Deploy'}
+            </Button>
+          )}
+          <Box border="1px solid black" position="relative" w="100%">
+            {!isMyTower && (
+              <Box
+                bg="transparent"
+                h="300px"
+                position="absolute"
+                w="100%"
+                zIndex={1}
+              />
+            )}
             <Editor
               defaultLanguage="solidity"
               height="300px"
