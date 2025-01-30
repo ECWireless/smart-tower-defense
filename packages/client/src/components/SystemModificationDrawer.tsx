@@ -1,4 +1,4 @@
-import { Box, Heading } from '@chakra-ui/react';
+import { Box, Heading, HStack } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
 import { decodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
@@ -38,6 +38,7 @@ export const SystemModificationDrawer: React.FC<
   } = useMUD();
   const { refreshGame } = useGame();
 
+  const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
@@ -180,7 +181,11 @@ export const SystemModificationDrawer: React.FC<
       size="lg"
     >
       <DrawerBackdrop />
-      <DrawerContent bgColor="white">
+      <DrawerContent
+        bgColor="white"
+        opacity={isSemiTransparent ? 0.2 : 1}
+        transition="opacity 0.3s ease"
+      >
         <DrawerCloseTrigger bgColor="black" />
         <DrawerHeader>
           <DrawerTitle color="black" textTransform="uppercase">
@@ -209,16 +214,26 @@ export const SystemModificationDrawer: React.FC<
               </li>
             </Box>
           </Box>
-          {isMyTower && (
+          <HStack mb={4}>
+            {isMyTower && (
+              <Button
+                disabled={isDeploying}
+                onClick={onModifyTowerSystem}
+                variant="surface"
+              >
+                {isDeploying ? 'Deploying...' : 'Deploy'}
+              </Button>
+            )}
             <Button
-              disabled={isDeploying}
-              mb={4}
-              onClick={onModifyTowerSystem}
-              variant="surface"
+              border="1px solid black"
+              color="black"
+              onMouseEnter={() => setIsSemiTransparent(true)}
+              onMouseLeave={() => setIsSemiTransparent(false)}
+              variant="plain"
             >
-              {isDeploying ? 'Deploying...' : 'Deploy'}
+              View Board
             </Button>
-          )}
+          </HStack>
           <Box border="1px solid black" position="relative" w="100%">
             {!isMyTower && (
               <Box
