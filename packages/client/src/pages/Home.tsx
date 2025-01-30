@@ -108,17 +108,20 @@ export const Home = (): JSX.Element => {
       [] as { address: string; level: number; username: string }[],
     );
 
-    const leaderboardNoDuplicates = fullLeaderboardList.reduce(
-      (acc, player) => {
-        const existingPlayer = acc.find(
-          p => p.address === player.address && p.level <= player.level,
-        );
-        if (existingPlayer) {
-          return acc.map(p => (p.address === player.address ? player : p));
-        }
-        return [...acc, player];
-      },
-      [] as { address: string; level: number; username: string }[],
+    const leaderboardNoDuplicates = Object.values(
+      fullLeaderboardList.reduce(
+        (acc, entry) => {
+          const existing = acc[entry.address];
+          if (!existing || existing.level < entry.level) {
+            acc[entry.address] = entry;
+          }
+          return acc;
+        },
+        {} as Record<
+          string,
+          { address: string; level: number; username: string }
+        >,
+      ),
     );
 
     return leaderboardNoDuplicates.sort((a, b) => b.level - a.level);
@@ -239,7 +242,10 @@ export const Home = (): JSX.Element => {
               </Text>
             )}
             {leaderboardList.map(player => (
-              <HStack key={player.address} border="1px solid white">
+              <HStack
+                key={`leaderboard-${player.address}`}
+                border="1px solid white"
+              >
                 <VStack borderRight="1px solid white" gap={0} p={2} w="200px">
                   <Text fontWeight={700}>Level</Text>
                   <Text>{player.level}</Text>
@@ -271,7 +277,7 @@ export const Home = (): JSX.Element => {
             )}
             {completedGames.map(game => (
               <HStack
-                key={game.id}
+                key={`completed-games-${game.id}`}
                 as="button"
                 border="1px solid white"
                 onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
@@ -317,7 +323,7 @@ export const Home = (): JSX.Element => {
             )}
             {activeGames.map(game => (
               <HStack
-                key={game.id}
+                key={`active-games-${game.id}`}
                 as="button"
                 border="1px solid white"
                 onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
