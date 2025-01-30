@@ -9,6 +9,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
 
+import { Tooltip } from '../components/ui/tooltip';
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { Button } from './ui/button';
@@ -146,10 +147,6 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
           />
         </Button>
       </HStack>
-      <HStack justifyContent="center">
-        <Text fontSize="sm">TIMER</Text>
-        <Text fontWeight={900}>5:00</Text>
-      </HStack>
       <DialogRoot
         onOpenChange={e => (e.open ? dialog.setOpen(true) : onCloseDialog())}
         open={dialog.open}
@@ -162,7 +159,9 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
             bgColor: 'gray.200',
           }}
         >
-          <FaInfoCircle color="black" />
+          <Tooltip closeDelay={200} content="Help" openDelay={200}>
+            <FaInfoCircle color="black" />
+          </Tooltip>
         </DialogTrigger>
         <DialogContent bgColor="white" color="black">
           <DialogCloseTrigger bgColor="black" />
