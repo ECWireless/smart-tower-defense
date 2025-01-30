@@ -340,9 +340,7 @@ export const InnerGamePage = (): JSX.Element => {
                                 ? 'rotateY(180deg)'
                                 : 'none'
                             }
-                            onClick={() =>
-                              isEnemyTile ? undefined : onViewTower(activeTower)
-                            }
+                            onClick={() => onViewTower(activeTower)}
                             onDragStart={e =>
                               handleDragStart(
                                 e,
@@ -420,7 +418,7 @@ export const InnerGamePage = (): JSX.Element => {
                 );
               })}
             </Box>
-            <TurnSidebar />
+            <TurnSidebar isSystemDrawerOpen={isSystemDrawerOpen} />
           </HStack>
         </Box>
       </Box>

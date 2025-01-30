@@ -8,8 +8,8 @@ import {
 } from '@chakra-ui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaInfoCircle, FaPlay } from 'react-icons/fa';
-import { zeroAddress } from 'viem';
 
+import { Tooltip } from '../components/ui/tooltip';
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { Button } from './ui/button';
@@ -28,7 +28,13 @@ import { toaster } from './ui/toaster';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
 
-export const TurnSidebar: React.FC = () => {
+type TurnSidebarProps = {
+  isSystemDrawerOpen: boolean;
+};
+
+export const TurnSidebar: React.FC<TurnSidebarProps> = ({
+  isSystemDrawerOpen,
+}) => {
   const {
     systemCalls: { nextTurn },
   } = useMUD();
@@ -89,9 +95,17 @@ export const TurnSidebar: React.FC = () => {
     }
   }, [game, nextTurn, refreshGame, setTriggerAnimation]);
 
+  const canChangeTurn = useMemo(() => {
+    if (!game) return false;
+    if (game.endTimestamp !== BigInt(0)) return false;
+    if (game.turn === game.player2Address) return true;
+    return game.turn === game.player1Address && game.actionCount === 0;
+  }, [game]);
+
   useEffect(() => {
-    if (!game) return () => {};
-    if (game.endTimestamp !== BigInt(0)) return () => {};
+    if (!canChangeTurn) return () => {};
+    if (triggerAnimation) return () => {};
+    if (isSystemDrawerOpen) return () => {};
 
     const listener = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -103,13 +117,7 @@ export const TurnSidebar: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', listener);
     };
-  }, [game, onNextTurn]);
-
-  const canChangeTurn = useMemo(() => {
-    if (!game) return false;
-    if (game.turn === zeroAddress) return true;
-    return game.turn === game.player1Address && game.actionCount === 0;
-  }, [game]);
+  }, [canChangeTurn, isSystemDrawerOpen, onNextTurn, triggerAnimation]);
 
   return (
     <VStack bgColor="white" color="black" p={2} w={120}>
@@ -139,10 +147,6 @@ export const TurnSidebar: React.FC = () => {
           />
         </Button>
       </HStack>
-      <HStack justifyContent="center">
-        <Text fontSize="sm">TIMER</Text>
-        <Text fontWeight={900}>5:00</Text>
-      </HStack>
       <DialogRoot
         onOpenChange={e => (e.open ? dialog.setOpen(true) : onCloseDialog())}
         open={dialog.open}
@@ -155,7 +159,9 @@ export const TurnSidebar: React.FC = () => {
             bgColor: 'gray.200',
           }}
         >
-          <FaInfoCircle color="black" />
+          <Tooltip closeDelay={200} content="Help" openDelay={200}>
+            <FaInfoCircle color="black" />
+          </Tooltip>
         </DialogTrigger>
         <DialogContent bgColor="white" color="black">
           <DialogCloseTrigger bgColor="black" />
@@ -167,8 +173,8 @@ export const TurnSidebar: React.FC = () => {
               <Heading fontSize="lg">Overview</Heading>
               <Text>
                 Smart Tower Defense builds off of concepts of{' '}
-                <strong>Autonomous Worlds</strong>
-                and <strong>Digital Physics</strong>.
+                <strong>Autonomous Worlds</strong> and{' '}
+                <strong>Digital Physics</strong>.
               </Text>
               <Text>
                 The primary way of playing the game is by{' '}

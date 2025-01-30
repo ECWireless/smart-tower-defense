@@ -1,10 +1,11 @@
-import { Box, Heading } from '@chakra-ui/react';
+import { Box, Heading, HStack } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
+import { decodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
@@ -32,10 +33,12 @@ export const SystemModificationDrawer: React.FC<
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
     components: { Projectile },
+    network: { playerEntity },
     systemCalls: { getContractSize, modifyTowerSystem },
   } = useMUD();
   const { refreshGame } = useGame();
 
+  const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
@@ -132,6 +135,19 @@ export const SystemModificationDrawer: React.FC<
     tower,
   ]);
 
+  const isMyTower = useMemo(() => {
+    if (!(playerEntity && tower.owner)) return false;
+
+    const playerAddress = decodeEntity(
+      {
+        address: 'address',
+      },
+      playerEntity,
+    );
+
+    return playerAddress.address === tower.owner;
+  }, [playerEntity, tower]);
+
   // Configure Solidity language
   loader.init().then(monacoInstance => {
     monacoInstance.languages.register({ id: 'solidity' });
@@ -165,7 +181,11 @@ export const SystemModificationDrawer: React.FC<
       size="lg"
     >
       <DrawerBackdrop />
-      <DrawerContent bgColor="white">
+      <DrawerContent
+        bgColor="white"
+        opacity={isSemiTransparent ? 0.2 : 1}
+        transition="opacity 0.3s ease"
+      >
         <DrawerCloseTrigger bgColor="black" />
         <DrawerHeader>
           <DrawerTitle color="black" textTransform="uppercase">
@@ -194,15 +214,36 @@ export const SystemModificationDrawer: React.FC<
               </li>
             </Box>
           </Box>
-          <Button
-            disabled={isDeploying}
-            mb={4}
-            onClick={onModifyTowerSystem}
-            variant="surface"
-          >
-            {isDeploying ? 'Deploying...' : 'Deploy'}
-          </Button>
-          <Box border="1px solid black" w="100%">
+          <HStack mb={4}>
+            {isMyTower && (
+              <Button
+                disabled={isDeploying}
+                onClick={onModifyTowerSystem}
+                variant="surface"
+              >
+                {isDeploying ? 'Deploying...' : 'Deploy'}
+              </Button>
+            )}
+            <Button
+              border="1px solid black"
+              color="black"
+              onMouseEnter={() => setIsSemiTransparent(true)}
+              onMouseLeave={() => setIsSemiTransparent(false)}
+              variant="plain"
+            >
+              View Board
+            </Button>
+          </HStack>
+          <Box border="1px solid black" position="relative" w="100%">
+            {!isMyTower && (
+              <Box
+                bg="transparent"
+                h="300px"
+                position="absolute"
+                w="100%"
+                zIndex={1}
+              />
+            )}
             <Editor
               defaultLanguage="solidity"
               height="300px"
