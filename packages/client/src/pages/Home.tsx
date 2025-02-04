@@ -230,9 +230,15 @@ export const Home = (): JSX.Element => {
       </VStack>
       <Tabs.Root defaultValue="leaderboard" mb={10}>
         <Tabs.List>
-          <Tabs.Trigger value="leaderboard">Leaderboard</Tabs.Trigger>
-          <Tabs.Trigger value="completed">Completed Games</Tabs.Trigger>
-          <Tabs.Trigger value="active">Active Games</Tabs.Trigger>
+          <Tabs.Trigger value="leaderboard">
+            Leaderboard ({leaderboardList.length})
+          </Tabs.Trigger>
+          <Tabs.Trigger value="completed">
+            Completed Games ({completedGames.length})
+          </Tabs.Trigger>
+          <Tabs.Trigger value="active">
+            Active Games ({activeGames.length})
+          </Tabs.Trigger>
         </Tabs.List>
         <Tabs.Content value="leaderboard">
           <VStack>
