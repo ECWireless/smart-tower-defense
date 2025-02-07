@@ -13,8 +13,15 @@ import { MAX_ROUNDS, MAX_TICKS, MAX_TOWER_HEALTH } from "../../constants.sol";
  */
 library ProjectileHelpers {
   function executeRoundResults(bytes32 gameId) public {
-    address player1Address = Game.getPlayer1Address(gameId);
-    address player2Address = Game.getPlayer2Address(gameId);
+    GameData memory game = Game.get(gameId);
+
+    address player1Address = game.player1Address;
+    address player2Address = game.player2Address;
+
+    if (game.roundCount > MAX_ROUNDS) {
+      GameHelpers.endGame(gameId, game.player2Address);
+      return;
+    }
 
     bytes32 localPlayer1Id = EntityHelpers.localAddressToKey(gameId, player1Address);
     bytes32 localPlayer2Id = EntityHelpers.localAddressToKey(gameId, player2Address);
@@ -23,11 +30,6 @@ library ProjectileHelpers {
     TowerDetails[] memory towers = _getTowerDetails(allTowers);
 
     _simulateTicks(towers);
-
-    GameData memory game = Game.get(gameId);
-    if (game.roundCount > MAX_ROUNDS) {
-      GameHelpers.endGame(gameId, game.player2Address);
-    }
   }
 
   function clearAllProjectiles(bytes32[] memory allTowers) public {

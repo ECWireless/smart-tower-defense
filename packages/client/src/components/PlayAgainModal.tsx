@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { GAMES_PATH } from '../Routes';
+import { MAX_ROUNDS } from '../utils/constants';
 import { Button } from './ui/button';
 import {
   DialogBackdrop,
@@ -181,6 +182,12 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
               ? `You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`
               : 'You lost!'}
           </Text>
+          {game.winner !== game.player1Address &&
+            game.roundCount > MAX_ROUNDS && (
+              <Text fontWeight={600}>
+                You have reached the max rounds you can play in a game.
+              </Text>
+            )}
           <Button
             loading={isCreatingGame}
             mt={4}
