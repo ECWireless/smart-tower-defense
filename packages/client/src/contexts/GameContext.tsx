@@ -20,9 +20,8 @@ import { Address, zeroAddress, zeroHash } from 'viem';
 
 import { toaster } from '../components/ui/toaster';
 import { useMUD } from '../MUDContext';
+import { MAX_TICKS } from '../utils/constants';
 import type { Castle, Game, Tower } from '../utils/types';
-
-const MAX_TICKS = 28;
 
 type GameContextType = {
   activeTowerId: string;
