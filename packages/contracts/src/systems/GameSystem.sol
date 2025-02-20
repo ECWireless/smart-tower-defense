@@ -57,7 +57,8 @@ contract GameSystem is System {
     Game.setActionCount(gameId, 1);
 
     if (Game.getTurn(gameId) == player2Address) {
-      GameHelpers.executePlayer2Actions(gameId, player1Address);
+      address worldAddress = _world();
+      GameHelpers.executePlayer2Actions(worldAddress, gameId, player1Address);
     }
   }
 }

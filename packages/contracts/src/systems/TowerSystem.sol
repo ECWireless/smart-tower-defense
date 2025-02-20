@@ -2,7 +2,11 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, TowerCounter } from "../codegen/index.sol";
+import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
+import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
+import { Systems } from "@latticexyz/world/src/codegen/tables/Systems.sol";
+
+import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
@@ -60,7 +64,10 @@ contract TowerSystem is System {
   ) external returns (address projectileLogicAddress) {
     address playerAddress = _msgSender();
     bytes32 playerGameId = CurrentGame.get(EntityHelpers.globalAddressToKey(playerAddress));
-    address gameSystemAddress = AddressBook.getGame();
+
+    (address gameSystemAddress, ) = Systems.get(
+      WorldResourceIdLib.encode({ typeId: RESOURCE_SYSTEM, namespace: "app", name: "GameSystem" })
+    );
     if (playerAddress == gameSystemAddress) {
       playerGameId = CurrentGame.get(towerId);
     }

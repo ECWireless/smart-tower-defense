@@ -1,4 +1,4 @@
-import { Action, ActionData, AddressBook, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedGame, SavedGameData, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
+import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedGame, SavedGameData, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH } from "../../constants.sol";
@@ -129,13 +129,12 @@ library GameHelpers {
     }
   }
 
-  function executePlayer2Actions(bytes32 gameId, address player1Address) public {
+  function executePlayer2Actions(address worldAddress, bytes32 gameId, address player1Address) public {
     bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
     uint256 turnCount = Game.getRoundCount(gameId) - 1;
 
     bytes32[] memory actionIds = SavedGame.getActions(gameId);
     if (actionIds.length > turnCount) {
-      address worldAddress = AddressBook.getWorld();
       ActionData memory action = Action.get(actionIds[turnCount]);
       (, int16 width) = MapConfig.get();
       action.newX = width - action.newX;
