@@ -18,14 +18,6 @@ export default defineWorld({
       },
       key: ["id"],
     },
-    AddressBook: {
-      schema: {
-        game: "address",
-        tower: "address",
-        world: "address",
-      },
-      key: [],
-    },
     Castle: "bool",
     Counter: {
       schema: {

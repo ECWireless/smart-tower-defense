@@ -18,11 +18,6 @@ library ProjectileHelpers {
     address player1Address = game.player1Address;
     address player2Address = game.player2Address;
 
-    if (game.roundCount > MAX_ROUNDS) {
-      GameHelpers.endGame(gameId, game.player2Address);
-      return;
-    }
-
     bytes32 localPlayer1Id = EntityHelpers.localAddressToKey(gameId, player1Address);
     bytes32 localPlayer2Id = EntityHelpers.localAddressToKey(gameId, player2Address);
 
@@ -30,6 +25,11 @@ library ProjectileHelpers {
     TowerDetails[] memory towers = _getTowerDetails(allTowers);
 
     _simulateTicks(towers);
+
+    bool isGameOver = Game.getEndTimestamp(gameId) != 0;
+    if (game.roundCount > MAX_ROUNDS && !isGameOver) {
+      GameHelpers.endGame(gameId, game.player2Address);
+    }
   }
 
   function clearAllProjectiles(bytes32[] memory allTowers) public {

@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, ActionData, AddressBook, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, Tower } from "../codegen/index.sol";
+import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
+import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
+
+import { _gameSystemAddress } from "../utils.sol";
+import { Action, ActionData, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, Tower } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -15,7 +19,8 @@ import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol"
  */
 library TowerHelpers {
   function validateInstallTower(bytes32 potentialGameId, address playerAddress, int16 x, int16 y) public view {
-    address gameSystemAddress = AddressBook.getGame();
+    address gameSystemAddress = _gameSystemAddress();
+
     bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
     bytes32 currentGameId = CurrentGame.get(globalPlayerId);
 
@@ -57,7 +62,8 @@ library TowerHelpers {
     int16 x,
     int16 y
   ) internal view {
-    address gameSystemAddress = AddressBook.getGame();
+    address gameSystemAddress = _gameSystemAddress();
+
     bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
     bytes32 currentGameId = CurrentGame.get(globalPlayerId);
 
@@ -203,8 +209,7 @@ library TowerHelpers {
     int16 newY,
     bool hasProjectile
   ) public {
-    address gameSystemAddress = AddressBook.getGame();
-    if (playerAddress != gameSystemAddress) {
+    if (playerAddress != _gameSystemAddress()) {
       bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
       bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
@@ -258,8 +263,7 @@ library TowerHelpers {
     int16 newX,
     int16 newY
   ) public {
-    address gameSystemAddress = AddressBook.getGame();
-    if (playerAddress != gameSystemAddress) {
+    if (playerAddress != _gameSystemAddress()) {
       bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
       bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
@@ -308,8 +312,7 @@ library TowerHelpers {
     address systemAddress,
     string memory sourceCode
   ) public {
-    address gameSystemAddress = AddressBook.getGame();
-    if (playerAddress != gameSystemAddress) {
+    if (playerAddress != _gameSystemAddress()) {
       bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
       bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
