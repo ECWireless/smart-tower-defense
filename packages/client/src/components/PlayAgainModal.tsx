@@ -1,8 +1,12 @@
 import { Text } from '@chakra-ui/react';
 import { useComponentValue } from '@latticexyz/react';
-import { getComponentValue } from '@latticexyz/recs';
+import {
+  Entity,
+  getComponentValue,
+  getComponentValueStrict,
+} from '@latticexyz/recs';
 import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useGame } from '../contexts/GameContext';
@@ -33,7 +37,14 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const {
-    components: { CurrentGame, GamesByLevel, TopLevel, WinStreak },
+    components: {
+      CurrentGame,
+      Game,
+      GamesByLevel,
+      SavedGame,
+      TopLevel,
+      WinStreak,
+    },
     network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
@@ -50,6 +61,22 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
   );
   const topLevelGames = useComponentValue(GamesByLevel, levelAsEntity)?.gameIds;
 
+  const topLevelGamesICanPlay = useMemo(() => {
+    if (!(game && topLevelGames)) return [];
+
+    return topLevelGames.filter(gameId => {
+      const savedTopLevelGame = getComponentValueStrict(
+        SavedGame,
+        gameId as Entity,
+      );
+      const topLevelGame = getComponentValueStrict(
+        Game,
+        savedTopLevelGame.gameId as Entity,
+      );
+      return topLevelGame.player1Address !== game.player1Address;
+    });
+  }, [game, Game, SavedGame, topLevelGames]);
+
   const onCreateGame = useCallback(async () => {
     try {
       setIsCreatingGame(true);
@@ -60,7 +87,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
 
       const resetLevel =
         game.winner !== game.player1Address ||
-        (topLevel === winStreak && topLevelGames?.length === 1);
+        (topLevel === winStreak && topLevelGamesICanPlay.length === 0);
 
       const { error, success } = await createGame(
         game.player1Username,
@@ -103,7 +130,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
     playerEntity,
     setIsGameOverModalOpen,
     topLevel,
-    topLevelGames,
+    topLevelGamesICanPlay,
     winStreak,
   ]);
 
@@ -128,7 +155,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
     );
   }
 
-  if (topLevel === winStreak && topLevelGames?.length === 1) {
+  if (topLevel === winStreak && topLevelGamesICanPlay.length === 0) {
     return (
       <DialogRoot
         open={isGameOverModalOpen}
@@ -142,7 +169,9 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
           </DialogHeader>
           <DialogBody spaceY={4}>
             <Text fontSize="lg">
-              Congratulations! You are now the <strong>top player</strong>!
+              Congratulations! You are now{' '}
+              {topLevelGames?.length === 1 ? 'the' : 'a'}{' '}
+              <strong>top player</strong>!
             </Text>
             <Text>
               Your game has been saved, and other players can try to beat it.
