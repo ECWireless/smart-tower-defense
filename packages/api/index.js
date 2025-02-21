@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 
 app.get("/", (_, res) => {
   res.send("Smart Tower Defense API");
