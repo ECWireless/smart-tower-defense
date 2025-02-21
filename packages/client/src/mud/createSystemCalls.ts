@@ -44,10 +44,13 @@ export function createSystemCalls(
 ) {
   const createGame = async (username: string, resetLevel: boolean) => {
     try {
-      const tx = await worldContract.write.app__createGame([
-        username,
-        resetLevel,
-      ]);
+      const tx = await worldContract.write.app__createGame(
+        [username, resetLevel],
+        // Because the system function uses prevrandao and a loop, automatic gas estimation can be wrong
+        {
+          gas: BigInt('10000000'),
+        },
+      );
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
 
