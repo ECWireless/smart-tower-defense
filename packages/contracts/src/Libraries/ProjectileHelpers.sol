@@ -106,10 +106,7 @@ library ProjectileHelpers {
       // Step 4: update the trajectory
       _updateProjectileTrajectory(towers[i].id, newX, newY);
 
-      // Step 5: handle collisions
-      _handleCollisions(towers, i);
-
-      // Step 6: finalize the projectile movement
+      // Step 5: finalize the projectile movement and collisions
       _handleProjectileMovement(towers, i, newX, newY);
     }
   }
@@ -194,41 +191,6 @@ library ProjectileHelpers {
     ProjectileTrajectory.set(towerId, newX, newY);
   }
 
-  function _handleCollisions(TowerDetails[] memory towers, uint256 towerIndex) internal pure {
-    for (uint256 j = 0; j < towers.length; j++) {
-      if (_checkProjectileCollision(towers, towerIndex, j)) {
-        break;
-      }
-    }
-  }
-
-  function _checkProjectileCollision(
-    TowerDetails[] memory towers,
-    uint256 i,
-    uint256 j
-  )
-    public
-    pure
-    returns (
-      // int16 newProjectileX,
-      // int16 newProjectileY
-      bool
-    )
-  {
-    if (i == j || towers[j].health == 0 || towers[j].projectileAddress == address(0)) {
-      return false;
-    }
-
-    // TODO: Maybe bring this back later
-    // if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
-    //   towers[i].projectileAddress = address(0);
-    //   towers[j].projectileAddress = address(0);
-    //   return true;
-    // }
-
-    return false;
-  }
-
   function _handleProjectileMovement(
     TowerDetails[] memory towers,
     uint256 i,
@@ -259,7 +221,11 @@ library ProjectileHelpers {
         if (gameId == 0) {
           gameId = CurrentGame.get(positionEntity);
         }
-        GameHelpers.endGame(gameId, Owner.get(towers[i].id));
+
+        // Preference is given to player 1 if both castles are destroyed at the same time
+        if (Game.getEndTimestamp(gameId) == 0) {
+          GameHelpers.endGame(gameId, Owner.get(towers[i].id));
+        }
       }
     } else {
       Health.setCurrentHealth(positionEntity, newHealth);
