@@ -157,10 +157,16 @@ library GameHelpers {
       (bool success, ) = worldAddress.call(data);
       require(success, "installTower call failed");
     } else if (action.actionType == ActionType.Move) {
+      bytes32 towerEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY));
+      uint8 towerHealth = Health.getCurrentHealth(towerEntity);
+      if (towerHealth == 0) {
+        return;
+      }
+
       bytes memory data = abi.encodeWithSignature(
         "app__moveTower(bytes32,bytes32,int16,int16)",
         CurrentGame.get(globalPlayer1),
-        EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY)),
+        towerEntity,
         action.newX,
         action.newY
       );
@@ -169,10 +175,15 @@ library GameHelpers {
       require(success, "moveTower call failed");
     } else if (action.actionType == ActionType.Modify) {
       ProjectileData memory projectileData = Projectile.get(actionIds[actionIdIndex]);
+      bytes32 towerEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY));
+      uint8 towerHealth = Health.getCurrentHealth(towerEntity);
+      if (towerHealth == 0) {
+        return;
+      }
 
       bytes memory data = abi.encodeWithSignature(
         "app__modifyTowerSystem(bytes32,bytes,string)",
-        EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY)),
+        towerEntity,
         projectileData.bytecode,
         projectileData.sourceCode
       );
