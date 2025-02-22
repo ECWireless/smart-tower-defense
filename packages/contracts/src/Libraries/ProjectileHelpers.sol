@@ -210,7 +210,12 @@ library ProjectileHelpers {
   }
 
   function _handleCollision(TowerDetails[] memory towers, uint256 i, bytes32 positionEntity) internal {
-    uint8 newHealth = Health.getCurrentHealth(positionEntity) - 1;
+    uint8 entityHealth = Health.getCurrentHealth(positionEntity);
+
+    if (entityHealth == 0) {
+      return;
+    }
+    uint8 newHealth = entityHealth - 1;
 
     if (Castle.get(positionEntity)) {
       Health.setCurrentHealth(positionEntity, newHealth);
