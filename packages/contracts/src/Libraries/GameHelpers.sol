@@ -131,50 +131,54 @@ library GameHelpers {
 
   function executePlayer2Actions(address worldAddress, bytes32 gameId, address player1Address) public {
     bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
-    uint256 turnCount = Game.getRoundCount(gameId) - 1;
+    uint8 roundCount = Game.getRoundCount(gameId) - 1;
+    uint8 actionCount = Game.getActionCount(gameId);
+    uint256 actionIdIndex = (roundCount * MAX_ACTIONS) + (MAX_ACTIONS - actionCount);
 
     bytes32[] memory actionIds = SavedGame.getActions(gameId);
-    if (actionIds.length > turnCount) {
-      ActionData memory action = Action.get(actionIds[turnCount]);
-      (, int16 width) = MapConfig.get();
-      action.newX = width - action.newX;
-      action.oldX = width - action.oldX;
+    if (actionIdIndex >= actionIds.length) {
+      return;
+    }
 
-      if (action.actionType == ActionType.Install) {
-        bytes memory data = abi.encodeWithSignature(
-          "app__installTower(bytes32,bool,int16,int16)",
-          CurrentGame.get(globalPlayer1),
-          action.projectile,
-          action.newX,
-          action.newY
-        );
+    ActionData memory action = Action.get(actionIds[actionIdIndex]);
+    (, int16 width) = MapConfig.get();
+    action.newX = width - action.newX;
+    action.oldX = width - action.oldX;
 
-        (bool success, ) = worldAddress.call(data);
-        require(success, "installTower call failed");
-      } else if (action.actionType == ActionType.Move) {
-        bytes memory data = abi.encodeWithSignature(
-          "app__moveTower(bytes32,bytes32,int16,int16)",
-          CurrentGame.get(globalPlayer1),
-          EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY)),
-          action.newX,
-          action.newY
-        );
+    if (action.actionType == ActionType.Install) {
+      bytes memory data = abi.encodeWithSignature(
+        "app__installTower(bytes32,bool,int16,int16)",
+        CurrentGame.get(globalPlayer1),
+        action.projectile,
+        action.newX,
+        action.newY
+      );
 
-        (bool success, ) = worldAddress.call(data);
-        require(success, "moveTower call failed");
-      } else if (action.actionType == ActionType.Modify) {
-        ProjectileData memory projectileData = Projectile.get(actionIds[turnCount]);
+      (bool success, ) = worldAddress.call(data);
+      require(success, "installTower call failed");
+    } else if (action.actionType == ActionType.Move) {
+      bytes memory data = abi.encodeWithSignature(
+        "app__moveTower(bytes32,bytes32,int16,int16)",
+        CurrentGame.get(globalPlayer1),
+        EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY)),
+        action.newX,
+        action.newY
+      );
 
-        bytes memory data = abi.encodeWithSignature(
-          "app__modifyTowerSystem(bytes32,bytes,string)",
-          EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY)),
-          projectileData.bytecode,
-          projectileData.sourceCode
-        );
+      (bool success, ) = worldAddress.call(data);
+      require(success, "moveTower call failed");
+    } else if (action.actionType == ActionType.Modify) {
+      ProjectileData memory projectileData = Projectile.get(actionIds[actionIdIndex]);
 
-        (bool success, ) = worldAddress.call(data);
-        require(success, "modifyTowerSystem call failed");
-      }
+      bytes memory data = abi.encodeWithSignature(
+        "app__modifyTowerSystem(bytes32,bytes,string)",
+        EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY)),
+        projectileData.bytecode,
+        projectileData.sourceCode
+      );
+
+      (bool success, ) = worldAddress.call(data);
+      require(success, "modifyTowerSystem call failed");
     }
   }
 

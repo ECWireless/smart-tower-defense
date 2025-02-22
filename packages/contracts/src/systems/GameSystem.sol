@@ -6,6 +6,7 @@ import { Game, GameData, SavedGame, SavedGameData, WinStreak } from "../codegen/
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { GameHelpers } from "../Libraries/GameHelpers.sol";
+import { MAX_ACTIONS } from "../../constants.sol";
 import "forge-std/console.sol";
 
 contract GameSystem is System {
@@ -54,11 +55,13 @@ contract GameSystem is System {
     }
 
     Game.setTurn(gameId, currentPlayerAddress == player1Address ? player2Address : player1Address);
-    Game.setActionCount(gameId, 1);
+    Game.setActionCount(gameId, MAX_ACTIONS);
 
     if (Game.getTurn(gameId) == player2Address) {
       address worldAddress = _world();
-      GameHelpers.executePlayer2Actions(worldAddress, gameId, player1Address);
+      for (uint256 i = 0; i < MAX_ACTIONS; i++) {
+        GameHelpers.executePlayer2Actions(worldAddress, gameId, player1Address);
+      }
     }
   }
 }
