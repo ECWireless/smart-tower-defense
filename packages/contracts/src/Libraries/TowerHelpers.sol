@@ -202,6 +202,39 @@ library TowerHelpers {
     require(distance <= 1, "TowerSystem: projectile speed exceeds rules");
   }
 
+  function storeSkipAction(bytes32 gameId, address playerAddress) public {
+    if (playerAddress != _gameSystemAddress()) {
+      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
+
+      ActionData[] memory actions = new ActionData[](1);
+      actions[0] = ActionData({ actionType: ActionType.Skip, newX: 0, newY: 0, oldX: 0, oldY: 0, projectile: false });
+
+      bytes32[] memory savedGameActionIds = SavedGame.getActions(savedGameId);
+      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+
+      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
+        newSavedGameActionIds[i] = savedGameActionIds[i];
+      }
+
+      for (uint256 i = 0; i < actions.length; i++) {
+        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+          abi.encodePacked(
+            actions[i].actionType,
+            actions[i].newX,
+            actions[i].newY,
+            actions[i].oldX,
+            actions[i].oldY,
+            actions[i].projectile
+          )
+        );
+        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+      }
+
+      SavedGame.setActions(savedGameId, newSavedGameActionIds);
+    }
+  }
+
   function storeInstallTowerAction(
     bytes32 gameId,
     address playerAddress,

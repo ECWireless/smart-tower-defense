@@ -3,7 +3,7 @@ import { defineWorld } from "@latticexyz/world";
 export default defineWorld({
   namespace: "app",
   enums: {
-    ActionType: ["Install", "Move", "Modify"],
+    ActionType: ["Skip", "Install", "Move", "Modify"],
   },
   tables: {
     Action: {
