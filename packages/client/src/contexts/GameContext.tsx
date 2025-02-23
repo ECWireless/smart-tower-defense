@@ -7,13 +7,14 @@ import {
   HasValue,
   runQuery,
 } from '@latticexyz/recs';
-import { encodeEntity } from '@latticexyz/store-sync/recs';
+import { decodeEntity, encodeEntity } from '@latticexyz/store-sync/recs';
 import {
   createContext,
   ReactNode,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import { Address, zeroAddress, zeroHash } from 'viem';
@@ -35,6 +36,7 @@ type GameContextType = {
   ) => void;
   installingPosition: { x: number; y: number } | null;
   isInstallingTower: boolean;
+  isPlayer1: boolean;
   isRefreshing: boolean;
   myCastlePosition: Castle;
   onInstallTower: (e: React.DragEvent, row: number, col: number) => void;
@@ -61,6 +63,7 @@ const GameContext = createContext<GameContextType>({
   handleDragStart: () => {},
   installingPosition: null,
   isInstallingTower: false,
+  isPlayer1: false,
   isRefreshing: false,
   myCastlePosition: {
     id: zeroHash as Entity,
@@ -102,6 +105,7 @@ export const GameProvider = ({
       Tower,
       Username,
     },
+    network: { playerEntity },
     systemCalls: { installTower, moveTower },
   } = useMUD();
 
@@ -429,6 +433,18 @@ export const GameProvider = ({
     triggerAnimation,
   ]);
 
+  const isPlayer1 = useMemo(() => {
+    if (!(game && playerEntity)) return false;
+    const playerAddress = decodeEntity(
+      {
+        address: 'address',
+      },
+      playerEntity,
+    ).address;
+
+    return playerAddress === game?.player1Address;
+  }, [game, playerEntity]);
+
   return (
     <GameContext.Provider
       value={{
@@ -439,6 +455,7 @@ export const GameProvider = ({
         handleDragStart,
         installingPosition,
         isInstallingTower,
+        isPlayer1,
         isRefreshing: isLoadingGame,
         myCastlePosition,
         onInstallTower,

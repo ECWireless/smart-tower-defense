@@ -1,11 +1,10 @@
 import { Box, Heading, HStack } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
-import { decodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
@@ -33,10 +32,9 @@ export const SystemModificationDrawer: React.FC<
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
     components: { Projectile },
-    network: { playerEntity },
     systemCalls: { getContractSize, modifyTowerSystem },
   } = useMUD();
-  const { refreshGame } = useGame();
+  const { isPlayer1, refreshGame } = useGame();
 
   const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
@@ -135,19 +133,6 @@ export const SystemModificationDrawer: React.FC<
     tower,
   ]);
 
-  const isMyTower = useMemo(() => {
-    if (!(playerEntity && tower.owner)) return false;
-
-    const playerAddress = decodeEntity(
-      {
-        address: 'address',
-      },
-      playerEntity,
-    );
-
-    return playerAddress.address === tower.owner;
-  }, [playerEntity, tower]);
-
   // Configure Solidity language
   loader.init().then(monacoInstance => {
     monacoInstance.languages.register({ id: 'solidity' });
@@ -215,7 +200,7 @@ export const SystemModificationDrawer: React.FC<
             </Box>
           </Box>
           <HStack mb={4}>
-            {isMyTower && (
+            {isPlayer1 && (
               <Button
                 disabled={isDeploying}
                 onClick={onModifyTowerSystem}
@@ -235,7 +220,7 @@ export const SystemModificationDrawer: React.FC<
             </Button>
           </HStack>
           <Box border="1px solid black" position="relative" w="100%">
-            {!isMyTower && (
+            {!isPlayer1 && (
               <Box
                 bg="transparent"
                 h="300px"

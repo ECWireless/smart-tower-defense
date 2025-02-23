@@ -33,6 +33,7 @@ export const InnerGamePage = (): JSX.Element => {
     handleDragStart,
     installingPosition,
     isInstallingTower,
+    isPlayer1,
     isRefreshing,
     myCastlePosition,
     onInstallTower,
@@ -109,7 +110,7 @@ export const InnerGamePage = (): JSX.Element => {
                     openDelay={200}
                   >
                     <Box
-                      draggable="true"
+                      draggable={isPlayer1}
                       onDragStart={e => handleDragStart(e, zeroHash, 'offense')}
                     >
                       <GiCannon color="blue" size={26} />
@@ -129,7 +130,7 @@ export const InnerGamePage = (): JSX.Element => {
                     openDelay={200}
                   >
                     <Box
-                      draggable="true"
+                      draggable={isPlayer1}
                       onDragStart={e => handleDragStart(e, zeroHash, 'defense')}
                     >
                       <GiDefensiveWall color="blue" size={20} />
@@ -334,7 +335,7 @@ export const InnerGamePage = (): JSX.Element => {
                           openDelay={200}
                         >
                           <Box
-                            draggable={!isEnemyTile}
+                            draggable={!isEnemyTile && isPlayer1}
                             transform={
                               activeTower.owner === game.player2Address
                                 ? 'rotateY(180deg)'
