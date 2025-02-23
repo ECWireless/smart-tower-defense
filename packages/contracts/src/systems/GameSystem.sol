@@ -40,6 +40,8 @@ contract GameSystem is System {
     address player1Address = game.player1Address;
     address player2Address = game.player2Address;
 
+    require(_msgSender() == player1Address, "GameSystem: not player1");
+
     address currentPlayerAddress = game.turn;
     if (game.turn == player1Address) {
       // For all actions remaining, add that number of skipped actions
