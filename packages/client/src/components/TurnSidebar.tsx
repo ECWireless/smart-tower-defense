@@ -38,8 +38,13 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
   const {
     systemCalls: { nextTurn },
   } = useMUD();
-  const { game, refreshGame, setTriggerAnimation, triggerAnimation } =
-    useGame();
+  const {
+    game,
+    isPlayer1,
+    refreshGame,
+    setTriggerAnimation,
+    triggerAnimation,
+  } = useGame();
 
   const dialog = useDialog();
 
@@ -124,7 +129,7 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
       <HStack justifyContent="center">
         <Text fontSize="sm">NEXT</Text>
         <Button
-          disabled={triggerAnimation}
+          disabled={triggerAnimation || !isPlayer1}
           loading={isChangingTurn}
           onClick={onNextTurn}
           p={0}
