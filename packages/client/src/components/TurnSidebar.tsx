@@ -62,12 +62,16 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
     localStorage.setItem(HOW_TO_SEEN_KEY, 'true');
   }, [dialog]);
 
-  const onNextTurn = useCallback(async () => {
+  const onNextRound = useCallback(async () => {
     try {
       setIsChangingTurn(true);
 
       if (!game) {
         throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        throw new Error(`Not player2's turn.`);
       }
 
       const { error, success } = await nextTurn(game.id);
@@ -81,11 +85,7 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
         type: 'success',
       });
 
-      if (game.turn === game.player2Address) {
-        setTriggerAnimation(true);
-      } else {
-        refreshGame();
-      }
+      setTriggerAnimation(true);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -98,7 +98,42 @@ export const TurnSidebar: React.FC<TurnSidebarProps> = ({
     } finally {
       setIsChangingTurn(false);
     }
-  }, [game, nextTurn, refreshGame, setTriggerAnimation]);
+  }, [game, nextTurn, setTriggerAnimation]);
+
+  const onNextTurn = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
+
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        await onNextRound();
+        return;
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      refreshGame();
+      await onNextRound();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toaster.create({
+        description: (error as Error).message,
+        title: 'Error Changing Turn',
+        type: 'error',
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [game, nextTurn, onNextRound, refreshGame]);
 
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
