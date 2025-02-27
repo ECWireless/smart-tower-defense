@@ -1,15 +1,27 @@
-import { Box, Heading, HStack } from '@chakra-ui/react';
+import { Box, HStack, Text, useDialog } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useState } from 'react';
+import { FcRules } from 'react-icons/fc';
 
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
 import { Button } from './ui/button';
+import {
+  DialogBackdrop,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 import {
   DrawerBackdrop,
   DrawerBody,
@@ -40,6 +52,8 @@ export const SystemModificationDrawer: React.FC<
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
+
+  const dialog = useDialog();
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
@@ -178,27 +192,54 @@ export const SystemModificationDrawer: React.FC<
           </DrawerTitle>
         </DrawerHeader>
         <DrawerBody color="black">
-          <Box mb={4}>
-            <Heading fontSize="lg">Rules</Heading>
-            <Box as="ul" listStylePosition="inside" listStyleType="circle">
-              <li>
-                Modify the <strong>Solidity</strong> code to change the behavior
-                of the projectile. The projectile will be deployed as a smart
-                contract.
-              </li>
-              <li>
-                Projectiles move at a speed of x &quot;pixels&quot; per tick.
-                However, <strong>x can never exceed 10 per tick</strong> (each
-                tile has a resolution of 10x10 pixels).{' '}
-                <strong>There are 28 ticks</strong> when the round results run.
-                The recommended speed is 5 pixels per tick.
-              </li>
-              <li>
-                The size limit of the projectile logic code is{' '}
-                <strong>{sizeLimit.toString()} bytes</strong>.
-              </li>
-            </Box>
-          </Box>
+          <DialogRoot
+            onOpenChange={e =>
+              e.open ? dialog.setOpen(true) : dialog.setOpen(false)
+            }
+            open={dialog.open}
+            scrollBehavior="inside"
+          >
+            <DialogBackdrop />
+            <DialogTrigger
+              as={Button}
+              border="1px black solid"
+              mb={4}
+              _hover={{
+                bgColor: 'gray.200',
+              }}
+            >
+              <Text>View the Rules</Text>
+              <FcRules color="black" />
+            </DialogTrigger>
+            <DialogContent bgColor="white" color="black">
+              <DialogCloseTrigger bgColor="black" />
+              <DialogHeader>
+                <DialogTitle textTransform="uppercase">Rules</DialogTitle>
+              </DialogHeader>
+              <DialogBody>
+                <Box as="ul" listStylePosition="inside" listStyleType="circle">
+                  <li>
+                    Modify the <strong>Solidity</strong> code to change the
+                    behavior of the projectile. The projectile will be deployed
+                    as a smart contract.
+                  </li>
+                  <li>
+                    Projectiles move at a speed of x &quot;pixels&quot; per
+                    tick. However,{' '}
+                    <strong>x can never exceed 10 per tick</strong> (each tile
+                    has a resolution of 10x10 pixels).{' '}
+                    <strong>There are 28 ticks</strong> when the round results
+                    run. The recommended speed is 5 pixels per tick.
+                  </li>
+                  <li>
+                    The size limit of the projectile logic code is{' '}
+                    <strong>{sizeLimit.toString()} bytes</strong>.
+                  </li>
+                </Box>
+              </DialogBody>
+              <DialogFooter />
+            </DialogContent>
+          </DialogRoot>
           <HStack mb={4}>
             {isPlayer1 && (
               <Button
