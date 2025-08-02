@@ -713,48 +713,50 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
                 View Board
               </Button>
             </div>
-            {isMyTower && (!isPatentRegistered || canAmendPatent) && (
-              <div className="flex gap-3">
-                <Button
-                  className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
-                  onClick={() => {
-                    setShowRegisterPatentModal(true);
+            {isMyTower &&
+              !!bytecode &&
+              (!isPatentRegistered || canAmendPatent) && (
+                <div className="flex gap-3">
+                  <Button
+                    className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
+                    onClick={() => {
+                      setShowRegisterPatentModal(true);
 
-                    if (canAmendPatent && selectedPatent) {
-                      setName(selectedPatent.name);
-                      setDescription(selectedPatent.description);
-                    }
-                  }}
-                  variant="outline"
-                >
-                  {isPatentRegistered ? (
-                    <Pencil className="h-4 mr-2 w-4" />
-                  ) : (
-                    <FileText className="h-4 mr-2 w-4" />
+                      if (canAmendPatent && selectedPatent) {
+                        setName(selectedPatent.name);
+                        setDescription(selectedPatent.description);
+                      }
+                    }}
+                    variant="outline"
+                  >
+                    {isPatentRegistered ? (
+                      <Pencil className="h-4 mr-2 w-4" />
+                    ) : (
+                      <FileText className="h-4 mr-2 w-4" />
+                    )}
+                    {isPatentRegistered ? 'Amend' : 'Register'} Patent
+                  </Button>
+                  {canAmendPatent && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            aria-label="Delete Patent"
+                            className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
+                            onClick={() => setShowDisclaimPatentModal(true)}
+                            variant="outline"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete Patent</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
-                  {isPatentRegistered ? 'Amend' : 'Register'} Patent
-                </Button>
-                {canAmendPatent && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Button
-                          aria-label="Delete Patent"
-                          className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
-                          onClick={() => setShowDisclaimPatentModal(true)}
-                          variant="outline"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Delete Patent</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-            )}
+                </div>
+              )}
           </div>
 
           {/* SAVE AND EDIT DIALOG */}
