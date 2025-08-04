@@ -1,11 +1,5 @@
 import { useEntityQuery } from '@latticexyz/react';
-import {
-  Entity,
-  getComponentValueStrict,
-  Has,
-  HasValue,
-  runQuery,
-} from '@latticexyz/recs';
+import { Entity, getComponentValueStrict, Has } from '@latticexyz/recs';
 import { decodeEntity } from '@latticexyz/store-sync/recs';
 import {
   ArrowRight,
@@ -185,7 +179,6 @@ export const HomeTabs: React.FC = () => {
       KingdomsByLevel,
       Level,
       PlayerIdToAddress,
-      RevenueReceipt,
       SavedKingdom,
       Username,
     },
@@ -257,20 +250,6 @@ export const HomeTabs: React.FC = () => {
           _savedKingdom.author as Entity,
         ).value;
 
-        const revenueReceipts = Array.from(
-          runQuery([
-            HasValue(RevenueReceipt, { savedKingdomId: savedKingdomId }),
-          ]),
-        ).map(entity => {
-          return getComponentValueStrict(RevenueReceipt, entity);
-        });
-
-        const totalEarnings = revenueReceipts.reduce(
-          (acc, receipt) =>
-            acc + receipt.amountToKingdom + receipt.amountToReserve,
-          BigInt(0),
-        );
-
         return {
           id: savedKingdomId,
           author: _savedKingdom.author,
@@ -278,7 +257,6 @@ export const HomeTabs: React.FC = () => {
           electricityBalance: _savedKingdom.electricityBalance,
           level: Number(decodedKey.level),
           losses: Number(_savedKingdom.losses),
-          totalEarnings: totalEarnings,
           wins: Number(_savedKingdom.wins),
         };
       });
@@ -496,12 +474,10 @@ export const HomeTabs: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-800">
+                  <TableHead className="text-cyan-400">Level</TableHead>
                   <TableHead className="text-cyan-400">Author</TableHead>
                   <TableHead className="text-cyan-400">
                     Current Balance
-                  </TableHead>
-                  <TableHead className="text-cyan-400">
-                    Total Earnings
                   </TableHead>
                   <TableHead className="text-cyan-400">Wins</TableHead>
                   <TableHead className="text-cyan-400">Losses</TableHead>
@@ -516,13 +492,13 @@ export const HomeTabs: React.FC = () => {
                   .map(kingdom => (
                     <TableRow key={kingdom.id} className="border-gray-800">
                       <TableCell className="font-medium">
+                        {kingdom.level.toString()}
+                      </TableCell>
+                      <TableCell className="font-medium">
                         {kingdom.authorUsername}
                       </TableCell>
                       <TableCell>
                         {formatWattHours(kingdom.electricityBalance)}
-                      </TableCell>
-                      <TableCell>
-                        {formatWattHours(kingdom.totalEarnings)}
                       </TableCell>
                       <TableCell className="text-green-400">
                         {kingdom.wins}
@@ -567,15 +543,15 @@ export const HomeTabs: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <div className="text-gray-400">Current Balance</div>
+                        <div className="text-gray-400">Level</div>
                         <div className="font-medium text-white">
-                          {formatWattHours(kingdom.electricityBalance)}
+                          {kingdom.level.toString()}
                         </div>
                       </div>
                       <div>
-                        <div className="text-gray-400">Total Earnings</div>
+                        <div className="text-gray-400">Current Balance</div>
                         <div className="font-medium text-white">
-                          {formatWattHours(kingdom.totalEarnings)}
+                          {formatWattHours(kingdom.electricityBalance)}
                         </div>
                       </div>
                       <div>
