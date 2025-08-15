@@ -18,6 +18,10 @@ const {
 const sgMail = require("@sendgrid/mail");
 const { OpenAI } = require("openai");
 const { privateKeyToAccount } = require("viem/accounts");
+const multer = require("multer");
+const axios = require("axios");
+const FormData = require("form-data");
+
 const { base, baseSepolia, foundry, pyrope, redstone } = require("viem/chains");
 const BASE_ESCOW_ABI = require("./abi/baseEscrowAbi.json");
 const SELL_EMITTER_ABI = require("./abi/sellEmitterAbi.json");
@@ -58,6 +62,11 @@ if (!process.env.ALERT_EMAIL) {
 
 if (!process.env.OPENAI_API_KEY) {
   console.error("Missing OPENAI_API_KEY in environment variables");
+  process.exit(1);
+}
+
+if (!process.env.PINATA_JWT) {
+  console.error("Missing PINATA_JWT in environment variables");
   process.exit(1);
 }
 
@@ -577,6 +586,74 @@ app.post("/sell-validator-signature", async (req, res) => {
     res.status(500).json({ error: "Signature failed" });
   }
 });
+
+const ALLOWED_ORIGINS = [
+  "https://www.thedailydust.com",
+  "https://thedailydust.com",
+];
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (_, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image uploads are allowed"));
+  },
+});
+
+const uploadCors = cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // allow non-browser tools (curl/Postman)
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error("Not allowed by CORS"));
+  },
+  methods: ["POST", "OPTIONS"],
+});
+
+app.post(
+  "/ipfs/file",
+  uploadCors,
+  upload.single("file"), // parse multipart body
+  async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No file provided" });
+
+      const form = new FormData();
+      form.append("file", req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: "image/png",
+      });
+
+      const name = req.body?.name || req.file.originalname;
+      form.append("name", name);
+
+      const resp = await axios.post(
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+            Authorization: `Bearer ${process.env.PINATA_JWT}`,
+          },
+          maxBodyLength: Infinity,
+        }
+      );
+
+      const { IpfsHash } = resp.data;
+
+      return res.json({
+        cid: IpfsHash,
+      });
+    } catch (err) {
+      const status = err?.response?.status || 500;
+      const payload = err?.response?.data || {
+        error: err?.message || "Upload failed",
+      };
+      console.error("Upload error:", payload);
+      return res.status(status).json(payload);
+    }
+  }
+);
 
 app.listen(port, () => {
   console.log(`Auto Tower Defense API listening on port ${port}`);
