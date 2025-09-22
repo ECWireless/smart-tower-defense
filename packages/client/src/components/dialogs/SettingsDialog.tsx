@@ -130,6 +130,20 @@ export const SettingsDialog: React.FC = () => {
     }
   }, []);
 
+  // Open dialog when 'esc' is clicked
+  useEffect(() => {
+    if (open) return () => undefined;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented && !e.repeat) {
+        setOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   const handleMusicToggle = (enabled: boolean) => {
     const _newSettings = { ...settings, musicEnabled: enabled };
     setSettings(_newSettings);
@@ -174,6 +188,7 @@ export const SettingsDialog: React.FC = () => {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
+          onOpenAutoFocus={e => e.preventDefault()}
           aria-describedby={undefined}
           className="bg-gray-900/95 border border-cyan-900/50 text-white"
         >
@@ -184,10 +199,7 @@ export const SettingsDialog: React.FC = () => {
           </DialogHeader>
 
           <div className="mt-4 space-y-6">
-            <div
-              className="flex justify-center mb-8"
-              onClick={() => setOpen(false)}
-            >
+            <div className="mb-8 mx-auto w-fit" onClick={() => setOpen(false)}>
               <AccountButton />
             </div>
 
